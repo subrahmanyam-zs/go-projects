@@ -15,7 +15,7 @@ We will trade off performance for ease of use.
   docker run --name gofr-mysql -e MYSQL_ROOT_PASSWORD=password -p 2001:3306 -d mysql:latest
   docker run --name gofr-redis -p 2002:6379 -d redis:latest
   docker run --name gofr-cassandra -d -p 2003:9042 cassandra:latest
-  docker run --name gofr-mongo -d -p 2004:27017 mongo:latest
+  docker run --name gofr-mongo -d -e MONGO_INITDB_ROOT_USERNAME=admin -e MONGO_INITDB_ROOT_PASSWORD=admin123 -p 2004:27017 mongo:latest
   docker run --name gofr-zipkin -d -p 2005:9411 openzipkin/zipkin:latest
   docker run --name gofr-pgsql -d -e POSTGRES_PASSWORD=root123 -p 2006:5432 postgres:12.2
   docker run --name gofr-mssql -d -e 'ACCEPT_EULA=Y' -e 'SA_PASSWORD=reallyStrongPwd123' -p 2007:1433 microsoft/mssql-server-linux
