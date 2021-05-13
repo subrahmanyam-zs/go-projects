@@ -39,7 +39,7 @@ Body:
        "id":1,
        "name":"person",
        "age":12,
-       "city":"Gujarat"
+       "city":"Banglore"
     }
 ```
 Sample Response:
