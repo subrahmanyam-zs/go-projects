@@ -17,7 +17,7 @@ PASS
 ok      github.com/zopsmart/gofr/examples/using-ycql    5.363s
 ```
 
-_This indicates that the integration test for the `sample-ycql` have passed._
+_This indicates that the integration test for the `sample-ycql` has passed._
 
 - Now run the sample server by typing: 
 ```shell
@@ -131,5 +131,6 @@ _Request:_
   {"errors":[{"code":"Entity Not Found","reason":"No 'person' found for Id: '1'","datetime":{"value":"2021-05-13T23:55:10Z","timezone":"IST"}}]}
   ```
 
+  
 > Validate Headers has been set to false in `main.go`, via `k.Server.ValidateHeaders = false`. If enabled, sample values for header fields could be used:
 > `X-Correlation-ID = 1s3d323adsd`, `X-Zopsmart-Tenant = good4more`, `True-Client-Ip = 127.0.0.1`
