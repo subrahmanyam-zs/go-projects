@@ -28,7 +28,7 @@ func NewGoDotEnvProvider(l logger, configFolder string) *GoDotEnvProvider {
 }
 
 // readConfig(logger Logger) loads the environment variables from .env file
-// Priority Order is Environment Variable > .env.X file > .env file
+// Priority Order is Environment Variable > .X.env file > .env file
 // if there is a need to overwrite any of the environment variable present in the ./env
 // then it can be done by creating .env.local file
 // or by specifying the file prefix in environment variable GOFR_ENV.
