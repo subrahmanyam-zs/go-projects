@@ -12,12 +12,6 @@ The request must contain the following header value pairs:
 ```
 docker run --name gofr-redis -p 2002:6379 -d redis:latest
 docker run --name container-redis -d redis
-```    
-
-#### setting up environment variables
-```
-REDIS_HOST=localhost
-REDIS_PORT=2002
 ```
 
 #### Sample request and response
