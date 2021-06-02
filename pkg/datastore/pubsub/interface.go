@@ -4,7 +4,7 @@ import (
 	"time"
 
 	eventhub "github.com/Azure/azure-event-hubs-go/v3"
-	"github.com/zopsmart/gofr/pkg/gofr/types"
+	"developer.zopsmart.com/go/gofr/pkg/gofr/types"
 )
 
 type Message struct {

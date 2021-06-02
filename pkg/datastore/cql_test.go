@@ -10,10 +10,10 @@ import (
 	"testing"
 
 	"github.com/gocql/gocql"
-	"github.com/zopsmart/gofr/pkg"
-	"github.com/zopsmart/gofr/pkg/gofr/config"
-	"github.com/zopsmart/gofr/pkg/gofr/types"
-	"github.com/zopsmart/gofr/pkg/log"
+	"developer.zopsmart.com/go/gofr/pkg"
+	"developer.zopsmart.com/go/gofr/pkg/gofr/config"
+	"developer.zopsmart.com/go/gofr/pkg/gofr/types"
+	"developer.zopsmart.com/go/gofr/pkg/log"
 )
 
 func Test_CQL_Connection(t *testing.T) {

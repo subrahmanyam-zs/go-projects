@@ -8,9 +8,9 @@ import (
 	"strings"
 	"text/template"
 
-	"github.com/zopsmart/gofr/cmd/gofr/helper"
-	"github.com/zopsmart/gofr/pkg/errors"
-	"github.com/zopsmart/gofr/pkg/gofr"
+	"developer.zopsmart.com/go/gofr/cmd/gofr/helper"
+	"developer.zopsmart.com/go/gofr/pkg/errors"
+	"developer.zopsmart.com/go/gofr/pkg/gofr"
 )
 
 const (
@@ -155,9 +155,9 @@ package main
 
 import (
 	"{{.MigrationDir}}/migrations"
-	"github.com/zopsmart/gofr/cmd/gofr/migration"
-	dbmigration "github.com/zopsmart/gofr/cmd/gofr/migration/dbMigration"
-	"github.com/zopsmart/gofr/pkg/gofr"
+	"developer.zopsmart.com/go/gofr/cmd/gofr/migration"
+	dbmigration "developer.zopsmart.com/go/gofr/cmd/gofr/migration/dbMigration"
+	"developer.zopsmart.com/go/gofr/pkg/gofr"
 )
 
 func main() {

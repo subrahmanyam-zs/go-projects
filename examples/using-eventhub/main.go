@@ -1,8 +1,8 @@
 package main
 
 import (
-	"github.com/zopsmart/gofr/examples/using-eventhub/handlers"
-	"github.com/zopsmart/gofr/pkg/gofr"
+	"developer.zopsmart.com/go/gofr/examples/using-eventhub/handlers"
+	"developer.zopsmart.com/go/gofr/pkg/gofr"
 )
 
 func main() {

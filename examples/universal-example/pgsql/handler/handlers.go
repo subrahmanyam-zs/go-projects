@@ -1,10 +1,10 @@
 package handler
 
 import (
-	"github.com/zopsmart/gofr/examples/universal-example/pgsql/entity"
-	"github.com/zopsmart/gofr/examples/universal-example/pgsql/store"
-	"github.com/zopsmart/gofr/pkg/errors"
-	"github.com/zopsmart/gofr/pkg/gofr"
+	"developer.zopsmart.com/go/gofr/examples/universal-example/pgsql/entity"
+	"developer.zopsmart.com/go/gofr/examples/universal-example/pgsql/store"
+	"developer.zopsmart.com/go/gofr/pkg/errors"
+	"developer.zopsmart.com/go/gofr/pkg/gofr"
 )
 
 type employee struct {

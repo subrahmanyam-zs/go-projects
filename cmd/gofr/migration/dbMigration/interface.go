@@ -1,8 +1,8 @@
 package dbmigration
 
 import (
-	"github.com/zopsmart/gofr/pkg/datastore"
-	"github.com/zopsmart/gofr/pkg/log"
+	"developer.zopsmart.com/go/gofr/pkg/datastore"
+	"developer.zopsmart.com/go/gofr/pkg/log"
 )
 
 const UP = "UP"

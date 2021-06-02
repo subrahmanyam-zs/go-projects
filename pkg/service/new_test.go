@@ -9,8 +9,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/zopsmart/gofr/pkg"
-	"github.com/zopsmart/gofr/pkg/log"
+	"developer.zopsmart.com/go/gofr/pkg"
+	"developer.zopsmart.com/go/gofr/pkg/log"
 )
 
 // TestNewHTTPServiceWithNilOptions tests the values set in httpService when no options are set

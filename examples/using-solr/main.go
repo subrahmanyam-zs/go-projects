@@ -3,10 +3,10 @@ package main
 import (
 	"os"
 
-	"github.com/zopsmart/gofr/examples/using-solr/handler"
-	"github.com/zopsmart/gofr/examples/using-solr/store/customer"
-	"github.com/zopsmart/gofr/pkg/datastore"
-	"github.com/zopsmart/gofr/pkg/gofr"
+	"developer.zopsmart.com/go/gofr/examples/using-solr/handler"
+	"developer.zopsmart.com/go/gofr/examples/using-solr/store/customer"
+	"developer.zopsmart.com/go/gofr/pkg/datastore"
+	"developer.zopsmart.com/go/gofr/pkg/gofr"
 )
 
 func main() {

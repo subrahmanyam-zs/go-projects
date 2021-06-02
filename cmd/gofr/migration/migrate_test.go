@@ -12,11 +12,11 @@ import (
 	"testing"
 	"time"
 
-	dbmigration "github.com/zopsmart/gofr/cmd/gofr/migration/dbMigration"
-	"github.com/zopsmart/gofr/pkg/datastore"
-	"github.com/zopsmart/gofr/pkg/errors"
-	"github.com/zopsmart/gofr/pkg/gofr/config"
-	"github.com/zopsmart/gofr/pkg/log"
+	dbmigration "developer.zopsmart.com/go/gofr/cmd/gofr/migration/dbMigration"
+	"developer.zopsmart.com/go/gofr/pkg/datastore"
+	"developer.zopsmart.com/go/gofr/pkg/errors"
+	"developer.zopsmart.com/go/gofr/pkg/gofr/config"
+	"developer.zopsmart.com/go/gofr/pkg/log"
 )
 
 type K20200324120906 struct{}

@@ -4,10 +4,10 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/zopsmart/gofr/pkg/datastore"
-	"github.com/zopsmart/gofr/pkg/datastore/pubsub/avro"
-	"github.com/zopsmart/gofr/pkg/datastore/pubsub/eventhub"
-	"github.com/zopsmart/gofr/pkg/datastore/pubsub/kafka"
+	"developer.zopsmart.com/go/gofr/pkg/datastore"
+	"developer.zopsmart.com/go/gofr/pkg/datastore/pubsub/avro"
+	"developer.zopsmart.com/go/gofr/pkg/datastore/pubsub/eventhub"
+	"developer.zopsmart.com/go/gofr/pkg/datastore/pubsub/kafka"
 )
 
 // kafkaRetry retries connecting to kafka

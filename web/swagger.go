@@ -3,7 +3,7 @@ package web
 import (
 	"embed"
 
-	"github.com/zopsmart/gofr/pkg/gofr/template"
+	"developer.zopsmart.com/go/gofr/pkg/gofr/template"
 )
 
 //go:embed swagger/*

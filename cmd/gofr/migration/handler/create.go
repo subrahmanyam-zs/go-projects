@@ -8,9 +8,9 @@ import (
 	"text/template"
 	"time"
 
-	"github.com/zopsmart/gofr/cmd/gofr/helper"
-	"github.com/zopsmart/gofr/pkg/errors"
-	"github.com/zopsmart/gofr/pkg/gofr"
+	"developer.zopsmart.com/go/gofr/cmd/gofr/helper"
+	"developer.zopsmart.com/go/gofr/pkg/errors"
+	"developer.zopsmart.com/go/gofr/pkg/gofr"
 )
 
 type Create struct {
@@ -130,7 +130,7 @@ func createAllFile(f FSCreate, prefixes []string) error {
 package migrations
 
 import (
-	dbmigration "github.com/zopsmart/gofr/cmd/gofr/migration/dbMigration"
+	dbmigration "developer.zopsmart.com/go/gofr/cmd/gofr/migration/dbMigration"
 )
 
 func All() map[string]dbmigration.Migrator{
@@ -168,8 +168,8 @@ func createMigrationFile(f FSCreate, migrationName string) error {
 	migrationTemplate := template.Must(template.New("migration").Parse(`package migrations
 
 import (
-	"github.com/zopsmart/gofr/pkg/datastore"
-	"github.com/zopsmart/gofr/pkg/log"
+	"developer.zopsmart.com/go/gofr/pkg/datastore"
+	"developer.zopsmart.com/go/gofr/pkg/log"
 )
 
 type K{{.Timestamp}} struct {

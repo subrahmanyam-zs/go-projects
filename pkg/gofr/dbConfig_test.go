@@ -6,9 +6,9 @@ import (
 	"testing"
 
 	"github.com/gocql/gocql"
-	"github.com/zopsmart/gofr/pkg/datastore"
-	"github.com/zopsmart/gofr/pkg/datastore/pubsub/kafka"
-	"github.com/zopsmart/gofr/pkg/gofr/config"
+	"developer.zopsmart.com/go/gofr/pkg/datastore"
+	"developer.zopsmart.com/go/gofr/pkg/datastore/pubsub/kafka"
+	"developer.zopsmart.com/go/gofr/pkg/gofr/config"
 )
 
 func Test_cassandraConfigFromEnv(t *testing.T) {

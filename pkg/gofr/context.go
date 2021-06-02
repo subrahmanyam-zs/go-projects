@@ -9,11 +9,11 @@ import (
 	"github.com/dgrijalva/jwt-go"
 	"github.com/gorilla/mux"
 	"github.com/gorilla/websocket"
-	"github.com/zopsmart/gofr/pkg/datastore/pubsub"
-	"github.com/zopsmart/gofr/pkg/gofr/request"
-	"github.com/zopsmart/gofr/pkg/gofr/responder"
-	"github.com/zopsmart/gofr/pkg/log"
-	"github.com/zopsmart/gofr/pkg/middleware/oauth"
+	"developer.zopsmart.com/go/gofr/pkg/datastore/pubsub"
+	"developer.zopsmart.com/go/gofr/pkg/gofr/request"
+	"developer.zopsmart.com/go/gofr/pkg/gofr/responder"
+	"developer.zopsmart.com/go/gofr/pkg/log"
+	"developer.zopsmart.com/go/gofr/pkg/middleware/oauth"
 )
 
 type Context struct {

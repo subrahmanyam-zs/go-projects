@@ -3,7 +3,7 @@ package main
 import (
 	"testing"
 
-	"github.com/zopsmart/gofr/pkg/gofr/assert"
+	"developer.zopsmart.com/go/gofr/pkg/gofr/assert"
 )
 
 func Test_Main(t *testing.T) {

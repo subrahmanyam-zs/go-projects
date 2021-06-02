@@ -9,7 +9,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/zopsmart/gofr/pkg/gofr/assert"
+	"developer.zopsmart.com/go/gofr/pkg/gofr/assert"
 )
 
 func TestCLI(t *testing.T) {

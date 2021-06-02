@@ -8,8 +8,8 @@ import (
 	reflect "reflect"
 
 	gomock "github.com/golang/mock/gomock"
-	models "github.com/zopsmart/gofr/examples/using-mongo/entity"
-	gofr "github.com/zopsmart/gofr/pkg/gofr"
+	models "developer.zopsmart.com/go/gofr/examples/using-mongo/entity"
+	gofr "developer.zopsmart.com/go/gofr/pkg/gofr"
 )
 
 // MockCustomer is a mock of Customer interface

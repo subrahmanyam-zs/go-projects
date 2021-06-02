@@ -8,9 +8,9 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/zopsmart/gofr/pkg/middleware"
+	"developer.zopsmart.com/go/gofr/pkg/middleware"
 
-	"github.com/zopsmart/gofr/pkg/log"
+	"developer.zopsmart.com/go/gofr/pkg/log"
 )
 
 func Test_getPublicKey(t *testing.T) {

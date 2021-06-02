@@ -1,6 +1,6 @@
 package pkg
 
-import "github.com/zopsmart/gofr/pkg/log"
+import "developer.zopsmart.com/go/gofr/pkg/log"
 
 const (
 	StatusUp          = "UP"

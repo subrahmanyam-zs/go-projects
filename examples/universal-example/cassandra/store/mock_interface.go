@@ -8,8 +8,8 @@ import (
 	reflect "reflect"
 
 	gomock "github.com/golang/mock/gomock"
-	entity "github.com/zopsmart/gofr/examples/universal-example/cassandra/entity"
-	gofr "github.com/zopsmart/gofr/pkg/gofr"
+	entity "developer.zopsmart.com/go/gofr/examples/universal-example/cassandra/entity"
+	gofr "developer.zopsmart.com/go/gofr/pkg/gofr"
 )
 
 // MockEmployee is a mock of Employee interface

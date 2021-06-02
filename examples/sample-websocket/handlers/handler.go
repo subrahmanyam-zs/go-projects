@@ -1,8 +1,8 @@
 package handlers
 
 import (
-	"github.com/zopsmart/gofr/pkg/gofr"
-	"github.com/zopsmart/gofr/pkg/gofr/template"
+	"developer.zopsmart.com/go/gofr/pkg/gofr"
+	"developer.zopsmart.com/go/gofr/pkg/gofr/template"
 )
 
 func WSHandler(c *gofr.Context) (i interface{}, err error) {

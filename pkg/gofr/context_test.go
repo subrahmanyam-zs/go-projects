@@ -10,9 +10,9 @@ import (
 	"testing"
 
 	"github.com/dgrijalva/jwt-go"
-	"github.com/zopsmart/gofr/pkg/gofr/request"
-	"github.com/zopsmart/gofr/pkg/middleware"
-	"github.com/zopsmart/gofr/pkg/middleware/oauth"
+	"developer.zopsmart.com/go/gofr/pkg/gofr/request"
+	"developer.zopsmart.com/go/gofr/pkg/middleware"
+	"developer.zopsmart.com/go/gofr/pkg/middleware/oauth"
 	"golang.org/x/net/context"
 )
 

@@ -6,9 +6,9 @@ import (
 
 	"github.com/jinzhu/gorm"
 	"github.com/jmoiron/sqlx"
-	"github.com/zopsmart/gofr/pkg/datastore/pubsub"
-	"github.com/zopsmart/gofr/pkg/gofr/types"
-	"github.com/zopsmart/gofr/pkg/log"
+	"developer.zopsmart.com/go/gofr/pkg/datastore/pubsub"
+	"developer.zopsmart.com/go/gofr/pkg/gofr/types"
+	"developer.zopsmart.com/go/gofr/pkg/log"
 )
 
 type DataStore struct {

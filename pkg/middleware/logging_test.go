@@ -10,8 +10,8 @@ import (
 	"testing"
 
 	"github.com/gorilla/mux"
-	"github.com/zopsmart/gofr/pkg/errors"
-	"github.com/zopsmart/gofr/pkg/log"
+	"developer.zopsmart.com/go/gofr/pkg/errors"
+	"developer.zopsmart.com/go/gofr/pkg/log"
 )
 
 type MockHandler struct {

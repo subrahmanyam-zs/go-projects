@@ -4,9 +4,9 @@ import (
 	"io/fs"
 	"os"
 
-	"github.com/zopsmart/gofr/pkg/errors"
-	"github.com/zopsmart/gofr/pkg/gofr/template"
-	"github.com/zopsmart/gofr/web"
+	"developer.zopsmart.com/go/gofr/pkg/errors"
+	"developer.zopsmart.com/go/gofr/pkg/gofr/template"
+	"developer.zopsmart.com/go/gofr/web"
 )
 
 // OpenAPIHandler serves the openapi.json file present either in the root directory or in root/api directory

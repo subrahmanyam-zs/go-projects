@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/zopsmart/gofr/pkg/datastore"
+	"developer.zopsmart.com/go/gofr/pkg/datastore"
 )
 
 type RedisCacher struct {

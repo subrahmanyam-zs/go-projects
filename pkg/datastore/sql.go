@@ -6,7 +6,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/zopsmart/gofr/pkg"
+	"developer.zopsmart.com/go/gofr/pkg"
 )
 
 func (c *SQLClient) Query(query string, args ...interface{}) (*sql.Rows, error) {

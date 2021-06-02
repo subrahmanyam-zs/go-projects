@@ -8,8 +8,8 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/zopsmart/gofr/pkg/errors"
-	"github.com/zopsmart/gofr/pkg/service"
+	"developer.zopsmart.com/go/gofr/pkg/errors"
+	"developer.zopsmart.com/go/gofr/pkg/service"
 )
 
 // SchemaRegistryClientInterface defines the api for all clients interfacing with schema registry

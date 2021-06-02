@@ -3,7 +3,7 @@ package service
 import (
 	"testing"
 
-	"github.com/zopsmart/gofr/pkg/errors"
+	"developer.zopsmart.com/go/gofr/pkg/errors"
 )
 
 func TestServiceCall_Error(t *testing.T) {

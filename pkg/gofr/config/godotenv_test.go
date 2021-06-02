@@ -5,7 +5,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/zopsmart/gofr/pkg/log"
+	"developer.zopsmart.com/go/gofr/pkg/log"
 )
 
 // This Test is to check if environment variables are loaded from configs/.env on

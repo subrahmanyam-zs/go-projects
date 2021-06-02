@@ -3,9 +3,9 @@ package handlers
 import (
 	"fmt"
 
-	"github.com/zopsmart/gofr/examples/using-mongo/entity"
-	"github.com/zopsmart/gofr/examples/using-mongo/store"
-	"github.com/zopsmart/gofr/pkg/gofr"
+	"developer.zopsmart.com/go/gofr/examples/using-mongo/entity"
+	"developer.zopsmart.com/go/gofr/examples/using-mongo/store"
+	"developer.zopsmart.com/go/gofr/pkg/gofr"
 )
 
 type Customer struct {

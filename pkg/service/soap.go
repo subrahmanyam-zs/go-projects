@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/zopsmart/gofr/pkg/log"
+	"developer.zopsmart.com/go/gofr/pkg/log"
 	"go.opencensus.io/plugin/ochttp"
 )
 

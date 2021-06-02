@@ -1,9 +1,9 @@
 package main
 
 import (
-	"github.com/zopsmart/gofr/examples/using-redis/handler"
-	"github.com/zopsmart/gofr/examples/using-redis/store"
-	"github.com/zopsmart/gofr/pkg/gofr"
+	"developer.zopsmart.com/go/gofr/examples/using-redis/handler"
+	"developer.zopsmart.com/go/gofr/examples/using-redis/store"
+	"developer.zopsmart.com/go/gofr/pkg/gofr"
 )
 
 func main() {

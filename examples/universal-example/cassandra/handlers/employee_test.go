@@ -9,11 +9,11 @@ import (
 
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
-	"github.com/zopsmart/gofr/examples/universal-example/cassandra/entity"
-	"github.com/zopsmart/gofr/examples/universal-example/cassandra/store"
-	"github.com/zopsmart/gofr/pkg/errors"
-	"github.com/zopsmart/gofr/pkg/gofr"
-	"github.com/zopsmart/gofr/pkg/gofr/request"
+	"developer.zopsmart.com/go/gofr/examples/universal-example/cassandra/entity"
+	"developer.zopsmart.com/go/gofr/examples/universal-example/cassandra/store"
+	"developer.zopsmart.com/go/gofr/pkg/errors"
+	"developer.zopsmart.com/go/gofr/pkg/gofr"
+	"developer.zopsmart.com/go/gofr/pkg/gofr/request"
 )
 
 func initializeHandlerTest(t *testing.T) (*store.MockEmployee, employee, *gofr.Gofr) {

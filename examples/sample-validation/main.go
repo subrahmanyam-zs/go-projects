@@ -1,8 +1,8 @@
 package main
 
 import (
-	"github.com/zopsmart/gofr/examples/sample-validation/handler"
-	"github.com/zopsmart/gofr/pkg/gofr"
+	"developer.zopsmart.com/go/gofr/examples/sample-validation/handler"
+	"developer.zopsmart.com/go/gofr/pkg/gofr"
 )
 
 func main() {

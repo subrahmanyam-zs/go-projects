@@ -4,7 +4,7 @@ import (
 	"log"
 	"time"
 
-	"github.com/zopsmart/gofr/pkg/gofr"
+	"developer.zopsmart.com/go/gofr/pkg/gofr"
 )
 
 var n = 0

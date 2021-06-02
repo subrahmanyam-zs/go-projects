@@ -8,11 +8,11 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
-	"github.com/zopsmart/gofr/examples/using-cassandra/entity"
-	"github.com/zopsmart/gofr/examples/using-cassandra/store"
-	"github.com/zopsmart/gofr/pkg/errors"
-	"github.com/zopsmart/gofr/pkg/gofr"
-	"github.com/zopsmart/gofr/pkg/gofr/request"
+	"developer.zopsmart.com/go/gofr/examples/using-cassandra/entity"
+	"developer.zopsmart.com/go/gofr/examples/using-cassandra/store"
+	"developer.zopsmart.com/go/gofr/pkg/errors"
+	"developer.zopsmart.com/go/gofr/pkg/gofr"
+	"developer.zopsmart.com/go/gofr/pkg/gofr/request"
 )
 
 func initializeHandlerTest(t *testing.T) (*store.MockPerson, Person, *gofr.Gofr) {

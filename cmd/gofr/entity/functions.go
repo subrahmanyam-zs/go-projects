@@ -74,7 +74,7 @@ func populateInterfaceFiles(entity, projectDirectory, types string, interfaceFil
 
 import (
 	"`+modelDirectory+`models"
-	"github.com/zopsmart/gofr/pkg/gofr"
+	"developer.zopsmart.com/go/gofr/pkg/gofr"
 )
 
 type %s interface {
@@ -132,7 +132,7 @@ func populateEntityFile(f fileSystem, projectDirectory, layerDirectory, entity, 
 import (
 	"database/sql"
 	"`+modelDirectory+`models"
-	"github.com/zopsmart/gofr/pkg/gofr"
+	"developer.zopsmart.com/go/gofr/pkg/gofr"
 )
 
 type %s struct {

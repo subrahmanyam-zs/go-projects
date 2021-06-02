@@ -5,7 +5,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/zopsmart/gofr/pkg/log"
+	"developer.zopsmart.com/go/gofr/pkg/log"
 	"google.golang.org/grpc"
 )
 

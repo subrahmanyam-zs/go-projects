@@ -9,8 +9,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/zopsmart/gofr/pkg"
-	"github.com/zopsmart/gofr/pkg/errors"
+	"developer.zopsmart.com/go/gofr/pkg"
+	"developer.zopsmart.com/go/gofr/pkg/errors"
 	"go.opencensus.io/plugin/ochttp"
 )
 

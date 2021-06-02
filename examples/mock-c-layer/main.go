@@ -1,9 +1,9 @@
 package main
 
 import (
-	"github.com/zopsmart/gofr/examples/mock-c-layer/handler"
-	"github.com/zopsmart/gofr/examples/mock-c-layer/store/brand"
-	"github.com/zopsmart/gofr/pkg/gofr"
+	"developer.zopsmart.com/go/gofr/examples/mock-c-layer/handler"
+	"developer.zopsmart.com/go/gofr/examples/mock-c-layer/store/brand"
+	"developer.zopsmart.com/go/gofr/pkg/gofr"
 )
 
 func main() {

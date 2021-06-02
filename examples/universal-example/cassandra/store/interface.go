@@ -1,8 +1,8 @@
 package store
 
 import (
-	"github.com/zopsmart/gofr/examples/universal-example/cassandra/entity"
-	"github.com/zopsmart/gofr/pkg/gofr"
+	"developer.zopsmart.com/go/gofr/examples/universal-example/cassandra/entity"
+	"developer.zopsmart.com/go/gofr/pkg/gofr"
 )
 
 type Employee interface {

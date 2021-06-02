@@ -3,8 +3,8 @@ package main
 import (
 	"os"
 
-	"github.com/zopsmart/gofr/examples/template-examples/handler"
-	"github.com/zopsmart/gofr/pkg/gofr"
+	"developer.zopsmart.com/go/gofr/examples/template-examples/handler"
+	"developer.zopsmart.com/go/gofr/pkg/gofr"
 )
 
 func main() {

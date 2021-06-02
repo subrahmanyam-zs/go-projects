@@ -15,8 +15,8 @@ import (
 	"github.com/bmizerany/assert"
 
 	"github.com/go-ldap/ldap/v3"
-	"github.com/zopsmart/gofr/pkg/errors"
-	"github.com/zopsmart/gofr/pkg/log"
+	"developer.zopsmart.com/go/gofr/pkg/errors"
+	"developer.zopsmart.com/go/gofr/pkg/log"
 )
 
 const ldapAddress = "ldapstage.zopsmart.com:636"

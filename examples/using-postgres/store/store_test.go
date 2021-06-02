@@ -4,10 +4,10 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/zopsmart/gofr/examples/using-postgres/model"
-	"github.com/zopsmart/gofr/pkg/datastore"
-	"github.com/zopsmart/gofr/pkg/errors"
-	"github.com/zopsmart/gofr/pkg/gofr"
+	"developer.zopsmart.com/go/gofr/examples/using-postgres/model"
+	"developer.zopsmart.com/go/gofr/pkg/datastore"
+	"developer.zopsmart.com/go/gofr/pkg/errors"
+	"developer.zopsmart.com/go/gofr/pkg/gofr"
 )
 
 func TestCoreLayer(t *testing.T) {

@@ -2,7 +2,7 @@ package types
 
 import (
 	"github.com/google/uuid"
-	"github.com/zopsmart/gofr/pkg/errors"
+	"developer.zopsmart.com/go/gofr/pkg/errors"
 )
 
 func ValidateUUID(data ...string) error {

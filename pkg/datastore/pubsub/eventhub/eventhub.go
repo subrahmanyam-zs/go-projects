@@ -11,11 +11,11 @@ import (
 	eventhub "github.com/Azure/azure-event-hubs-go/v3"
 	"github.com/Azure/go-autorest/autorest/azure"
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/zopsmart/gofr/pkg"
-	"github.com/zopsmart/gofr/pkg/datastore/pubsub"
-	"github.com/zopsmart/gofr/pkg/datastore/pubsub/avro"
-	"github.com/zopsmart/gofr/pkg/gofr/types"
-	"github.com/zopsmart/gofr/pkg/log"
+	"developer.zopsmart.com/go/gofr/pkg"
+	"developer.zopsmart.com/go/gofr/pkg/datastore/pubsub"
+	"developer.zopsmart.com/go/gofr/pkg/datastore/pubsub/avro"
+	"developer.zopsmart.com/go/gofr/pkg/gofr/types"
+	"developer.zopsmart.com/go/gofr/pkg/log"
 )
 
 type Config struct {

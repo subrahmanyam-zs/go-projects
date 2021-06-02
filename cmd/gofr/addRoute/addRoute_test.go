@@ -297,9 +297,9 @@ func Test_existCheck(t *testing.T) {
 }
 
 func Test_importSortCheck(t *testing.T) {
-	lineString := importSortCheck("abc", "github.com/zopsmart/gofr/pkg/gofr")
+	lineString := importSortCheck("abc", "developer.zopsmart.com/go/gofr/pkg/gofr")
 	if strings.Contains(lineString, `"abc"
-		github.com/zopsmart/gofr/pkg/gofr`) {
+		developer.zopsmart.com/go/gofr/pkg/gofr`) {
 		t.Errorf("import sort failed. Got: %v", lineString)
 	}
 }

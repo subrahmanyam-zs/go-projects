@@ -1,8 +1,8 @@
 package store
 
 import (
-	"github.com/zopsmart/gofr/examples/using-mongo/entity"
-	"github.com/zopsmart/gofr/pkg/gofr"
+	"developer.zopsmart.com/go/gofr/examples/using-mongo/entity"
+	"developer.zopsmart.com/go/gofr/pkg/gofr"
 )
 
 type Customer interface {
