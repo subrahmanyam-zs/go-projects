@@ -4,9 +4,9 @@ import (
 	"sort"
 	"strconv"
 
-	db "github.com/zopsmart/gofr/cmd/gofr/migration/dbMigration"
-	"github.com/zopsmart/gofr/pkg/errors"
-	"github.com/zopsmart/gofr/pkg/log"
+	db "developer.zopsmart.com/go/gofr/cmd/gofr/migration/dbMigration"
+	"developer.zopsmart.com/go/gofr/pkg/errors"
+	"developer.zopsmart.com/go/gofr/pkg/log"
 )
 
 // Migrate either runs UP or DOWN migration based in the `method` specified

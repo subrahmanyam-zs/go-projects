@@ -6,9 +6,9 @@ import (
 
 	"github.com/dgrijalva/jwt-go"
 
-	"github.com/zopsmart/gofr/pkg/middleware"
+	"developer.zopsmart.com/go/gofr/pkg/middleware"
 
-	"github.com/zopsmart/gofr/pkg/log"
+	"developer.zopsmart.com/go/gofr/pkg/log"
 )
 
 func LDAPOAuth(logger log.Logger, ldapOptions *middleware.LDAPOptions, options Options) func(inner http.Handler) http.Handler {

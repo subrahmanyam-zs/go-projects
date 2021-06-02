@@ -3,8 +3,8 @@ package handler
 import (
 	"fmt"
 
-	"github.com/zopsmart/gofr/pkg/errors"
-	"github.com/zopsmart/gofr/pkg/gofr"
+	"developer.zopsmart.com/go/gofr/pkg/errors"
+	"developer.zopsmart.com/go/gofr/pkg/gofr"
 )
 
 // HelloWorld is a handler function of type gofr.Handler, it responds with a message

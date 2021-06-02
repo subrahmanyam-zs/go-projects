@@ -4,7 +4,7 @@ import (
 	"regexp"
 	"strconv"
 
-	"github.com/zopsmart/gofr/pkg/errors"
+	"developer.zopsmart.com/go/gofr/pkg/errors"
 )
 
 type Address struct {

@@ -1,9 +1,9 @@
 package main
 
 import (
-	"github.com/zopsmart/gofr/examples/using-ycql/handlers"
-	"github.com/zopsmart/gofr/examples/using-ycql/store/shop"
-	"github.com/zopsmart/gofr/pkg/gofr"
+	"developer.zopsmart.com/go/gofr/examples/using-ycql/handlers"
+	"developer.zopsmart.com/go/gofr/examples/using-ycql/store/shop"
+	"developer.zopsmart.com/go/gofr/pkg/gofr"
 )
 
 func main() {

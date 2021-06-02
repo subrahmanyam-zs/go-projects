@@ -7,9 +7,9 @@ import (
 	"testing"
 
 	"github.com/gorilla/websocket"
-	"github.com/zopsmart/gofr/pkg/gofr"
-	"github.com/zopsmart/gofr/pkg/gofr/request"
-	"github.com/zopsmart/gofr/pkg/gofr/responder"
+	"developer.zopsmart.com/go/gofr/pkg/gofr"
+	"developer.zopsmart.com/go/gofr/pkg/gofr/request"
+	"developer.zopsmart.com/go/gofr/pkg/gofr/responder"
 )
 
 func TestWSHandler(t *testing.T) {

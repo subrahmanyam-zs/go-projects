@@ -16,8 +16,8 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/assert"
-	"github.com/zopsmart/gofr/pkg/log"
-	"github.com/zopsmart/gofr/pkg/middleware"
+	"developer.zopsmart.com/go/gofr/pkg/log"
+	"developer.zopsmart.com/go/gofr/pkg/middleware"
 	"go.opencensus.io/plugin/ochttp"
 )
 

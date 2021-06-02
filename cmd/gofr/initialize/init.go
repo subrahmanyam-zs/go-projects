@@ -4,8 +4,8 @@ import (
 	"os"
 	"strconv"
 
-	"github.com/zopsmart/gofr/cmd/gofr/helper"
-	"github.com/zopsmart/gofr/pkg/gofr"
+	"developer.zopsmart.com/go/gofr/cmd/gofr/helper"
+	"developer.zopsmart.com/go/gofr/pkg/gofr"
 )
 
 type Handler struct {
@@ -86,7 +86,7 @@ func createProject(f fileSystem, projectName string) error {
 	mainString := `package main
 
 import (
-	"github.com/zopsmart/gofr/pkg/gofr"
+	"developer.zopsmart.com/go/gofr/pkg/gofr"
 )
 
 func main() {

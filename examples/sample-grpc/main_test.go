@@ -7,8 +7,8 @@ import (
 	"testing"
 	"time"
 
-	grpc2 "github.com/zopsmart/gofr/examples/sample-grpc/handler/grpc"
-	"github.com/zopsmart/gofr/pkg/gofr/request"
+	grpc2 "developer.zopsmart.com/go/gofr/examples/sample-grpc/handler/grpc"
+	"developer.zopsmart.com/go/gofr/pkg/gofr/request"
 	"google.golang.org/grpc"
 )
 

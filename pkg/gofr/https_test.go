@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/zopsmart/gofr/pkg/log"
+	"developer.zopsmart.com/go/gofr/pkg/log"
 )
 
 func TestRedirectHttps(t *testing.T) {

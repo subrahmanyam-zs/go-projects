@@ -14,7 +14,7 @@ go test
 You'll see something like this in the terminal:
 ```shell
 PASS
-ok      github.com/zopsmart/gofr/examples/using-ycql    5.363s
+ok      developer.zopsmart.com/go/gofr/examples/using-ycql    5.363s
 ```
 
 _This indicates that the integration test for the `sample-ycql` has passed._

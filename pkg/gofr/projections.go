@@ -5,7 +5,7 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/zopsmart/gofr/pkg/errors"
+	"developer.zopsmart.com/go/gofr/pkg/errors"
 )
 
 const defaultProjection = "compact"

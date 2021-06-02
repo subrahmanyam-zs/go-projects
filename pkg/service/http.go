@@ -15,9 +15,9 @@ import (
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/zopsmart/gofr/pkg/errors"
-	"github.com/zopsmart/gofr/pkg/log"
-	"github.com/zopsmart/gofr/pkg/middleware"
+	"developer.zopsmart.com/go/gofr/pkg/errors"
+	"developer.zopsmart.com/go/gofr/pkg/log"
+	"developer.zopsmart.com/go/gofr/pkg/middleware"
 	"go.opencensus.io/plugin/ochttp"
 )
 

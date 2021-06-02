@@ -5,8 +5,8 @@ import (
 	"os"
 	"testing"
 
-	"github.com/zopsmart/gofr/examples/using-elasticsearch/model"
-	"github.com/zopsmart/gofr/pkg/gofr"
+	"developer.zopsmart.com/go/gofr/examples/using-elasticsearch/model"
+	"developer.zopsmart.com/go/gofr/pkg/gofr"
 )
 
 // nolint:gochecknoglobals // needed for testing customer package

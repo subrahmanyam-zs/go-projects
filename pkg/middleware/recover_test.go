@@ -13,7 +13,7 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/stretchr/testify/assert"
-	"github.com/zopsmart/gofr/pkg/log"
+	"developer.zopsmart.com/go/gofr/pkg/log"
 )
 
 type MockHandlerForPanic struct{}

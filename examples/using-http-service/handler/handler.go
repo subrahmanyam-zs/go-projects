@@ -1,9 +1,9 @@
 package handler
 
 import (
-	"github.com/zopsmart/gofr/examples/using-http-service/service"
-	"github.com/zopsmart/gofr/pkg/errors"
-	"github.com/zopsmart/gofr/pkg/gofr"
+	"developer.zopsmart.com/go/gofr/examples/using-http-service/service"
+	"developer.zopsmart.com/go/gofr/pkg/errors"
+	"developer.zopsmart.com/go/gofr/pkg/gofr"
 )
 
 type Handler struct {

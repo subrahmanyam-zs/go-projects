@@ -3,7 +3,7 @@ package types
 import (
 	"unicode"
 
-	"github.com/zopsmart/gofr/pkg/errors"
+	"developer.zopsmart.com/go/gofr/pkg/errors"
 )
 
 type Enum struct {

@@ -9,10 +9,10 @@ import (
 	"testing"
 
 	"github.com/gorilla/mux"
-	"github.com/zopsmart/gofr/examples/using-elasticsearch/model"
-	errors2 "github.com/zopsmart/gofr/pkg/errors"
-	"github.com/zopsmart/gofr/pkg/gofr"
-	"github.com/zopsmart/gofr/pkg/gofr/request"
+	"developer.zopsmart.com/go/gofr/examples/using-elasticsearch/model"
+	errors2 "developer.zopsmart.com/go/gofr/pkg/errors"
+	"developer.zopsmart.com/go/gofr/pkg/gofr"
+	"developer.zopsmart.com/go/gofr/pkg/gofr/request"
 )
 
 type mockStore struct{}

@@ -6,9 +6,9 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/zopsmart/gofr/pkg/middleware"
+	"developer.zopsmart.com/go/gofr/pkg/middleware"
 
-	"github.com/zopsmart/gofr/pkg/log"
+	"developer.zopsmart.com/go/gofr/pkg/log"
 )
 
 func getJWT(logger log.Logger, r *http.Request) (JWT, error) {

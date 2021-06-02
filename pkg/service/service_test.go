@@ -11,7 +11,7 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/zopsmart/gofr/pkg/log"
+	"developer.zopsmart.com/go/gofr/pkg/log"
 )
 
 func TestService_CallGet(t *testing.T) {

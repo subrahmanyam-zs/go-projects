@@ -6,7 +6,7 @@ import (
 	"strconv"
 
 	"github.com/prometheus/client_golang/prometheus/promhttp"
-	"github.com/zopsmart/gofr/pkg/log"
+	"developer.zopsmart.com/go/gofr/pkg/log"
 )
 
 func metricsServer(logger log.Logger, port int, route string) *http.Server {

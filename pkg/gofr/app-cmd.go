@@ -4,7 +4,7 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/zopsmart/gofr/pkg/log"
+	"developer.zopsmart.com/go/gofr/pkg/log"
 	"go.opencensus.io/trace"
 )
 

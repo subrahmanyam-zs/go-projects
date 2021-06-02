@@ -3,10 +3,10 @@ package handlers
 import (
 	"strconv"
 
-	"github.com/zopsmart/gofr/examples/using-ycql/entity"
-	"github.com/zopsmart/gofr/examples/using-ycql/store"
-	"github.com/zopsmart/gofr/pkg/errors"
-	"github.com/zopsmart/gofr/pkg/gofr"
+	"developer.zopsmart.com/go/gofr/examples/using-ycql/entity"
+	"developer.zopsmart.com/go/gofr/examples/using-ycql/store"
+	"developer.zopsmart.com/go/gofr/pkg/errors"
+	"developer.zopsmart.com/go/gofr/pkg/gofr"
 )
 
 type Shop struct {

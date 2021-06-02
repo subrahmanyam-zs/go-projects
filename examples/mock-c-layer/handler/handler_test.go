@@ -8,11 +8,11 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/zopsmart/gofr/examples/mock-c-layer/store"
-	"github.com/zopsmart/gofr/examples/mock-c-layer/store/brand"
-	errors2 "github.com/zopsmart/gofr/pkg/errors"
-	"github.com/zopsmart/gofr/pkg/gofr"
-	"github.com/zopsmart/gofr/pkg/gofr/request"
+	"developer.zopsmart.com/go/gofr/examples/mock-c-layer/store"
+	"developer.zopsmart.com/go/gofr/examples/mock-c-layer/store/brand"
+	errors2 "developer.zopsmart.com/go/gofr/pkg/errors"
+	"developer.zopsmart.com/go/gofr/pkg/gofr"
+	"developer.zopsmart.com/go/gofr/pkg/gofr/request"
 )
 
 func TestBrand_Get(t *testing.T) {

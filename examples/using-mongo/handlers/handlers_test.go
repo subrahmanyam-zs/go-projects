@@ -9,11 +9,11 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
-	"github.com/zopsmart/gofr/examples/using-mongo/entity"
-	"github.com/zopsmart/gofr/examples/using-mongo/store"
-	"github.com/zopsmart/gofr/pkg/errors"
-	"github.com/zopsmart/gofr/pkg/gofr"
-	"github.com/zopsmart/gofr/pkg/gofr/request"
+	"developer.zopsmart.com/go/gofr/examples/using-mongo/entity"
+	"developer.zopsmart.com/go/gofr/examples/using-mongo/store"
+	"developer.zopsmart.com/go/gofr/pkg/errors"
+	"developer.zopsmart.com/go/gofr/pkg/gofr"
+	"developer.zopsmart.com/go/gofr/pkg/gofr/request"
 )
 
 func initializeHandlersTest(t *testing.T) (*store.MockCustomer, Customer, *gofr.Gofr) {

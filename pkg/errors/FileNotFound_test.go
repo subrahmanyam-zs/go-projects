@@ -12,9 +12,9 @@ func TestFileNotFound_Error(t *testing.T) {
 			name: "Success",
 			fields: FileNotFound{
 				FileName: "openapi.json",
-				Path:     "go/src/github.com/zopsmart/gofr",
+				Path:     "go/src/developer.zopsmart.com/go/gofr",
 			},
-			want: "File openapi.json not found at location go/src/github.com/zopsmart/gofr",
+			want: "File openapi.json not found at location go/src/developer.zopsmart.com/go/gofr",
 		},
 	}
 	for _, tt := range tests {

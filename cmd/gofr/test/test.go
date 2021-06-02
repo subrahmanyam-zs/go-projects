@@ -8,8 +8,8 @@ import (
 	"strings"
 
 	"github.com/getkin/kin-openapi/openapi3"
-	"github.com/zopsmart/gofr/cmd/gofr/helper"
-	"github.com/zopsmart/gofr/pkg/gofr"
+	"developer.zopsmart.com/go/gofr/cmd/gofr/helper"
+	"developer.zopsmart.com/go/gofr/pkg/gofr"
 )
 
 func testHelp() string {

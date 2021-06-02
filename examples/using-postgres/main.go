@@ -1,9 +1,9 @@
 package main
 
 import (
-	"github.com/zopsmart/gofr/examples/using-postgres/handler"
-	"github.com/zopsmart/gofr/examples/using-postgres/store"
-	"github.com/zopsmart/gofr/pkg/gofr"
+	"developer.zopsmart.com/go/gofr/examples/using-postgres/handler"
+	"developer.zopsmart.com/go/gofr/examples/using-postgres/store"
+	"developer.zopsmart.com/go/gofr/pkg/gofr"
 )
 
 func main() {

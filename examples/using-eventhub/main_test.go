@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/zopsmart/gofr/pkg/gofr/request"
+	"developer.zopsmart.com/go/gofr/pkg/gofr/request"
 )
 
 // nolint, need to wait for topic to be created so retry logic is to be added

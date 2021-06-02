@@ -1,9 +1,9 @@
 package handler
 
 import (
-	"github.com/zopsmart/gofr/examples/mock-c-layer/store"
-	"github.com/zopsmart/gofr/pkg/errors"
-	"github.com/zopsmart/gofr/pkg/gofr"
+	"developer.zopsmart.com/go/gofr/examples/mock-c-layer/store"
+	"developer.zopsmart.com/go/gofr/pkg/errors"
+	"developer.zopsmart.com/go/gofr/pkg/gofr"
 )
 
 type Brand struct {

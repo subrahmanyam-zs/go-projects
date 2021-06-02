@@ -1,7 +1,7 @@
 package store
 
 import (
-	"github.com/zopsmart/gofr/pkg/gofr"
+	"developer.zopsmart.com/go/gofr/pkg/gofr"
 )
 
 type Brand interface {

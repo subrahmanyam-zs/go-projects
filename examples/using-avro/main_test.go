@@ -10,9 +10,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/zopsmart/gofr/examples/using-pubsub/handlers"
-	"github.com/zopsmart/gofr/pkg/errors"
-	"github.com/zopsmart/gofr/pkg/gofr/request"
+	"developer.zopsmart.com/go/gofr/examples/using-pubsub/handlers"
+	"developer.zopsmart.com/go/gofr/pkg/errors"
+	"developer.zopsmart.com/go/gofr/pkg/gofr/request"
 )
 
 // nolint, need to wait for topic to be created so retry logic is to be added

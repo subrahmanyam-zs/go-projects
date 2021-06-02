@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/zopsmart/gofr/pkg/errors"
+	"developer.zopsmart.com/go/gofr/pkg/errors"
 )
 
 func TestAddress_Check(t *testing.T) {

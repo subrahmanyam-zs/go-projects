@@ -6,11 +6,11 @@ import (
 	"strings"
 
 	"github.com/gocql/gocql"
-	"github.com/zopsmart/gofr/pkg"
-	"github.com/zopsmart/gofr/pkg/datastore"
-	"github.com/zopsmart/gofr/pkg/datastore/pubsub/avro"
-	"github.com/zopsmart/gofr/pkg/datastore/pubsub/eventhub"
-	"github.com/zopsmart/gofr/pkg/datastore/pubsub/kafka"
+	"developer.zopsmart.com/go/gofr/pkg"
+	"developer.zopsmart.com/go/gofr/pkg/datastore"
+	"developer.zopsmart.com/go/gofr/pkg/datastore/pubsub/avro"
+	"developer.zopsmart.com/go/gofr/pkg/datastore/pubsub/eventhub"
+	"developer.zopsmart.com/go/gofr/pkg/datastore/pubsub/kafka"
 )
 
 // cassandraDBConfigFromEnv returns configuration from environment variables to client so it can connect to cassandra

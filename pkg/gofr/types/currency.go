@@ -4,7 +4,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/zopsmart/gofr/pkg/errors"
+	"developer.zopsmart.com/go/gofr/pkg/errors"
 	"golang.org/x/text/currency"
 )
 

@@ -5,9 +5,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/zopsmart/gofr/pkg/datastore"
-	"github.com/zopsmart/gofr/pkg/gofr/config"
-	"github.com/zopsmart/gofr/pkg/log"
+	"developer.zopsmart.com/go/gofr/pkg/datastore"
+	"developer.zopsmart.com/go/gofr/pkg/gofr/config"
+	"developer.zopsmart.com/go/gofr/pkg/log"
 )
 
 func TestCassandra_IsDirty(t *testing.T) {

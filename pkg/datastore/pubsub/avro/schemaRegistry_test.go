@@ -9,9 +9,9 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	"github.com/zopsmart/gofr/pkg/errors"
-	"github.com/zopsmart/gofr/pkg/log"
-	"github.com/zopsmart/gofr/pkg/service"
+	"developer.zopsmart.com/go/gofr/pkg/errors"
+	"developer.zopsmart.com/go/gofr/pkg/log"
+	"developer.zopsmart.com/go/gofr/pkg/service"
 )
 
 func TestSchemaRegistryClient_GetSchemaByVersion(t *testing.T) {

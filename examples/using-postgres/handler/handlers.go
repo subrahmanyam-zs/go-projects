@@ -3,10 +3,10 @@ package handler
 import (
 	"strconv"
 
-	"github.com/zopsmart/gofr/examples/using-postgres/model"
-	"github.com/zopsmart/gofr/examples/using-postgres/store"
-	"github.com/zopsmart/gofr/pkg/errors"
-	"github.com/zopsmart/gofr/pkg/gofr"
+	"developer.zopsmart.com/go/gofr/examples/using-postgres/model"
+	"developer.zopsmart.com/go/gofr/examples/using-postgres/store"
+	"developer.zopsmart.com/go/gofr/pkg/errors"
+	"developer.zopsmart.com/go/gofr/pkg/gofr"
 )
 
 type Customer struct {

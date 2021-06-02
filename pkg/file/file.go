@@ -3,7 +3,7 @@ package file
 import (
 	"os"
 
-	"github.com/zopsmart/gofr/pkg/errors"
+	"developer.zopsmart.com/go/gofr/pkg/errors"
 )
 
 type fileAbstractor struct {

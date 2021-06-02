@@ -3,7 +3,7 @@ package file
 import (
 	"testing"
 
-	"github.com/zopsmart/gofr/pkg/gofr/config"
+	"developer.zopsmart.com/go/gofr/pkg/gofr/config"
 )
 
 func TestNewGCP(t *testing.T) {

@@ -6,8 +6,8 @@ import (
 	"image/png"
 	"os"
 
-	"github.com/zopsmart/gofr/pkg/gofr"
-	"github.com/zopsmart/gofr/pkg/gofr/template"
+	"developer.zopsmart.com/go/gofr/pkg/gofr"
+	"developer.zopsmart.com/go/gofr/pkg/gofr/template"
 )
 
 func Template(c *gofr.Context) (interface{}, error) {

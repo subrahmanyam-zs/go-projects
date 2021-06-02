@@ -10,9 +10,9 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/zopsmart/gofr/cmd/gofr/helper"
-	"github.com/zopsmart/gofr/pkg/gofr"
-	"github.com/zopsmart/gofr/pkg/log"
+	"developer.zopsmart.com/go/gofr/cmd/gofr/helper"
+	"developer.zopsmart.com/go/gofr/pkg/gofr"
+	"developer.zopsmart.com/go/gofr/pkg/log"
 )
 
 type Handler struct{}
@@ -269,7 +269,7 @@ func populateHandler(f fileSystem, path, handlerString string) error {
 		handlerString = fmt.Sprintf(`package %s
 
 import (
-       "github.com/zopsmart/gofr/pkg/gofr"
+       "developer.zopsmart.com/go/gofr/pkg/gofr"
 )
 
 %s`, path, handlerString)
@@ -414,7 +414,7 @@ func addHandlerImport(f fileSystem, parentDirectory, path string) error {
 		for scanner.Scan() {
 			lineString = scanner.Text()
 
-			if strings.Contains(lineString, "github.com/zopsmart/gofr/pkg/gofr") {
+			if strings.Contains(lineString, "developer.zopsmart.com/go/gofr/pkg/gofr") {
 				lineString = importSortCheck(parentDirectory+"/http/"+path, lineString)
 			}
 
@@ -437,7 +437,7 @@ func addHandlerImport(f fileSystem, parentDirectory, path string) error {
 }
 
 func importSortCheck(directory, lineString string) string {
-	if strings.Compare(directory, "github.com/zopsmart/gofr/pkg/gofr") < 0 {
+	if strings.Compare(directory, "developer.zopsmart.com/go/gofr/pkg/gofr") < 0 {
 		lineString = `	"` + directory + `"` + "\n" + lineString
 	} else {
 		lineString = lineString + "\n" + `	"` + directory + `"`

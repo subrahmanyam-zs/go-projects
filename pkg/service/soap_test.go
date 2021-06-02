@@ -10,7 +10,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/zopsmart/gofr/pkg/log"
+	"developer.zopsmart.com/go/gofr/pkg/log"
 )
 
 // It is a test server that behaves like SOAP API. Based on the different SOAP actions, it returns the different desired responses.

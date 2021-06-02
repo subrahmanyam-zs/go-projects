@@ -12,10 +12,10 @@ import (
 	"testing"
 
 	"github.com/gorilla/mux"
-	gofrErrors "github.com/zopsmart/gofr/pkg/errors"
-	"github.com/zopsmart/gofr/pkg/gofr/request"
-	"github.com/zopsmart/gofr/pkg/gofr/responder"
-	"github.com/zopsmart/gofr/pkg/gofr/types"
+	gofrErrors "developer.zopsmart.com/go/gofr/pkg/errors"
+	"developer.zopsmart.com/go/gofr/pkg/gofr/request"
+	"developer.zopsmart.com/go/gofr/pkg/gofr/responder"
+	"developer.zopsmart.com/go/gofr/pkg/gofr/types"
 )
 
 // routeKeySetter is used to set the routKey in the request context

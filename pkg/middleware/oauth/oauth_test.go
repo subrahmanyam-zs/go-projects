@@ -13,8 +13,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/zopsmart/gofr/pkg/errors"
-	"github.com/zopsmart/gofr/pkg/log"
+	"developer.zopsmart.com/go/gofr/pkg/errors"
+	"developer.zopsmart.com/go/gofr/pkg/log"
 )
 
 func validJWKSet() string {

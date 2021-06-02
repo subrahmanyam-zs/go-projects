@@ -7,8 +7,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/zopsmart/gofr/pkg/gofr/config"
-	"github.com/zopsmart/gofr/pkg/log"
+	"developer.zopsmart.com/go/gofr/pkg/gofr/config"
+	"developer.zopsmart.com/go/gofr/pkg/log"
 )
 
 func getDB() DataStore {

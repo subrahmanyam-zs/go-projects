@@ -8,10 +8,10 @@ import (
 	"time"
 
 	"github.com/go-redis/redis/v8"
-	"github.com/zopsmart/gofr/pkg"
-	"github.com/zopsmart/gofr/pkg/gofr/types"
-	"github.com/zopsmart/gofr/pkg/log"
-	"github.com/zopsmart/gofr/pkg/middleware"
+	"developer.zopsmart.com/go/gofr/pkg"
+	"developer.zopsmart.com/go/gofr/pkg/gofr/types"
+	"developer.zopsmart.com/go/gofr/pkg/log"
+	"developer.zopsmart.com/go/gofr/pkg/middleware"
 )
 
 // Redis is an abstraction that embeds the UniversalClient from go-redis/redis

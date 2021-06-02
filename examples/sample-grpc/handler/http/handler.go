@@ -1,9 +1,9 @@
 package http
 
 import (
-	"github.com/zopsmart/gofr/examples/sample-grpc/handler/grpc"
-	"github.com/zopsmart/gofr/pkg/errors"
-	"github.com/zopsmart/gofr/pkg/gofr"
+	"developer.zopsmart.com/go/gofr/examples/sample-grpc/handler/grpc"
+	"developer.zopsmart.com/go/gofr/pkg/errors"
+	"developer.zopsmart.com/go/gofr/pkg/gofr"
 )
 
 func Get(c *gofr.Context) (interface{}, error) {

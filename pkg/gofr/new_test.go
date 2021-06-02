@@ -8,10 +8,10 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/zopsmart/gofr/pkg/datastore/pubsub"
-	"github.com/zopsmart/gofr/pkg/datastore/pubsub/kafka"
-	"github.com/zopsmart/gofr/pkg/gofr/config"
-	"github.com/zopsmart/gofr/pkg/log"
+	"developer.zopsmart.com/go/gofr/pkg/datastore/pubsub"
+	"developer.zopsmart.com/go/gofr/pkg/datastore/pubsub/kafka"
+	"developer.zopsmart.com/go/gofr/pkg/gofr/config"
+	"developer.zopsmart.com/go/gofr/pkg/log"
 )
 
 type mockConfig struct {

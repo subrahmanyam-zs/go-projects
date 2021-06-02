@@ -7,11 +7,11 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/zopsmart/gofr/pkg/errors"
-	"github.com/zopsmart/gofr/pkg/gofr"
-	"github.com/zopsmart/gofr/pkg/gofr/request"
-	"github.com/zopsmart/gofr/pkg/gofr/responder"
-	"github.com/zopsmart/gofr/pkg/gofr/template"
+	"developer.zopsmart.com/go/gofr/pkg/errors"
+	"developer.zopsmart.com/go/gofr/pkg/gofr"
+	"developer.zopsmart.com/go/gofr/pkg/gofr/request"
+	"developer.zopsmart.com/go/gofr/pkg/gofr/responder"
+	"developer.zopsmart.com/go/gofr/pkg/gofr/template"
 )
 
 type pusher struct {

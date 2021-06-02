@@ -3,7 +3,7 @@ package responder
 import (
 	"fmt"
 
-	"github.com/zopsmart/gofr/pkg/gofr/template"
+	"developer.zopsmart.com/go/gofr/pkg/gofr/template"
 )
 
 type CMD struct{}

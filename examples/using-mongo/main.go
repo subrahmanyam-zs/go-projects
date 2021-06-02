@@ -1,9 +1,9 @@
 package main
 
 import (
-	"github.com/zopsmart/gofr/examples/using-mongo/handlers"
-	"github.com/zopsmart/gofr/examples/using-mongo/store/customer"
-	"github.com/zopsmart/gofr/pkg/gofr"
+	"developer.zopsmart.com/go/gofr/examples/using-mongo/handlers"
+	"developer.zopsmart.com/go/gofr/examples/using-mongo/store/customer"
+	"developer.zopsmart.com/go/gofr/pkg/gofr"
 )
 
 func main() {

@@ -3,7 +3,7 @@ package types
 import (
 	"regexp"
 
-	"github.com/zopsmart/gofr/pkg/errors"
+	"developer.zopsmart.com/go/gofr/pkg/errors"
 )
 
 // nolint:lll // this will compile the regex once instead of compiling it each time when it is being called.

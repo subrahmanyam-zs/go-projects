@@ -5,9 +5,9 @@ import (
 	"time"
 
 	"github.com/gocql/gocql"
-	"github.com/zopsmart/gofr/pkg/datastore"
-	"github.com/zopsmart/gofr/pkg/errors"
-	"github.com/zopsmart/gofr/pkg/log"
+	"developer.zopsmart.com/go/gofr/pkg/datastore"
+	"developer.zopsmart.com/go/gofr/pkg/errors"
+	"developer.zopsmart.com/go/gofr/pkg/log"
 )
 
 type Cassandra struct {

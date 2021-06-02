@@ -3,8 +3,8 @@ package service
 import (
 	"context"
 
-	"github.com/zopsmart/gofr/pkg/gofr"
-	"github.com/zopsmart/gofr/pkg/service"
+	"developer.zopsmart.com/go/gofr/pkg/gofr"
+	"developer.zopsmart.com/go/gofr/pkg/service"
 )
 
 type Service interface {

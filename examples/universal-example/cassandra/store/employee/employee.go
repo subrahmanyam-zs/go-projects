@@ -3,9 +3,9 @@ package employee
 import (
 	"strings"
 
-	"github.com/zopsmart/gofr/examples/universal-example/cassandra/entity"
-	"github.com/zopsmart/gofr/pkg/errors"
-	"github.com/zopsmart/gofr/pkg/gofr"
+	"developer.zopsmart.com/go/gofr/examples/universal-example/cassandra/entity"
+	"developer.zopsmart.com/go/gofr/pkg/errors"
+	"developer.zopsmart.com/go/gofr/pkg/gofr"
 )
 
 type employee struct{}

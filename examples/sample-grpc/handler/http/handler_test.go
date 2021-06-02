@@ -4,10 +4,10 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/zopsmart/gofr/examples/sample-grpc/handler/grpc"
-	"github.com/zopsmart/gofr/pkg/errors"
-	"github.com/zopsmart/gofr/pkg/gofr"
-	"github.com/zopsmart/gofr/pkg/gofr/request"
+	"developer.zopsmart.com/go/gofr/examples/sample-grpc/handler/grpc"
+	"developer.zopsmart.com/go/gofr/pkg/errors"
+	"developer.zopsmart.com/go/gofr/pkg/gofr"
+	"developer.zopsmart.com/go/gofr/pkg/gofr/request"
 )
 
 func TestExample_Get(t *testing.T) {

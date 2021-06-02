@@ -1,12 +1,12 @@
 package main
 
 import (
-	addroute "github.com/zopsmart/gofr/cmd/gofr/addRoute"
-	"github.com/zopsmart/gofr/cmd/gofr/entity"
-	"github.com/zopsmart/gofr/cmd/gofr/initialize"
-	"github.com/zopsmart/gofr/cmd/gofr/migration/handler"
-	"github.com/zopsmart/gofr/cmd/gofr/test"
-	"github.com/zopsmart/gofr/pkg/gofr"
+	addroute "developer.zopsmart.com/go/gofr/cmd/gofr/addRoute"
+	"developer.zopsmart.com/go/gofr/cmd/gofr/entity"
+	"developer.zopsmart.com/go/gofr/cmd/gofr/initialize"
+	"developer.zopsmart.com/go/gofr/cmd/gofr/migration/handler"
+	"developer.zopsmart.com/go/gofr/cmd/gofr/test"
+	"developer.zopsmart.com/go/gofr/pkg/gofr"
 )
 
 func main() {

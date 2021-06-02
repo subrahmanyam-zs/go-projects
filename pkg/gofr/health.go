@@ -1,8 +1,8 @@
 package gofr
 
 import (
-	"github.com/zopsmart/gofr/pkg"
-	"github.com/zopsmart/gofr/pkg/gofr/types"
+	"developer.zopsmart.com/go/gofr/pkg"
+	"developer.zopsmart.com/go/gofr/pkg/gofr/types"
 )
 
 // HeartBeatHandler is a handler for giving a http.StatusOK response

@@ -1,9 +1,9 @@
 package main
 
 import (
-	"github.com/zopsmart/gofr/examples/sample-grpc/handler/grpc"
-	"github.com/zopsmart/gofr/examples/sample-grpc/handler/http"
-	"github.com/zopsmart/gofr/pkg/gofr"
+	"developer.zopsmart.com/go/gofr/examples/sample-grpc/handler/grpc"
+	"developer.zopsmart.com/go/gofr/examples/sample-grpc/handler/http"
+	"developer.zopsmart.com/go/gofr/pkg/gofr"
 )
 
 func main() {

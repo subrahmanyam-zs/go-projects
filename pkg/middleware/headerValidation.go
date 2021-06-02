@@ -7,7 +7,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/zopsmart/gofr/pkg/errors"
+	"developer.zopsmart.com/go/gofr/pkg/errors"
 )
 
 type Header struct {

@@ -3,8 +3,8 @@ package service
 import (
 	"context"
 
-	"github.com/zopsmart/gofr/pkg/log"
-	"github.com/zopsmart/gofr/pkg/service"
+	"developer.zopsmart.com/go/gofr/pkg/log"
+	"developer.zopsmart.com/go/gofr/pkg/service"
 )
 
 type CatalogService interface {

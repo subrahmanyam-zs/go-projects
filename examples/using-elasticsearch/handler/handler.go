@@ -3,10 +3,10 @@ package handler
 import (
 	"net/http"
 
-	"github.com/zopsmart/gofr/examples/using-elasticsearch/model"
-	"github.com/zopsmart/gofr/examples/using-elasticsearch/store"
-	"github.com/zopsmart/gofr/pkg/errors"
-	"github.com/zopsmart/gofr/pkg/gofr"
+	"developer.zopsmart.com/go/gofr/examples/using-elasticsearch/model"
+	"developer.zopsmart.com/go/gofr/examples/using-elasticsearch/store"
+	"developer.zopsmart.com/go/gofr/pkg/errors"
+	"developer.zopsmart.com/go/gofr/pkg/gofr"
 )
 
 type Customer struct {

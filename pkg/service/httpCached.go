@@ -9,8 +9,8 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/zopsmart/gofr/pkg/gofr/cache"
-	"github.com/zopsmart/gofr/pkg/middleware"
+	"developer.zopsmart.com/go/gofr/pkg/gofr/cache"
+	"developer.zopsmart.com/go/gofr/pkg/middleware"
 )
 
 type cachedHTTPService struct {

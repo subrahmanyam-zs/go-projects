@@ -1,4 +1,4 @@
-module github.com/zopsmart/gofr
+module developer.zopsmart.com/go/gofr
 
 go 1.16
 

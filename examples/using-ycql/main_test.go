@@ -8,10 +8,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/zopsmart/gofr/pkg/datastore"
-	"github.com/zopsmart/gofr/pkg/gofr/config"
-	"github.com/zopsmart/gofr/pkg/gofr/request"
-	"github.com/zopsmart/gofr/pkg/log"
+	"developer.zopsmart.com/go/gofr/pkg/datastore"
+	"developer.zopsmart.com/go/gofr/pkg/gofr/config"
+	"developer.zopsmart.com/go/gofr/pkg/gofr/request"
+	"developer.zopsmart.com/go/gofr/pkg/log"
 )
 
 func TestMain(m *testing.M) {

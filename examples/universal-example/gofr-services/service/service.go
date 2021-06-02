@@ -1,7 +1,7 @@
 package service
 
 import (
-	"github.com/zopsmart/gofr/pkg/gofr"
+	"developer.zopsmart.com/go/gofr/pkg/gofr"
 )
 
 type svc struct {

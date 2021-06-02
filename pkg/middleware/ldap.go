@@ -11,7 +11,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/zopsmart/gofr/pkg/log"
+	"developer.zopsmart.com/go/gofr/pkg/log"
 
 	"github.com/go-ldap/ldap/v3"
 )

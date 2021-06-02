@@ -9,8 +9,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/zopsmart/gofr/pkg/errors"
-	"github.com/zopsmart/gofr/pkg/log"
+	"developer.zopsmart.com/go/gofr/pkg/errors"
+	"developer.zopsmart.com/go/gofr/pkg/log"
 )
 
 // nolint:gocognit // all the conditions are required for tests

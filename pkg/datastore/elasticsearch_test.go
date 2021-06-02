@@ -6,9 +6,9 @@ import (
 	"strconv"
 	"testing"
 
-	"github.com/zopsmart/gofr/pkg/gofr/config"
-	"github.com/zopsmart/gofr/pkg/gofr/types"
-	"github.com/zopsmart/gofr/pkg/log"
+	"developer.zopsmart.com/go/gofr/pkg/gofr/config"
+	"developer.zopsmart.com/go/gofr/pkg/gofr/types"
+	"developer.zopsmart.com/go/gofr/pkg/log"
 )
 
 func TestNewElasticsearchClient(t *testing.T) {

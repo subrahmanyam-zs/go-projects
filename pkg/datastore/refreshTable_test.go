@@ -7,8 +7,8 @@ import (
 	"strconv"
 	"testing"
 
-	"github.com/zopsmart/gofr/pkg/gofr/config"
-	"github.com/zopsmart/gofr/pkg/log"
+	"developer.zopsmart.com/go/gofr/pkg/gofr/config"
+	"developer.zopsmart.com/go/gofr/pkg/log"
 )
 
 const ycqlKeyspaceTest = "test"
@@ -210,7 +210,7 @@ func Test_CSVReader(t *testing.T) {
 	}
 	db := initializeDB(t, &cfg)
 	goPath := c.Get("GOPATH")
-	db.path = goPath + "/src/github.com/zopsmart/gofr/pkg/datastore"
+	db.path = goPath + "/src/developer.zopsmart.com/go/gofr/pkg/datastore"
 	mock := &MockTesting{}
 	tableName := "random"
 	db.RefreshTables(mock, tableName)

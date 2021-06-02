@@ -1,9 +1,9 @@
 package main
 
 import (
-	"github.com/zopsmart/gofr/examples/using-http-service/handler"
-	svc "github.com/zopsmart/gofr/examples/using-http-service/service"
-	"github.com/zopsmart/gofr/pkg/gofr"
+	"developer.zopsmart.com/go/gofr/examples/using-http-service/handler"
+	svc "developer.zopsmart.com/go/gofr/examples/using-http-service/service"
+	"developer.zopsmart.com/go/gofr/pkg/gofr"
 )
 
 func main() {
