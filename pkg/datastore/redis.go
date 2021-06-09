@@ -206,6 +206,7 @@ func (l *QueryLogger) AfterProcessPipeline(ctx context.Context, cmds []redis.Cmd
 		query = strings.TrimSuffix(query, "]")
 		l.Query[i] = query
 	}
+	query := strings.Split(l.Query[0], " ")
 
 	l.Duration = endTime.Sub(l.StartTime).Microseconds()
 	l.DataStore = pkg.Redis
@@ -214,7 +215,7 @@ func (l *QueryLogger) AfterProcessPipeline(ctx context.Context, cmds []redis.Cmd
 
 	dur := endTime.Sub(l.StartTime).Seconds()
 
-	redisStats.WithLabelValues(l.Query[1], l.Hosts).Observe(dur)
+	redisStats.WithLabelValues(query[0], l.Hosts).Observe(dur)
 
 	return nil
 }
