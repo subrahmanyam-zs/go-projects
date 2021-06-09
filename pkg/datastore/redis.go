@@ -184,7 +184,7 @@ func (l *QueryLogger) AfterProcess(ctx context.Context, cmd redis.Cmder) error {
 
 	dur := endTime.Sub(l.StartTime).Seconds()
 
-	redisStats.WithLabelValues(l.Query[0], l.Hosts).Observe(dur)
+	redisStats.WithLabelValues(checkQuery(l.Query[0]), l.Hosts).Observe(dur)
 
 	return nil
 }
@@ -213,7 +213,21 @@ func (l *QueryLogger) AfterProcessPipeline(ctx context.Context, cmds []redis.Cmd
 
 	dur := endTime.Sub(l.StartTime).Seconds()
 
-	redisStats.WithLabelValues(l.Query[0], l.Hosts).Observe(dur)
+	redisStats.WithLabelValues(checkQuery(l.Query[0]), l.Hosts).Observe(dur)
 
 	return nil
+}
+
+func checkQuery(query string) string {
+	query = strings.ToLower(query)
+	query = strings.TrimSpace(query)
+
+	if strings.HasPrefix(query, "get") {
+		return "GET"
+	} else if strings.HasPrefix(query, "delete") {
+		return "DELETE"
+	} else if strings.HasPrefix(query, "ping") {
+		return "PING"
+	}
+	return "SET"
 }
