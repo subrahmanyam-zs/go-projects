@@ -7,11 +7,13 @@ import (
 	"strings"
 	"time"
 
-	"github.com/go-redis/redis/v8"
+	"github.com/prometheus/client_golang/prometheus"
+
 	"developer.zopsmart.com/go/gofr/pkg"
 	"developer.zopsmart.com/go/gofr/pkg/gofr/types"
 	"developer.zopsmart.com/go/gofr/pkg/log"
 	"developer.zopsmart.com/go/gofr/pkg/middleware"
+	"github.com/go-redis/redis/v8"
 )
 
 // Redis is an abstraction that embeds the UniversalClient from go-redis/redis
@@ -30,6 +32,17 @@ type redisClusterClient struct {
 	*redis.ClusterClient
 	config RedisConfig
 }
+
+// nolint:gochecknoglobals // redisStats has to be a global variable for prometheus
+var (
+	redisStats = prometheus.NewHistogramVec(prometheus.HistogramOpts{
+		Name:    "zs_redis_stats",
+		Help:    "Histogram for Redis",
+		Buckets: []float64{.001, .003, .005, .01, .025, .05, .1, .2, .3, .4, .5, .75, 1, 2, 3, 5, 10, 30},
+	}, []string{"type", "host"})
+
+	_ = prometheus.Register(redisStats)
+)
 
 // RedisConfig stores the config variables required to connect to Redis, if Options is nil, then the Redis client will import the default
 // configuration as defined in go-redis/redis. User defined config can be provided by populating the Options field.
@@ -55,6 +68,7 @@ func NewRedis(logger log.Logger, config RedisConfig) (Redis, error) {
 	rc := redis.NewClient(config.Options)
 	rLog := QueryLogger{
 		Logger: logger,
+		Hosts:  config.HostName,
 	}
 
 	rc.AddHook(&rLog)
@@ -168,6 +182,8 @@ func (l *QueryLogger) AfterProcess(ctx context.Context, cmd redis.Cmder) error {
 
 	l.Logger.Debug(l)
 
+	redisStats.WithLabelValues(l.Query[0], l.Hosts).Observe(float64(l.Duration))
+
 	return nil
 }
 
@@ -192,6 +208,7 @@ func (l *QueryLogger) AfterProcessPipeline(ctx context.Context, cmds []redis.Cmd
 	l.DataStore = pkg.Redis
 
 	l.Logger.Debug(l)
+	redisStats.WithLabelValues(l.Query[0], l.Hosts).Observe(float64(l.Duration))
 
 	return nil
 }
