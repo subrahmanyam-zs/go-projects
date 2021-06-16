@@ -2,6 +2,7 @@ package gofr
 
 import (
 	ctx "context"
+	"developer.zopsmart.com/go/gofr/pkg/middleware/cspauth"
 	"fmt"
 	"net/http"
 	"strconv"
@@ -9,14 +10,14 @@ import (
 	"sync"
 	"time"
 
-	"github.com/gorilla/websocket"
-	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"developer.zopsmart.com/go/gofr/pkg/errors"
 	"developer.zopsmart.com/go/gofr/pkg/gofr/request"
 	"developer.zopsmart.com/go/gofr/pkg/gofr/responder"
 	"developer.zopsmart.com/go/gofr/pkg/log"
 	"developer.zopsmart.com/go/gofr/pkg/middleware"
 	"developer.zopsmart.com/go/gofr/pkg/middleware/oauth"
+	"github.com/gorilla/websocket"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"go.opencensus.io/trace"
 	"golang.org/x/net/context"
 )
@@ -94,6 +95,7 @@ func NewServer(c Config, gofr *Gofr) *server {
 	s.Router.Use(middleware.CORS(s.mwVars))
 	s.Router.Use(middleware.Logging(gofr.Logger, s.mwVars["LOG_OMIT_HEADERS"]))
 	s.Router.Use(middleware.PrometheusMiddleware)
+	s.Router.Use(cspauth.CSPAuth(gofr.Logger))
 
 	s.setupAuth(c, gofr)
 
