@@ -74,6 +74,13 @@ func CSPAuth(logger log.Logger) func(inner http.Handler) http.Handler {
 			options := getOptions(req)
 			csp := New(logger, options)
 
+			if csp == nil {
+				logger.Warnf("request doesn't contains valid headers for CSP Auth")
+				w.WriteHeader(http.StatusBadRequest)
+
+				return
+			}
+
 			if ok := csp.Verify(logger, req); !ok {
 				csp.Set(req)
 			}
@@ -113,7 +120,7 @@ func (c *CSP) Verify(logger log.Logger, r *http.Request) bool {
 	//base64 decoding the auth context.
 	b64DecodeRandom, err := base64Decode(r.Header.Get(authContextHeader))
 	if err != nil {
-		logger.Errorf("error occured while base64 decode, %v", err)
+		logger.Errorf("error while base64 decoding auth context, %v", err)
 		return false
 	}
 
@@ -126,7 +133,7 @@ func (c *CSP) Verify(logger log.Logger, r *http.Request) bool {
 	//base64 decode auth context
 	authContextToDecrypt, err := base64Decode(string(authContextToDecode))
 	if err != nil {
-		logger.Errorf("error while base 64 decoding auth context, %v", err)
+		logger.Errorf("error while base64 decoding auth context without random chars, %v", err)
 		return false
 	}
 
@@ -141,7 +148,7 @@ func (c *CSP) Verify(logger log.Logger, r *http.Request) bool {
 
 	err = json.Unmarshal([]byte(decryptedAuthContext), &authJSON)
 	if err != nil {
-		logger.Errorf("error while unmarshaling csp auth json, %v", err)
+		logger.Errorf("error while unmarshalling csp auth json, %v", err)
 		return false
 	}
 
