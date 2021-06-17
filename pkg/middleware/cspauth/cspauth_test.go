@@ -3,7 +3,6 @@ package cspauth
 import (
 	"bytes"
 	"developer.zopsmart.com/go/gofr/pkg/log"
-	"io"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -13,18 +12,7 @@ import (
 type MockHandler struct{}
 
 func (r *MockHandler) ServeHTTP(w http.ResponseWriter, req *http.Request) {
-	if req.Response == nil {
-		w.WriteHeader(http.StatusOK)
-
-		return
-	}
-
-	w.WriteHeader(req.Response.StatusCode)
-	resp, err := io.ReadAll(req.Response.Body)
-
-	if err == nil {
-		_, _ = w.Write(resp)
-	}
+	w.WriteHeader(http.StatusOK)
 }
 
 func TestCSPAuth(t *testing.T) {
