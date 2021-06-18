@@ -9,7 +9,6 @@ import (
 	"encoding/base64"
 	"encoding/hex"
 	"encoding/json"
-	"golang.org/x/crypto/pbkdf2"
 	"io/ioutil"
 	"net/http"
 	"strconv"
@@ -19,6 +18,7 @@ import (
 	"developer.zopsmart.com/go/gofr/pkg/errors"
 	"developer.zopsmart.com/go/gofr/pkg/log"
 	uuid "github.com/satori/go.uuid"
+	"golang.org/x/crypto/pbkdf2"
 )
 
 const (
@@ -68,11 +68,17 @@ func New(logger log.Logger, opts *Options) *CSP {
 }
 
 // CSPAuth middleware
-func CSPAuth(logger log.Logger) func(inner http.Handler) http.Handler {
+func CSPAuth(logger log.Logger, opts Options) func(inner http.Handler) http.Handler {
 	return func(inner http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
-			options := getOptions(req)
-			csp := New(logger, options)
+			if opts.SharedKey == "" {
+				inner.ServeHTTP(w, req)
+
+				return
+			}
+
+			setOptions(&opts, req)
+			csp := New(logger, &opts)
 
 			if csp == nil {
 				logger.Warnf("request doesn't contains valid headers for CSP Auth")

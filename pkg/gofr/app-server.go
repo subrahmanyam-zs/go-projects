@@ -95,14 +95,13 @@ func NewServer(c Config, gofr *Gofr) *server {
 	s.Router.Use(middleware.CORS(s.mwVars))
 	s.Router.Use(middleware.Logging(gofr.Logger, s.mwVars["LOG_OMIT_HEADERS"]))
 	s.Router.Use(middleware.PrometheusMiddleware)
-	s.Router.Use(cspauth.CSPAuth(gofr.Logger))
 
-	s.setupAuth(c, gofr)
-
+	s.setupOAuth(c, gofr)
+	s.setupCSPAuth(c, gofr)
 	return s
 }
 
-func (s *server) setupAuth(c Config, gofr *Gofr) {
+func (s *server) setupOAuth(c Config, gofr *Gofr) {
 	if oAuthOptions, oAuthOk := getOAuthOptions(c); oAuthOk {
 		if c.Get("LDAP_ADDR") != "" {
 			gofr.Logger.Warn("OAuth middleware not enabled due to LDAP_ADDR env variable set")
@@ -111,6 +110,16 @@ func (s *server) setupAuth(c Config, gofr *Gofr) {
 
 		s.Router.Use(oauth.Auth(gofr.Logger, oAuthOptions))
 	}
+}
+
+func (s *server) setupCSPAuth(c Config, gofr *Gofr) {
+	opts := getCSPOptions(c)
+	if opts.SharedKey == "" {
+		gofr.Logger.Warn("CSPAuth middleware not enabled due to CSP_SHARED_KEY env variable not set")
+		return
+	}
+
+	s.Router.Use(cspauth.CSPAuth(gofr.Logger, opts))
 }
 
 func (s *server) handleMetrics(l log.Logger) {
@@ -306,6 +315,15 @@ func getOAuthOptions(c Config) (options oauth.Options, ok bool) {
 	}
 
 	return
+}
+
+func getCSPOptions(c Config) cspauth.Options {
+	options := cspauth.Options{}
+	if key := c.Get("CSP_SHARED_KEY"); key != "" {
+		options.SharedKey = key
+	}
+
+	return options
 }
 
 func (s *server) serverPushFlush(inner http.Handler) http.Handler {

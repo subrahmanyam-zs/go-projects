@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	uuid "github.com/satori/go.uuid"
 	"net/http"
-	"os"
 	"strings"
 )
 
@@ -17,20 +16,17 @@ type Options struct {
 	AppID       string
 }
 
-func getOptions(req *http.Request) *Options {
+func setOptions(opts *Options, req *http.Request) {
 	ip := req.Header.Get("X-Forwarded-For")
 	if ip == "" {
 		// get the ip address from the RemoteAddr
-		ip = strings.Split(req.RemoteAddr,":")[0]
+		ip = strings.Split(req.RemoteAddr, ":")[0]
 	}
 
-	return &Options{
-		MachineName: req.Header.Get("User-Agent"),
-		IPAddress:   ip,
-		AppKey:      req.Header.Get(appKeyHeader),
-		SharedKey:   os.Getenv("CSP_APP_SHARED_KEY"),
-		AppID:       req.Header.Get(clientIDHeader),
-	}
+	opts.MachineName = req.Header.Get("User-Agent")
+	opts.IPAddress = ip
+	opts.AppKey = req.Header.Get(appKeyHeader)
+	opts.AppID = req.Header.Get(clientIDHeader)
 }
 
 func (o *Options) validate() error {
