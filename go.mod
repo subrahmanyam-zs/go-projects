@@ -11,7 +11,7 @@ require (
 	github.com/Azure/azure-storage-blob-go v0.13.0
 	github.com/Azure/go-autorest/autorest v0.11.18
 	github.com/Shopify/sarama v1.27.2
-	github.com/aws/aws-sdk-go v1.27.0 // indirect
+	github.com/aws/aws-sdk-go v1.27.0
 	github.com/aws/aws-sdk-go-v2/credentials v1.1.2
 	github.com/aws/aws-sdk-go-v2/service/s3 v1.2.1
 	github.com/bmizerany/assert v0.0.0-20160611221934-b7ed37b82869

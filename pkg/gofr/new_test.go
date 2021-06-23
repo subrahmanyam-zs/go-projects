@@ -8,6 +8,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
+
 	"developer.zopsmart.com/go/gofr/pkg/datastore/pubsub"
 	"developer.zopsmart.com/go/gofr/pkg/datastore/pubsub/kafka"
 	"developer.zopsmart.com/go/gofr/pkg/gofr/config"
@@ -322,6 +324,51 @@ func Test_PubSub(t *testing.T) {
 	}
 }
 
+func Test_Notifier(t *testing.T) {
+	b := new(bytes.Buffer)
+	logger := log.NewMockLogger(b)
+	conf := config.NewGoDotEnvProvider(logger, "../../configs")
+
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		re := map[string]interface{}{
+			"subject": "gofr-value",
+			"version": 3,
+			"id":      303,
+			"schema": "{\"type\":\"record\",\"name\":\"person\"," +
+				"\"fields\":[{\"name\":\"Id\",\"type\":\"string\"}," +
+				"{\"name\":\"Name\",\"type\":\"string\"}," +
+				"{\"name\":\"Email\",\"type\":\"string\"}]}",
+		}
+
+		reBytes, _ := json.Marshal(re)
+		w.Header().Set("Content-type", "application/json")
+		_, _ = w.Write(reBytes)
+	}))
+
+	k := &Gofr{Logger: logger}
+
+	testCases := []struct {
+		configLoc   Config
+		expectedStr string
+	}{
+		{&config.MockConfig{Data: map[string]string{
+			"EVENTHUB_NAMESPACE": "zsmisc-dev",
+			"EVENTHUB_NAME":      "healthcheck",
+			"AccessKeyID":        conf.Get("SNS_ACCESS_KEY"),
+			"SecretAccessKey":    conf.Get("SNS_SECRET_ACCESS_KEY"),
+			"Region":             conf.Get("SNS_REGION"),
+			"NOTIFIER_BACKEND":   "SNS",
+			"AVRO_SCHEMA_URL":    ts.URL,
+		}}, "AWS SNS initialized"},
+	}
+
+	for i, tc := range testCases {
+		b.Reset()
+		initializeNotifiers(tc.configLoc, k)
+
+		assert.Contains(t, b.String(), tc.expectedStr, "[FAILED %v], expected: `%v` in the logs, got: %v", i, tc.expectedStr, b.String())
+	}
+}
 func Test_initializeAvro(t *testing.T) {
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		re := map[string]interface{}{

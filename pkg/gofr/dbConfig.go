@@ -2,15 +2,16 @@ package gofr
 
 import (
 	"crypto/tls"
+	awssns "developer.zopsmart.com/go/gofr/pkg/notifier/aws-sns"
 	"strconv"
 	"strings"
 
-	"github.com/gocql/gocql"
 	"developer.zopsmart.com/go/gofr/pkg"
 	"developer.zopsmart.com/go/gofr/pkg/datastore"
 	"developer.zopsmart.com/go/gofr/pkg/datastore/pubsub/avro"
 	"developer.zopsmart.com/go/gofr/pkg/datastore/pubsub/eventhub"
 	"developer.zopsmart.com/go/gofr/pkg/datastore/pubsub/kafka"
+	"github.com/gocql/gocql"
 )
 
 // cassandraDBConfigFromEnv returns configuration from environment variables to client so it can connect to cassandra
@@ -175,5 +176,16 @@ func eventhubConfigFromEnv(c Config) eventhub.Config {
 		SharedAccessName:  c.Get("EVENTHUB_SAS_NAME"),
 		SharedAccessKey:   c.Get("EVENTHUB_SAS_KEY"),
 		ConnRetryDuration: getRetryDuration(c.Get("EVENTHUB_CONN_RETRY")),
+	}
+}
+func awsSNSConfigFromEnv(c Config) awssns.Config {
+
+	return awssns.Config{
+		AccessKeyID:     c.Get("SNS_ACCESS_KEY"),
+		SecretAccessKey: c.Get("SNS_SECRET_ACCESS_KEY"),
+		Region:          c.Get("SNS_REGION"),
+		TopicArn:        c.Get("SNS_TOPIC_ARN"),
+		Protocol:        c.Get("SNS_PROTOCOL"),
+		Endpoint:        c.Get("SNS_ENDPOINT"),
 	}
 }

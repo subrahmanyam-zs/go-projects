@@ -2,11 +2,14 @@ package gofr
 
 import (
 	"io"
+	"io/ioutil"
 	"strconv"
 	"testing"
 	"time"
 
 	"github.com/go-redis/redis/v8"
+	"github.com/stretchr/testify/assert"
+
 	"developer.zopsmart.com/go/gofr/pkg/datastore"
 	"developer.zopsmart.com/go/gofr/pkg/gofr/config"
 	"developer.zopsmart.com/go/gofr/pkg/log"
@@ -385,4 +388,26 @@ func Test_elasticSearchRetry(t *testing.T) {
 	if k.Elasticsearch.Client == nil {
 		t.Errorf("FAILED, expected: Elastic Search initialized successfully, got: Elastic Search initialization failed")
 	}
+}
+
+func Test_AWSSNSRetry(t *testing.T) {
+	var k Gofr
+
+	logger := log.NewMockLogger(ioutil.Discard)
+	k.Logger = logger
+	c := config.NewGoDotEnvProvider(logger, "../../configs")
+	awsSNSConfig := awsSNSConfigFromEnv(c)
+	awsSNSConfig.ConnRetryDuration = 1
+
+	go awsSNSRetry(&awsSNSConfig, &k)
+
+	for i := 0; i < 5; i++ {
+		time.Sleep(3 * time.Second)
+
+		if k.Notifier.IsSet() {
+			break
+		}
+	}
+
+	assert.True(t, k.Notifier.IsSet(), "FAILED, expected: AwsSNS initialized successfully, got: AwsSNS initialization failed")
 }
