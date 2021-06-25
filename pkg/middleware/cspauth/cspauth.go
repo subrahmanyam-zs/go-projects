@@ -71,12 +71,6 @@ func New(logger log.Logger, opts *Options) *CSP {
 func CSPAuth(logger log.Logger, opts Options) func(inner http.Handler) http.Handler {
 	return func(inner http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
-			if opts.SharedKey == "" {
-				inner.ServeHTTP(w, req)
-
-				return
-			}
-
 			setOptions(&opts, req)
 			csp := New(logger, &opts)
 
