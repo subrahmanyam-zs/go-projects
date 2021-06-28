@@ -3,6 +3,7 @@ package cspauth
 import (
 	"bytes"
 	"developer.zopsmart.com/go/gofr/pkg/log"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -10,12 +11,11 @@ import (
 
 type MockHandler struct{}
 
-func (r *MockHandler) ServeHTTP(w http.ResponseWriter, req *http.Request) {
+func (r *MockHandler) ServeHTTP(w http.ResponseWriter, _ *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
 func TestCSPAuth(t *testing.T) {
-
 	tcs := []struct {
 		appKey      string
 		clientID    string
@@ -85,70 +85,19 @@ func TestCSPAuth(t *testing.T) {
 	for i, tc := range tcs {
 		opts := Options{SharedKey: tc.sharedKey}
 		body := bytes.NewReader([]byte(tc.body))
-		if tc.body == "" {
-			body = nil
-		}
 		req := httptest.NewRequest("GET", "/dummy", body)
 		req.Header.Set("ak", tc.appKey)
 		req.Header.Set("cd", tc.clientID)
 		req.Header.Set("ac", tc.authContext)
 		w := httptest.NewRecorder()
 
-		b := new(bytes.Buffer)
-		logger := log.NewMockLogger(b)
+		logger := log.NewMockLogger(io.Discard)
 
 		handler := CSPAuth(logger, opts)(&MockHandler{})
 		handler.ServeHTTP(w, req)
 
 		if w.Code != tc.expCode {
 			t.Errorf("TESTCASE[%v]\nexpected code %v,\ngot %v", i, tc.expCode, w.Code)
-		}
-	}
-}
-
-func Test_getBody(t *testing.T) {
-	req, _ := http.NewRequest("GET", "/dummy", nil)
-	req.Body = nil
-
-	b := getBody(req)
-	if len(b) != 0 {
-		t.Errorf("expected empty slice, got %v", b)
-	}
-}
-
-func Test_pkcs7Pad(t *testing.T) {
-	tcs := []struct {
-		blockSize int
-		err       error
-	}{
-		{0, errInvalidBlockSize},
-		{1, errInvalidPKCS7Data},
-	}
-
-	for i, tc := range tcs {
-		_, err := pkcs7Pad(nil, tc.blockSize)
-		if err != tc.err {
-			t.Errorf("TESTCASE[%v]:\nexpected %v, got %v", i, tc.err, err)
-		}
-	}
-}
-
-func Test_pkcs7Unpad(t *testing.T) {
-	tcs := []struct {
-		data      []byte
-		blockSize int
-		err       error
-	}{
-		{nil, 0, errInvalidBlockSize},
-		{nil, 1, errInvalidPKCS7Data},
-		{[]byte{1, 2, 3}, 2, errInvalidPKCS7Padding},
-		{[]byte{1, 2, 3, 5}, 2, errInvalidPKCS7Padding},
-	}
-
-	for i, tc := range tcs {
-		_, err := pkcs7Unpad(tc.data, tc.blockSize)
-		if err != tc.err {
-			t.Errorf("TESTCASE[%v]:\nexpected %v, got %v", i, tc.err, err)
 		}
 	}
 }

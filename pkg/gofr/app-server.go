@@ -113,9 +113,10 @@ func (s *server) setupOAuth(c Config, gofr *Gofr) {
 }
 
 func (s *server) setupCSPAuth(c Config, gofr *Gofr) {
-	opts := getCSPOptions(c)
+	opts := cspauth.Options{SharedKey:c.Get("CSP_SHARED_KEY")}
+
 	if opts.SharedKey == "" {
-		gofr.Logger.Warn("CSPAuth middleware not enabled due to CSP_SHARED_KEY env variable not set")
+		gofr.Logger.Warn("CSPAuth middleware is not enabled due to CSP_SHARED_KEY env variable is not set")
 		return
 	}
 
@@ -315,15 +316,6 @@ func getOAuthOptions(c Config) (options oauth.Options, ok bool) {
 	}
 
 	return
-}
-
-func getCSPOptions(c Config) cspauth.Options {
-	options := cspauth.Options{}
-	if key := c.Get("CSP_SHARED_KEY"); key != "" {
-		options.SharedKey = key
-	}
-
-	return options
 }
 
 func (s *server) serverPushFlush(inner http.Handler) http.Handler {

@@ -1,10 +1,20 @@
 package cspauth
 
 import (
+	"developer.zopsmart.com/go/gofr/pkg/errors"
 	"encoding/json"
 	uuid "github.com/satori/go.uuid"
 	"net/http"
 	"strings"
+)
+
+var (
+	// ErrEmptySharedKey is raised when shared key is empty
+	ErrEmptySharedKey = errors.Error("shared key cannot be empty")
+	// ErrEmptyAppKey is raised when app key is is not more than 12 bytes
+	ErrEmptyAppKey = errors.Error("app key should be more than 12 bytes for successful key generation")
+	// ErrEmptyAppID is raised when app id is empty
+	ErrEmptyAppID = errors.Error("app id cannot be empty")
 )
 
 // Options used to initialize CSP
@@ -46,6 +56,7 @@ func (o *Options) generateAuthJSON(method string, body []byte) []byte {
 	guid := uuid.NewV4()
 	msgUniqueID := hexEncode(guid[:])
 	var bodyHash string
+
 	if 0 < len(body) {
 		bodyHash = hexEncode(sha256Hash(body))
 	}
@@ -63,5 +74,6 @@ func (o *Options) generateAuthJSON(method string, body []byte) []byte {
 		UUID:          msgUniqueID,
 	}
 	bytes, _ := json.Marshal(authJSON)
+
 	return bytes
 }

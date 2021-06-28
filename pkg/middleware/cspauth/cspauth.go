@@ -1,24 +1,10 @@
 package cspauth
 
 import (
-	"bytes"
-	"crypto/aes"
-	"crypto/cipher"
-	"crypto/sha1"
-	"crypto/sha256"
-	"encoding/base64"
-	"encoding/hex"
-	"encoding/json"
-	"io/ioutil"
-	"net/http"
-	"strconv"
-	"strings"
-	"time"
-
-	"developer.zopsmart.com/go/gofr/pkg/errors"
 	"developer.zopsmart.com/go/gofr/pkg/log"
-	uuid "github.com/satori/go.uuid"
-	"golang.org/x/crypto/pbkdf2"
+	"developer.zopsmart.com/go/gofr/pkg/middleware"
+	"encoding/json"
+	"net/http"
 )
 
 const (
@@ -34,19 +20,6 @@ const (
 	securityVersionHeader    = "sv"
 )
 
-var (
-	// ErrEmptySharedKey is raised when shared key is empty
-	ErrEmptySharedKey = errors.Error("shared key cannot be empty")
-	// ErrEmptyAppKey is raised when app key is is not more than 12 bytes
-	ErrEmptyAppKey = errors.Error("app key should be more than 12 bytes for successful key generation")
-	// ErrEmptyAppID is raised when app id is empty
-	ErrEmptyAppID = errors.Error("app id cannot be empty")
-
-	errInvalidBlockSize    = errors.Error("invalid blocksize")
-	errInvalidPKCS7Data    = errors.Error("invalid PKCS7 data (empty or not padded)")
-	errInvalidPKCS7Padding = errors.Error("invalid padding on input")
-)
-
 // CSP generates and validates csp auth headers
 type CSP struct {
 	options       *Options
@@ -55,16 +28,17 @@ type CSP struct {
 }
 
 // New creates new instance of CSP
-func New(logger log.Logger, opts *Options) *CSP {
-	if err := opts.validate(); nil != err {
+func New(logger log.Logger, opts *Options) (*CSP, error) {
+	if err := opts.validate(); err != nil {
 		logger.Warnf("Invalid Options, %v", err)
-		return nil
+		return nil, err
 	}
+
 	return &CSP{
 		options:       opts,
 		encryptionKey: createKey([]byte(opts.AppKey), []byte(opts.AppKey[:12])),
 		iv:            createKey([]byte(opts.SharedKey), []byte(opts.AppKey[:12])),
-	}
+	}, nil
 }
 
 // CSPAuth middleware
@@ -72,11 +46,11 @@ func CSPAuth(logger log.Logger, opts Options) func(inner http.Handler) http.Hand
 	return func(inner http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
 			setOptions(&opts, req)
-			csp := New(logger, &opts)
 
-			if csp == nil {
-				logger.Warnf("request doesn't contains valid headers for CSP Auth")
-				w.WriteHeader(http.StatusBadRequest)
+			csp, err := New(logger, &opts)
+			if err != nil {
+				e := middleware.FetchErrResponseWithCode(http.StatusBadRequest, "Invalid CSP Auth Options", err.Error())
+				middleware.ErrorResponse(w, req, logger, *e)
 
 				return
 			}
@@ -108,6 +82,7 @@ func (c *CSP) Set(r *http.Request) {
 	x := getRandomChars()
 	cipherTextWithRand := append([]byte(b64CtBeforeRand), x...)
 	b64ct := base64Encode(cipherTextWithRand)
+
 	r.Header.Set(appKeyHeader, c.options.AppKey)
 	r.Header.Set(clientIDHeader, c.options.AppID)
 	r.Header.Set(securityVersionHeader, securityVersion)
@@ -138,7 +113,7 @@ func (c *CSP) Verify(logger log.Logger, r *http.Request) bool {
 	}
 
 	//now decrypt auth context.
-	decryptedAuthContext, err := decryptData([]byte(authContextToDecrypt), c.encryptionKey, c.iv)
+	decryptedAuthContext, err := decryptData(authContextToDecrypt, c.encryptionKey, c.iv)
 	if err != nil {
 		logger.Errorf("error occurred while decrypting auth context, %v", err)
 		return false
@@ -146,7 +121,7 @@ func (c *CSP) Verify(logger log.Logger, r *http.Request) bool {
 	//unmarshal the decrypted data into cspAuthJson object
 	var authJSON cspAuthJSON
 
-	err = json.Unmarshal([]byte(decryptedAuthContext), &authJSON)
+	err = json.Unmarshal(decryptedAuthContext, &authJSON)
 	if err != nil {
 		logger.Errorf("error while unmarshalling csp auth json, %v", err)
 		return false
@@ -165,116 +140,4 @@ func (c *CSP) Verify(logger log.Logger, r *http.Request) bool {
 	computedSignature := base64Encode([]byte(hexEncode(sha256Hash([]byte(dataForSigValidation)))))
 	//match signature check
 	return computedSignature == authJSON.SignatureHash
-}
-
-func createKey(password, salt []byte) []byte {
-	return pbkdf2.Key(password, salt, cspEncryptionIterations, encryptionBlockSizeBytes, sha1.New)
-}
-
-func getBody(r *http.Request) []byte {
-	if r.Body == nil {
-		return []byte{}
-	}
-	bodyBytes, _ := ioutil.ReadAll(r.Body)
-	// Restore the io.ReadCloser to its original state
-	r.Body = ioutil.NopCloser(bytes.NewBuffer(bodyBytes))
-	return bodyBytes
-}
-
-//Generate sha 256 hash
-func sha256Hash(body []byte) []byte {
-	hash := sha256.New()
-	hash.Write(body)
-	return hash.Sum(nil)
-}
-
-//Generate base 64 encoded string
-func base64Encode(body []byte) string {
-	return base64.StdEncoding.EncodeToString(body)
-}
-
-//Generate hex encoded string
-func hexEncode(body []byte) string {
-	return strings.ToUpper(hex.EncodeToString(body))
-}
-
-//Decode base 64 string
-func base64Decode(body string) ([]byte, error) {
-	return base64.StdEncoding.DecodeString(body)
-}
-
-//generate timestamp in format "YYYY-MM-DD hh:mm:ss.uuuuuu" (microseconds)
-func genTimestamp() string {
-	t := time.Now().UTC()
-	ts := t.Format("2006-01-02 15:04:05.") + strconv.Itoa(t.Nanosecond()/1000)
-	return ts
-}
-
-func encryptData(plaintext []byte, key []byte, iv []byte) []byte {
-	aesCipher, _ := aes.NewCipher(key)
-	aesEncrypter := cipher.NewCBCEncrypter(aesCipher, iv)
-	plaintext, _ = pkcs7Pad(plaintext, aesCipher.BlockSize())
-
-	ciphertext := make([]byte, len(plaintext))
-	aesEncrypter.CryptBlocks(ciphertext, plaintext)
-	return ciphertext
-}
-
-func getRandomChars() []byte {
-	uu := uuid.NewV4()
-	ux := uu.String()
-	return []byte(ux[:lenRandomChars])
-}
-
-func decryptData(ciphertext []byte, key []byte, iv []byte) (plaintext []byte, err error) {
-	aesCipher, _ := aes.NewCipher(key)
-	aesDecrypter := cipher.NewCBCDecrypter(aesCipher, iv)
-	plaintext = make([]byte, len(ciphertext))
-	aesDecrypter.CryptBlocks(plaintext, ciphertext)
-	plaintext, err = pkcs7Unpad(plaintext, aesCipher.BlockSize())
-
-	return
-}
-
-// pkcs7Pad right-pads the given byte slice with 1 to n bytes, where
-// n is the block size. The size of the result is x times n, where x
-// is at least 1.
-func pkcs7Pad(b []byte, blocksize int) ([]byte, error) {
-	if blocksize <= 0 {
-		return nil, errInvalidBlockSize
-	}
-	if b == nil || len(b) == 0 {
-		return nil, errInvalidPKCS7Data
-	}
-	n := blocksize - (len(b) % blocksize)
-	pb := make([]byte, len(b)+n)
-	copy(pb, b)
-	copy(pb[len(b):], bytes.Repeat([]byte{byte(n)}, n))
-	return pb, nil
-}
-
-// pkcs7Unpad validates and unpads data from the given bytes slice.
-// The returned value will be 1 to n bytes smaller depending on the
-// amount of padding, where n is the block size.
-func pkcs7Unpad(b []byte, blocksize int) ([]byte, error) {
-	if blocksize <= 0 {
-		return nil, errInvalidBlockSize
-	}
-	if b == nil || len(b) == 0 {
-		return nil, errInvalidPKCS7Data
-	}
-	if len(b)%blocksize != 0 {
-		return nil, errInvalidPKCS7Padding
-	}
-	c := b[len(b)-1]
-	n := int(c)
-	if n == 0 || n > len(b) {
-		return nil, errInvalidPKCS7Padding
-	}
-	for i := 0; i < n; i++ {
-		if b[len(b)-n+i] != c {
-			return nil, errInvalidPKCS7Padding
-		}
-	}
-	return b[:len(b)-n], nil
 }
