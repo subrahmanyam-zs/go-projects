@@ -6,7 +6,6 @@ import (
 	"crypto/cipher"
 	"crypto/sha1"
 	"crypto/sha256"
-	"developer.zopsmart.com/go/gofr/pkg/errors"
 	"encoding/base64"
 	"encoding/hex"
 	"io/ioutil"
@@ -19,12 +18,6 @@ import (
 	"golang.org/x/crypto/pbkdf2"
 )
 
-var (
-	errInvalidBlockSize    = errors.Error("invalid blocksize")
-	errInvalidPKCS7Data    = errors.Error("invalid PKCS7 data (empty or not padded)")
-	errInvalidPKCS7Padding = errors.Error("invalid padding on input")
-)
-
 func createKey(password, salt []byte) []byte {
 	return pbkdf2.Key(password, salt, cspEncryptionIterations, encryptionBlockSizeBytes, sha1.New)
 }
@@ -33,58 +26,63 @@ func getBody(r *http.Request) []byte {
 	if r.Body == nil {
 		return []byte{}
 	}
+
 	bodyBytes, _ := ioutil.ReadAll(r.Body)
-	// Restore the io.ReadCloser to its original state
 	r.Body = ioutil.NopCloser(bytes.NewBuffer(bodyBytes))
+
 	return bodyBytes
 }
 
-//Generate sha 256 hash
+// Generate sha256 hash
 func sha256Hash(body []byte) []byte {
 	hash := sha256.New()
 	hash.Write(body)
+
 	return hash.Sum(nil)
 }
 
-//Generate base 64 encoded string
+// Generate base64 encoded string
 func base64Encode(body []byte) string {
 	return base64.StdEncoding.EncodeToString(body)
 }
 
-//Generate hex encoded string
+// Generate hex encoded string
 func hexEncode(body []byte) string {
 	return strings.ToUpper(hex.EncodeToString(body))
 }
 
-//Decode base 64 string
+// Decode base64 string
 func base64Decode(body string) ([]byte, error) {
 	return base64.StdEncoding.DecodeString(body)
 }
 
-//generate timestamp in format "YYYY-MM-DD hh:mm:ss.uuuuuu" (microseconds)
+// generate timestamp in format "YYYY-MM-DD hh:mm:ss.uuuuuu" (microseconds)
 func genTimestamp() string {
 	t := time.Now().UTC()
 	ts := t.Format("2006-01-02 15:04:05.") + strconv.Itoa(t.Nanosecond()/1000)
+
 	return ts
 }
 
-func encryptData(plaintext []byte, key []byte, iv []byte) []byte {
+func encryptData(plaintext, key, iv []byte) []byte {
 	aesCipher, _ := aes.NewCipher(key)
 	aesEncrypter := cipher.NewCBCEncrypter(aesCipher, iv)
 	plaintext, _ = pkcs7Pad(plaintext, aesCipher.BlockSize())
 
 	ciphertext := make([]byte, len(plaintext))
 	aesEncrypter.CryptBlocks(ciphertext, plaintext)
+
 	return ciphertext
 }
 
 func getRandomChars() []byte {
 	uu := uuid.NewV4()
 	ux := uu.String()
+
 	return []byte(ux[:lenRandomChars])
 }
 
-func decryptData(ciphertext []byte, key []byte, iv []byte) (plaintext []byte, err error) {
+func decryptData(ciphertext, key, iv []byte) (plaintext []byte, err error) {
 	aesCipher, _ := aes.NewCipher(key)
 	aesDecrypter := cipher.NewCBCDecrypter(aesCipher, iv)
 	plaintext = make([]byte, len(ciphertext))
@@ -101,13 +99,16 @@ func pkcs7Pad(b []byte, blocksize int) ([]byte, error) {
 	if blocksize <= 0 {
 		return nil, errInvalidBlockSize
 	}
-	if b == nil || len(b) == 0 {
+
+	if len(b) == 0 {
 		return nil, errInvalidPKCS7Data
 	}
+
 	n := blocksize - (len(b) % blocksize)
 	pb := make([]byte, len(b)+n)
 	copy(pb, b)
 	copy(pb[len(b):], bytes.Repeat([]byte{byte(n)}, n))
+
 	return pb, nil
 }
 
@@ -118,21 +119,27 @@ func pkcs7Unpad(b []byte, blocksize int) ([]byte, error) {
 	if blocksize <= 0 {
 		return nil, errInvalidBlockSize
 	}
-	if b == nil || len(b) == 0 {
+
+	if len(b) == 0 {
 		return nil, errInvalidPKCS7Data
 	}
+
 	if len(b)%blocksize != 0 {
 		return nil, errInvalidPKCS7Padding
 	}
+
 	c := b[len(b)-1]
 	n := int(c)
+
 	if n == 0 || n > len(b) {
 		return nil, errInvalidPKCS7Padding
 	}
+
 	for i := 0; i < n; i++ {
 		if b[len(b)-n+i] != c {
 			return nil, errInvalidPKCS7Padding
 		}
 	}
+
 	return b[:len(b)-n], nil
 }

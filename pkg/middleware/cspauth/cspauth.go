@@ -1,53 +1,21 @@
 package cspauth
 
 import (
-	"developer.zopsmart.com/go/gofr/pkg/log"
-	"developer.zopsmart.com/go/gofr/pkg/middleware"
 	"encoding/json"
 	"net/http"
+	"strings"
+
+	"developer.zopsmart.com/go/gofr/pkg/log"
+	"developer.zopsmart.com/go/gofr/pkg/middleware"
 )
 
-const (
-	securityType             = "1"
-	securityVersion          = "V1"
-	encryptionBlockSizeBytes = 16
-	cspEncryptionIterations  = 1000
-	lenRandomChars           = 6
-	appKeyHeader             = "ak"
-	clientIDHeader           = "cd"
-	authContextHeader        = "ac"
-	securityTypeHeader       = "st"
-	securityVersionHeader    = "sv"
-)
-
-// CSP generates and validates csp auth headers
-type CSP struct {
-	options       *Options
-	encryptionKey []byte //encryption key to be used for aes encryption/decryption
-	iv            []byte //iv to be used for aes encryption/decryption
-}
-
-// New creates new instance of CSP
-func New(logger log.Logger, opts *Options) (*CSP, error) {
-	if err := opts.validate(); err != nil {
-		logger.Warnf("Invalid Options, %v", err)
-		return nil, err
-	}
-
-	return &CSP{
-		options:       opts,
-		encryptionKey: createKey([]byte(opts.AppKey), []byte(opts.AppKey[:12])),
-		iv:            createKey([]byte(opts.SharedKey), []byte(opts.AppKey[:12])),
-	}, nil
-}
-
-// CSPAuth middleware
-func CSPAuth(logger log.Logger, opts Options) func(inner http.Handler) http.Handler {
+// CSPAuth middleware provides authentication using CSP
+func CSPAuth(logger log.Logger, opts *Options) func(inner http.Handler) http.Handler {
 	return func(inner http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
-			setOptions(&opts, req)
+			setOptions(opts, req)
 
-			csp, err := New(logger, &opts)
+			csp, err := New(logger, opts)
 			if err != nil {
 				e := middleware.FetchErrResponseWithCode(http.StatusBadRequest, "Invalid CSP Auth Options", err.Error())
 				middleware.ErrorResponse(w, req, logger, *e)
@@ -56,7 +24,10 @@ func CSPAuth(logger log.Logger, opts Options) func(inner http.Handler) http.Hand
 			}
 
 			if ok := csp.Verify(logger, req); !ok {
-				csp.Set(req)
+				e := middleware.FetchErrResponseWithCode(http.StatusForbidden, "Invalid CSP Auth Context", "")
+				middleware.ErrorResponse(w, req, logger, *e)
+
+				return
 			}
 
 			inner.ServeHTTP(w, req)
@@ -64,14 +35,17 @@ func CSPAuth(logger log.Logger, opts Options) func(inner http.Handler) http.Hand
 	}
 }
 
-type cspAuthJSON struct {
-	IPAddress     string `json:"IPAddress"`
-	MachineName   string `json:"MachineName"`
-	RequestDate   string `json:"RequestDate"`
-	HTTPMethod    string `json:"HttpMethod"`
-	UUID          string `json:"MsgUniqueId"`
-	ClientID      string `json:"ClientId"`
-	SignatureHash string `json:"SignatureHash"`
+func setOptions(opts *Options, req *http.Request) {
+	ip := req.Header.Get("X-Forwarded-For")
+	if ip == "" {
+		// ip address from the RemoteAddr
+		ip = strings.Split(req.RemoteAddr, ":")[0]
+	}
+
+	opts.MachineName = req.Header.Get("User-Agent")
+	opts.IPAddress = ip
+	opts.AppKey = req.Header.Get(appKeyHeader)
+	opts.AppID = req.Header.Get(clientIDHeader)
 }
 
 // Set the csp auth headers in http request
@@ -92,7 +66,6 @@ func (c *CSP) Set(r *http.Request) {
 
 // Verify the csp auth headers in given request
 func (c *CSP) Verify(logger log.Logger, r *http.Request) bool {
-	//base64 decoding the auth context.
 	b64DecodeRandom, err := base64Decode(r.Header.Get(authContextHeader))
 	if err != nil {
 		logger.Errorf("error while base64 decoding auth context, %v", err)
@@ -103,22 +76,22 @@ func (c *CSP) Verify(logger log.Logger, r *http.Request) bool {
 		logger.Errorf("Invalid auth context, %v", err)
 		return false
 	}
-	//remove random string from auth context
+	// remove random string from auth context
 	authContextToDecode := b64DecodeRandom[:len(b64DecodeRandom)-lenRandomChars]
-	//base64 decode auth context
+
 	authContextToDecrypt, err := base64Decode(string(authContextToDecode))
 	if err != nil {
 		logger.Errorf("error while base64 decoding auth context without random chars, %v", err)
 		return false
 	}
 
-	//now decrypt auth context.
+	// decrypt auth context using encryption key and initial vector
 	decryptedAuthContext, err := decryptData(authContextToDecrypt, c.encryptionKey, c.iv)
 	if err != nil {
 		logger.Errorf("error occurred while decrypting auth context, %v", err)
 		return false
 	}
-	//unmarshal the decrypted data into cspAuthJson object
+
 	var authJSON cspAuthJSON
 
 	err = json.Unmarshal(decryptedAuthContext, &authJSON)
@@ -129,15 +102,16 @@ func (c *CSP) Verify(logger log.Logger, r *http.Request) bool {
 
 	httpBody := getBody(r)
 
-	//generate requestData string and take base64encoded(hash(requestdata)) and compare with signaturehash in json
 	var bodyHash string
 	if len(httpBody) > 0 {
 		bodyHash = hexEncode(sha256Hash(httpBody))
 	}
-	dataForSigValidation := authJSON.MachineName + authJSON.RequestDate + authJSON.IPAddress + c.options.AppKey + c.options.SharedKey + authJSON.HTTPMethod + authJSON.UUID + authJSON.ClientID + bodyHash
 
-	//compute signature with data for signature validation
+	dataForSigValidation := authJSON.MachineName + authJSON.RequestDate + authJSON.IPAddress + c.options.AppKey +
+		c.options.SharedKey + authJSON.HTTPMethod + authJSON.UUID + authJSON.ClientID + bodyHash
+
+	// compute signature with data for signature validation
 	computedSignature := base64Encode([]byte(hexEncode(sha256Hash([]byte(dataForSigValidation)))))
-	//match signature check
+
 	return computedSignature == authJSON.SignatureHash
 }
