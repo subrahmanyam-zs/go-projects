@@ -15,23 +15,6 @@ func Test_getBody(t *testing.T) {
 	}
 }
 
-func Test_pkcs7Pad(t *testing.T) {
-	tcs := []struct {
-		blockSize int
-		err       error
-	}{
-		{0, errInvalidBlockSize},
-		{1, errInvalidPKCS7Data},
-	}
-
-	for i, tc := range tcs {
-		_, err := pkcs7Pad(nil, tc.blockSize)
-		if err != tc.err {
-			t.Errorf("TESTCASE[%v]:\nexpected %v, got %v", i, tc.err, err)
-		}
-	}
-}
-
 func Test_pkcs7Unpad(t *testing.T) {
 	tcs := []struct {
 		data      []byte

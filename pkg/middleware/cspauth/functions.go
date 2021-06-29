@@ -10,11 +10,8 @@ import (
 	"encoding/hex"
 	"io/ioutil"
 	"net/http"
-	"strconv"
 	"strings"
-	"time"
 
-	uuid "github.com/satori/go.uuid"
 	"golang.org/x/crypto/pbkdf2"
 )
 
@@ -36,7 +33,7 @@ func getBody(r *http.Request) []byte {
 // Generate sha256 hash
 func sha256Hash(body []byte) []byte {
 	hash := sha256.New()
-	hash.Write(body)
+	_, _ = hash.Write(body)
 
 	return hash.Sum(nil)
 }
@@ -56,32 +53,6 @@ func base64Decode(body string) ([]byte, error) {
 	return base64.StdEncoding.DecodeString(body)
 }
 
-// generate timestamp in format "YYYY-MM-DD hh:mm:ss.uuuuuu" (microseconds)
-func genTimestamp() string {
-	t := time.Now().UTC()
-	ts := t.Format("2006-01-02 15:04:05.") + strconv.Itoa(t.Nanosecond()/1000)
-
-	return ts
-}
-
-func encryptData(plaintext, key, iv []byte) []byte {
-	aesCipher, _ := aes.NewCipher(key)
-	aesEncrypter := cipher.NewCBCEncrypter(aesCipher, iv)
-	plaintext, _ = pkcs7Pad(plaintext, aesCipher.BlockSize())
-
-	ciphertext := make([]byte, len(plaintext))
-	aesEncrypter.CryptBlocks(ciphertext, plaintext)
-
-	return ciphertext
-}
-
-func getRandomChars() []byte {
-	uu := uuid.NewV4()
-	ux := uu.String()
-
-	return []byte(ux[:lenRandomChars])
-}
-
 func decryptData(ciphertext, key, iv []byte) (plaintext []byte, err error) {
 	aesCipher, _ := aes.NewCipher(key)
 	aesDecrypter := cipher.NewCBCDecrypter(aesCipher, iv)
@@ -90,26 +61,6 @@ func decryptData(ciphertext, key, iv []byte) (plaintext []byte, err error) {
 	plaintext, err = pkcs7Unpad(plaintext, aesCipher.BlockSize())
 
 	return
-}
-
-// pkcs7Pad right-pads the given byte slice with 1 to n bytes, where
-// n is the block size. The size of the result is x times n, where x
-// is at least 1.
-func pkcs7Pad(b []byte, blocksize int) ([]byte, error) {
-	if blocksize <= 0 {
-		return nil, errInvalidBlockSize
-	}
-
-	if len(b) == 0 {
-		return nil, errInvalidPKCS7Data
-	}
-
-	n := blocksize - (len(b) % blocksize)
-	pb := make([]byte, len(b)+n)
-	copy(pb, b)
-	copy(pb[len(b):], bytes.Repeat([]byte{byte(n)}, n))
-
-	return pb, nil
 }
 
 // pkcs7Unpad validates and unpads data from the given bytes slice.

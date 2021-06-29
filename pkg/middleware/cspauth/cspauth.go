@@ -48,22 +48,6 @@ func setOptions(opts *Options, req *http.Request) {
 	opts.AppID = req.Header.Get(clientIDHeader)
 }
 
-// Set the csp auth headers in http request
-func (c *CSP) Set(r *http.Request) {
-	cspAuthJSONBytes := c.options.generateAuthJSON(r.Method, getBody(r))
-	cipherText := encryptData(cspAuthJSONBytes, c.encryptionKey, c.iv)
-	b64CtBeforeRand := base64Encode(cipherText)
-	x := getRandomChars()
-	cipherTextWithRand := append([]byte(b64CtBeforeRand), x...)
-	b64ct := base64Encode(cipherTextWithRand)
-
-	r.Header.Set(appKeyHeader, c.options.AppKey)
-	r.Header.Set(clientIDHeader, c.options.AppID)
-	r.Header.Set(securityVersionHeader, securityVersion)
-	r.Header.Set(securityTypeHeader, securityType)
-	r.Header.Set(authContextHeader, b64ct)
-}
-
 // Verify the csp auth headers in given request
 func (c *CSP) Verify(logger log.Logger, r *http.Request) bool {
 	b64DecodeRandom, err := base64Decode(r.Header.Get(authContextHeader))
