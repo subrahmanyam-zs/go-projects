@@ -15,10 +15,12 @@ import (
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
+	"go.opencensus.io/plugin/ochttp"
+
 	"developer.zopsmart.com/go/gofr/pkg/errors"
 	"developer.zopsmart.com/go/gofr/pkg/log"
 	"developer.zopsmart.com/go/gofr/pkg/middleware"
-	"go.opencensus.io/plugin/ochttp"
+
 )
 
 type httpService struct {
@@ -35,6 +37,8 @@ type httpService struct {
 	contentType   responseType
 	sp            surgeProtector
 	numOfRetries  int
+
+	csp *csp
 
 	cache *cachedHTTPService
 }
@@ -260,6 +264,16 @@ func (h *httpService) setHeadersFromContext(ctx context.Context, req *http.Reque
 
 	if h.auth != "" {
 		req.Header.Add("Authorization", h.auth)
+	}
+	// add headers for csp auth
+	if h.csp != nil  {
+		authContext := h.csp.getAuthContext(req.Method, req.Body)
+
+		req.Header.Add(appKeyHeader, h.csp.options.AppKey)
+		req.Header.Add(clientIDHeader, h.csp.options.AppKey)
+		req.Header.Add(securityVersionHeader, securityVersion)
+		req.Header.Add(securityTypeHeader, securityType)
+		req.Header.Add(authContextHeader, authContext)
 	}
 	// add custom headers to the request
 	for i := range h.headerKeys {
