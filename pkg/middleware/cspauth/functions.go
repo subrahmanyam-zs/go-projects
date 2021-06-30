@@ -21,7 +21,7 @@ func createKey(password, salt []byte) []byte {
 
 func getBody(r *http.Request) []byte {
 	if r.Body == nil {
-		return []byte{}
+		return nil
 	}
 
 	bodyBytes, _ := ioutil.ReadAll(r.Body)
@@ -67,30 +67,33 @@ func decryptData(ciphertext, key, iv []byte) (plaintext []byte, err error) {
 // The returned value will be 1 to n bytes smaller depending on the
 // amount of padding, where n is the block size.
 func pkcs7Unpad(b []byte, blocksize int) ([]byte, error) {
+
 	if blocksize <= 0 {
 		return nil, errInvalidBlockSize
 	}
 
-	if len(b) == 0 {
+	bLen := len(b)
+
+	if bLen == 0 {
 		return nil, errInvalidPKCS7Data
 	}
 
-	if len(b)%blocksize != 0 {
+	if bLen%blocksize != 0 {
 		return nil, errInvalidPKCS7Padding
 	}
 
-	c := b[len(b)-1]
+	c := b[bLen-1]
 	n := int(c)
 
-	if n == 0 || n > len(b) {
+	if n == 0 || n > bLen {
 		return nil, errInvalidPKCS7Padding
 	}
 
 	for i := 0; i < n; i++ {
-		if b[len(b)-n+i] != c {
+		if b[bLen-n+i] != c {
 			return nil, errInvalidPKCS7Padding
 		}
 	}
 
-	return b[:len(b)-n], nil
+	return b[:bLen-n], nil
 }

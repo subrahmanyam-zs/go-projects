@@ -9,7 +9,7 @@ type CSP struct {
 	iv            []byte // initial vector(iv) to be used for aes encryption/decryption
 }
 
-// New creates new instance of CSP
+// New validates the options and creates new instance of CSP
 func New(logger log.Logger, opts *Options) (*CSP, error) {
 	if err := opts.validate(); err != nil {
 		logger.Warnf("Invalid Options, %v", err)
@@ -23,12 +23,27 @@ func New(logger log.Logger, opts *Options) (*CSP, error) {
 	}, nil
 }
 
-type cspAuthJSON struct {
-	IPAddress     string `json:"IPAddress"`
-	MachineName   string `json:"MachineName"`
-	RequestDate   string `json:"RequestDate"`
-	HTTPMethod    string `json:"HttpMethod"`
-	UUID          string `json:"MsgUniqueId"`
-	ClientID      string `json:"ClientId"`
-	SignatureHash string `json:"SignatureHash"`
+// Options used to initialize CSP
+type Options struct {
+	MachineName string
+	IPAddress   string
+	AppKey      string
+	SharedKey   string
+	AppID       string
+}
+
+func (o *Options) validate() error {
+	if o.SharedKey == "" {
+		return ErrEmptySharedKey
+	}
+
+	if len(o.AppKey) < minAppKeyLen {
+		return ErrEmptyAppKey
+	}
+
+	if o.AppID == "" {
+		return ErrEmptyAppID
+	}
+
+	return nil
 }
