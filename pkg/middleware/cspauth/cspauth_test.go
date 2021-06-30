@@ -60,12 +60,12 @@ func TestCSPAuth(t *testing.T) {
 		req.Header.Set("ak", tc.appKey)
 		req.Header.Set("cd", tc.clientID)
 		req.Header.Set("ac", tc.authContext)
+
 		w := httptest.NewRecorder()
 
-		opts := Options{SharedKey: tc.sharedKey}
 		logger := log.NewMockLogger(io.Discard)
 
-		handler := CSPAuth(logger, &opts)(&MockHandler{})
+		handler := CSPAuth(logger, tc.sharedKey)(&MockHandler{})
 		handler.ServeHTTP(w, req)
 
 		if w.Code != tc.expCode {

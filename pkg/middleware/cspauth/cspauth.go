@@ -10,10 +10,10 @@ import (
 )
 
 // CSPAuth middleware provides authentication using CSP
-func CSPAuth(logger log.Logger, opts *Options) func(inner http.Handler) http.Handler {
+func CSPAuth(logger log.Logger, sharedKey string) func(inner http.Handler) http.Handler {
 	return func(inner http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
-			opts = getOptions(opts.SharedKey, req)
+			opts := getOptions(sharedKey, req)
 
 			csp, err := New(logger, opts)
 			if err != nil {
@@ -79,17 +79,12 @@ func (c *CSP) Validate(logger log.Logger, r *http.Request) error {
 		return middleware.ErrInvalidAuthContext
 	}
 
-	httpBody := getBody(r)
+	bodyHash := getBodyHash(r)
 
-	var bodyHash string
-	if httpBody != nil {
-		bodyHash = hexEncode(sha256Hash(httpBody))
-	}
-
+	// generate data and its signature for validation
 	dataForSigValidation := authJSON.MachineName + authJSON.RequestDate + authJSON.IPAddress + c.options.AppKey +
 		c.options.SharedKey + authJSON.HTTPMethod + authJSON.UUID + authJSON.ClientID + bodyHash
 
-	// compute signature with data for signature validation
 	computedSignature := base64Encode([]byte(hexEncode(sha256Hash([]byte(dataForSigValidation)))))
 
 	if computedSignature != authJSON.SignatureHash {

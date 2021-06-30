@@ -9,6 +9,11 @@ import (
 	"sync"
 	"time"
 
+	"github.com/gorilla/websocket"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
+	"go.opencensus.io/trace"
+	"golang.org/x/net/context"
+
 	"developer.zopsmart.com/go/gofr/pkg/errors"
 	"developer.zopsmart.com/go/gofr/pkg/gofr/request"
 	"developer.zopsmart.com/go/gofr/pkg/gofr/responder"
@@ -16,10 +21,6 @@ import (
 	"developer.zopsmart.com/go/gofr/pkg/middleware"
 	"developer.zopsmart.com/go/gofr/pkg/middleware/cspauth"
 	"developer.zopsmart.com/go/gofr/pkg/middleware/oauth"
-	"github.com/gorilla/websocket"
-	"github.com/prometheus/client_golang/prometheus/promhttp"
-	"go.opencensus.io/trace"
-	"golang.org/x/net/context"
 )
 
 type server struct {
@@ -102,10 +103,10 @@ func NewServer(c Config, gofr *Gofr) *server {
 
 func (s *server) setupAuth(c Config, gofr *Gofr) {
 	// CSP Auth
-	opts := cspauth.Options{SharedKey: c.Get("CSP_SHARED_KEY")}
-	if opts.SharedKey != "" {
+	sharedKey := c.Get("CSP_SHARED_KEY")
+	if sharedKey != "" {
 		gofr.Logger.Log("CSP Auth middleware enabled")
-		s.Router.Use(cspauth.CSPAuth(gofr.Logger, &opts))
+		s.Router.Use(cspauth.CSPAuth(gofr.Logger, sharedKey))
 	}
 
 	// OAuth

@@ -19,15 +19,15 @@ func createKey(password, salt []byte) []byte {
 	return pbkdf2.Key(password, salt, cspEncryptionIterations, encryptionBlockSizeBytes, sha1.New)
 }
 
-func getBody(r *http.Request) []byte {
+func getBodyHash(r *http.Request) string {
 	if r.Body == nil {
-		return nil
+		return ""
 	}
 
 	bodyBytes, _ := ioutil.ReadAll(r.Body)
 	r.Body = ioutil.NopCloser(bytes.NewBuffer(bodyBytes))
 
-	return bodyBytes
+	return hexEncode(sha256Hash(bodyBytes))
 }
 
 // Generate sha256 hash
@@ -67,7 +67,6 @@ func decryptData(ciphertext, key, iv []byte) (plaintext []byte, err error) {
 // The returned value will be 1 to n bytes smaller depending on the
 // amount of padding, where n is the block size.
 func pkcs7Unpad(b []byte, blocksize int) ([]byte, error) {
-
 	if blocksize <= 0 {
 		return nil, errInvalidBlockSize
 	}

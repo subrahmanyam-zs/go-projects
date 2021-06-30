@@ -9,9 +9,9 @@ func Test_getBody(t *testing.T) {
 	req, _ := http.NewRequest("GET", "/dummy", nil)
 	req.Body = nil
 
-	b := getBody(req)
-	if len(b) != 0 {
-		t.Errorf("expected empty slice, got %v", b)
+	b := getBodyHash(req)
+	if b != "" {
+		t.Errorf("expected empty string, got %v", b)
 	}
 }
 
