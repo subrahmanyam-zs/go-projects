@@ -16,12 +16,7 @@ func Test_getAuthContext(t *testing.T) {
 		sharedKey string
 		body      string
 	}{
-		{
-			"ankling123jerkins4junked",
-			"cd1",
-			"CSP_SHARED_KEY",
-			"Dummy body",
-		},
+		{"ankling123jerkins4junked", "cd1", "CSP_SHARED_KEY", "Dummy body"},
 	}
 
 	for i, tc := range tcs {

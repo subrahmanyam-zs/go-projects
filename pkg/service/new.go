@@ -106,7 +106,7 @@ func NewHTTPServiceWithOptions(resourceAddr string, logger log.Logger, options *
 		go httpSvc.setClientOauthHeader(options.OAuthOption)
 	}
 
-	if options.Auth != nil && options.OAuthOption != nil {
+	if options.Auth != nil && options.CSPOption != nil {
 		var err error
 
 		httpSvc.csp, err = New(logger, options.CSPOption)

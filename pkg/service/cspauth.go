@@ -25,6 +25,9 @@ import (
 const (
 	encryptionBlockSizeBytes = 16
 	cspEncryptionIterations  = 1000
+	lenRandomChars           = 6
+	minLenAppKey             = 12
+	nanoToMicroSecond        = 1000
 	securityType             = "1"
 	securityVersion          = "V1"
 	securityTypeHeader       = "jst"
@@ -32,9 +35,6 @@ const (
 	appKeyHeader             = "ak"
 	clientIDHeader           = "cd"
 	authContextHeader        = "ac"
-	lenRandomChars           = 6
-	minLenAppKey             = 12
-	nanoToMicroSecond        = 1000
 )
 
 var (
