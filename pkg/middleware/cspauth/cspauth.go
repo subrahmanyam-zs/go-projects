@@ -13,6 +13,11 @@ import (
 func CSPAuth(logger log.Logger, sharedKey string) func(inner http.Handler) http.Handler {
 	return func(inner http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+			if middleware.ExemptPath(req) {
+				inner.ServeHTTP(w, req)
+
+				return
+			}
 			opts := getOptions(sharedKey, req)
 
 			csp, err := New(logger, opts)
@@ -103,9 +108,7 @@ func (c *CSP) getAuthContext(logger log.Logger, authContextHeader string) ([]byt
 	}
 
 	if len(b64DecodeRandom) <= lenRandomChars {
-		logger.Errorf("Invalid auth context, %v", err)
-
-		return nil, err
+		return nil, middleware.ErrInvalidAuthContext
 	}
 	// remove random string from auth context
 	authContextToDecode := b64DecodeRandom[:len(b64DecodeRandom)-lenRandomChars]

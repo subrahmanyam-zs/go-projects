@@ -73,3 +73,18 @@ func TestCSPAuth(t *testing.T) {
 		}
 	}
 }
+
+func Test_ExemptPath(t *testing.T) {
+	req := httptest.NewRequest(http.MethodPost, "/.well-known/health-check", nil)
+
+	w := httptest.NewRecorder()
+
+	logger := log.NewMockLogger(io.Discard)
+
+	handler := CSPAuth(logger, "")(&MockHandler{})
+	handler.ServeHTTP(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Errorf("Expected code %v,\nGot %v", http.StatusOK, w.Code)
+	}
+}
