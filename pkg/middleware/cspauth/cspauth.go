@@ -28,8 +28,6 @@ func CSPAuth(logger log.Logger, sharedKey string) func(inner http.Handler) http.
 				return
 			}
 
-			csp.Set(appKey, csp.sharedKey)
-
 			err = csp.Validate(logger, req, appKey)
 			if err != nil {
 				description, statusCode := middleware.GetDescription(err)
@@ -120,7 +118,7 @@ func (c *CSP) getAuthContext(logger log.Logger, authContextHeader, appKey string
 		return nil, err
 	}
 
-	keys := c.Get(appKey)
+	keys := c.get(appKey, c.sharedKey)
 
 	// decrypt auth context using encryption key and initial vector
 	decryptedAuthContext, err := decryptData(authContextToDecrypt, keys.encryptionKey, keys.iv)
