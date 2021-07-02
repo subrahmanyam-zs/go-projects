@@ -51,10 +51,7 @@ func getOptions(sharedKey string, req *http.Request) *Options {
 	}
 
 	return &Options{
-		MachineName: req.Header.Get("User-Agent"),
-		IPAddress:   ip,
 		AppKey:      req.Header.Get(appKeyHeader),
-		AppID:       req.Header.Get(clientIDHeader),
 		SharedKey:   sharedKey,
 	}
 }

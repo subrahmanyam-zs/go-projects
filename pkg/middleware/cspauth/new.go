@@ -60,11 +60,8 @@ func New(logger log.Logger, opts *Options, cache *Cache) (*CSP, error) {
 
 // Options used to initialize CSP
 type Options struct {
-	MachineName string
-	IPAddress   string
 	AppKey      string
 	SharedKey   string
-	AppID       string
 }
 
 func (o *Options) validate() error {
@@ -74,10 +71,6 @@ func (o *Options) validate() error {
 
 	if len(o.AppKey) < minAppKeyLen {
 		return ErrEmptyAppKey
-	}
-
-	if o.AppID == "" {
-		return ErrEmptyAppID
 	}
 
 	return nil
