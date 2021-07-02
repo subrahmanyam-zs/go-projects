@@ -46,7 +46,7 @@ func CSPAuth(logger log.Logger, sharedKey string) func(inner http.Handler) http.
 
 func (c *CSP) getAppKey(req *http.Request) (string, error) {
 	appKey := req.Header.Get(appKeyHeader)
-	if len(appKey) < minAppKeyLen {
+	if len(appKey) < minLenAppKey {
 		return "", ErrEmptyAppKey
 	}
 
