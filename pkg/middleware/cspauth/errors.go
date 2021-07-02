@@ -6,7 +6,7 @@ var (
 	// ErrEmptyAppKey is raised when app key is is not more than 12 bytes
 	ErrEmptyAppKey = errors.Error("app key should be more than 12 bytes")
 
-	errInvalidBlockSize    = errors.Error("invalid block size")
-	errInvalidPKCS7Data    = errors.Error("invalid PKCS7 data (empty or not padded)")
-	errInvalidPKCS7Padding = errors.Error("invalid padding on input")
+	ErrInvalidBlockSize    = errors.Error("invalid block size")
+	ErrInvalidPKCS7Data    = errors.Error("invalid PKCS7 data (empty or not padded)")
+	ErrInvalidPKCS7Padding = errors.Error("invalid padding on input")
 )

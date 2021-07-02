@@ -30,8 +30,8 @@ func (c *cache) Set(appKey, sharedKey string) {
 	c.mu.Unlock()
 
 	if !ok {
-		encryptionKey := createKey([]byte(appKey), []byte(appKey[:12]), 32)
-		iv := createKey([]byte(sharedKey), []byte(appKey[:12]), 16)
+		encryptionKey := CreateKey([]byte(appKey), []byte(appKey[:12]), 32)
+		iv := CreateKey([]byte(sharedKey), []byte(appKey[:12]), 16)
 
 		c.mu.Lock()
 

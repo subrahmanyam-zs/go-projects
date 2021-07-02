@@ -79,13 +79,13 @@ func (c *CSP) Validate(logger log.Logger, r *http.Request, appKey string) error 
 		return middleware.ErrInvalidAuthContext
 	}
 
-	bodyHash := getBodyHash(r)
+	bodyHash := GetBodyHash(r)
 
 	// generate data and its signature for validation
 	dataForSigValidation := authJSON.MachineName + authJSON.RequestDate + authJSON.IPAddress + appKey +
 		c.sharedKey + authJSON.HTTPMethod + authJSON.UUID + authJSON.ClientID + bodyHash
 
-	computedSignature := base64Encode([]byte(hexEncode(sha256Hash([]byte(dataForSigValidation)))))
+	computedSignature := Base64Encode([]byte(HexEncode(Sha256Hash([]byte(dataForSigValidation)))))
 
 	if computedSignature != authJSON.SignatureHash {
 		return middleware.ErrInvalidAuthContext

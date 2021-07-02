@@ -9,7 +9,7 @@ func Test_getBody(t *testing.T) {
 	req, _ := http.NewRequest("GET", "/dummy", nil)
 	req.Body = nil
 
-	b := getBodyHash(req)
+	b := GetBodyHash(req)
 	if b != "" {
 		t.Errorf("expected empty string, got %v", b)
 	}
@@ -21,10 +21,10 @@ func Test_pkcs7Unpad(t *testing.T) {
 		blockSize int
 		err       error
 	}{
-		{nil, 0, errInvalidBlockSize},
-		{nil, 1, errInvalidPKCS7Data},
-		{[]byte{1, 2, 3}, 2, errInvalidPKCS7Padding},
-		{[]byte{1, 2, 3, 5}, 2, errInvalidPKCS7Padding},
+		{nil, 0, ErrInvalidBlockSize},
+		{nil, 1, ErrInvalidPKCS7Data},
+		{[]byte{1, 2, 3}, 2, ErrInvalidPKCS7Padding},
+		{[]byte{1, 2, 3, 5}, 2, ErrInvalidPKCS7Padding},
 	}
 
 	for i, tc := range tcs {

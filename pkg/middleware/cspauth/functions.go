@@ -15,11 +15,13 @@ import (
 	"golang.org/x/crypto/pbkdf2"
 )
 
-func createKey(password, salt []byte, keyLen int) []byte {
+// CreateKey generates key of length keyLen from the password, salt and iteration count
+func CreateKey(password, salt []byte, keyLen int) []byte {
 	return pbkdf2.Key(password, salt, cspEncryptionIterations, keyLen, sha1.New)
 }
 
-func getBodyHash(r *http.Request) string {
+// GetBodyHash returns the encoded hash of the body
+func GetBodyHash(r *http.Request) string {
 	if r.Body == nil {
 		return ""
 	}
@@ -27,27 +29,27 @@ func getBodyHash(r *http.Request) string {
 	bodyBytes, _ := ioutil.ReadAll(r.Body)
 	r.Body = ioutil.NopCloser(bytes.NewBuffer(bodyBytes))
 
-	return hexEncode(sha256Hash(bodyBytes))
+	return HexEncode(Sha256Hash(bodyBytes))
 }
 
-// Generate sha256 hash
-func sha256Hash(body []byte) []byte {
+// Sha256Hash generate sha256 hash
+func Sha256Hash(body []byte) []byte {
 	hash := sha256.Sum256(body)
 
 	return hash[:]
 }
 
-// Generate base64 encoded string
-func base64Encode(body []byte) string {
+// Base64Encode generate base64 encoded string
+func Base64Encode(body []byte) string {
 	return base64.StdEncoding.EncodeToString(body)
 }
 
-// Generate hex encoded string
-func hexEncode(body []byte) string {
+// HexEncode generate hex encoded string
+func HexEncode(body []byte) string {
 	return strings.ToUpper(hex.EncodeToString(body))
 }
 
-// Decode base64 string
+// Decode base 64 string
 func base64Decode(body string) ([]byte, error) {
 	return base64.StdEncoding.DecodeString(body)
 }
@@ -67,29 +69,29 @@ func decryptData(ciphertext, key, iv []byte) (plaintext []byte, err error) {
 // amount of padding, where n is the block size.
 func pkcs7Unpad(b []byte, blocksize int) ([]byte, error) {
 	if blocksize <= 0 {
-		return nil, errInvalidBlockSize
+		return nil, ErrInvalidBlockSize
 	}
 
 	bLen := len(b)
 
 	if bLen == 0 {
-		return nil, errInvalidPKCS7Data
+		return nil, ErrInvalidPKCS7Data
 	}
 
 	if bLen%blocksize != 0 {
-		return nil, errInvalidPKCS7Padding
+		return nil, ErrInvalidPKCS7Padding
 	}
 
 	c := b[bLen-1]
 	n := int(c)
 
 	if n == 0 || n > bLen {
-		return nil, errInvalidPKCS7Padding
+		return nil, ErrInvalidPKCS7Padding
 	}
 
 	for i := 0; i < n; i++ {
 		if b[bLen-n+i] != c {
-			return nil, errInvalidPKCS7Padding
+			return nil, ErrInvalidPKCS7Padding
 		}
 	}
 
