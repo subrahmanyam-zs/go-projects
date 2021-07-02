@@ -11,14 +11,16 @@ import (
 
 	"github.com/gorilla/websocket"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
+	"go.opencensus.io/trace"
+	"golang.org/x/net/context"
+
 	"developer.zopsmart.com/go/gofr/pkg/errors"
 	"developer.zopsmart.com/go/gofr/pkg/gofr/request"
 	"developer.zopsmart.com/go/gofr/pkg/gofr/responder"
 	"developer.zopsmart.com/go/gofr/pkg/log"
 	"developer.zopsmart.com/go/gofr/pkg/middleware"
+	"developer.zopsmart.com/go/gofr/pkg/middleware/cspauth"
 	"developer.zopsmart.com/go/gofr/pkg/middleware/oauth"
-	"go.opencensus.io/trace"
-	"golang.org/x/net/context"
 )
 
 type server struct {
@@ -96,11 +98,18 @@ func NewServer(c Config, gofr *Gofr) *server {
 	s.Router.Use(middleware.PrometheusMiddleware)
 
 	s.setupAuth(c, gofr)
-
 	return s
 }
 
 func (s *server) setupAuth(c Config, gofr *Gofr) {
+	// CSP Auth
+	sharedKey := c.Get("CSP_SHARED_KEY")
+	if sharedKey != "" {
+		gofr.Logger.Log("CSP Auth middleware enabled")
+		s.Router.Use(cspauth.CSPAuth(gofr.Logger, sharedKey))
+	}
+
+	// OAuth
 	if oAuthOptions, oAuthOk := getOAuthOptions(c); oAuthOk {
 		if c.Get("LDAP_ADDR") != "" {
 			gofr.Logger.Warn("OAuth middleware not enabled due to LDAP_ADDR env variable set")
