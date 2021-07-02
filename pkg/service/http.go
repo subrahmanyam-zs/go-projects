@@ -267,13 +267,13 @@ func (h *httpService) setHeadersFromContext(ctx context.Context, req *http.Reque
 	}
 	// add headers for csp auth
 	if h.csp != nil  {
-		authContext := h.csp.getAuthContext(req.Method, req.Body)
+		authContext := h.csp.getAuthContext(req)
 
-		req.Header.Add(appKeyHeader, h.csp.options.AppKey)
-		req.Header.Add(clientIDHeader, h.csp.options.AppKey)
-		req.Header.Add(securityVersionHeader, securityVersion)
-		req.Header.Add(securityTypeHeader, securityType)
-		req.Header.Add(authContextHeader, authContext)
+		req.Header.Set("ak", h.csp.options.AppKey)
+		req.Header.Set("cd", h.csp.options.ClientID)
+		req.Header.Set("sv", securityVersion)
+		req.Header.Set("jst", securityType)
+		req.Header.Set("ac", authContext)
 	}
 	// add custom headers to the request
 	for i := range h.headerKeys {

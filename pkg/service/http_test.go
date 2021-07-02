@@ -15,9 +15,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/stretchr/testify/assert"
 	"developer.zopsmart.com/go/gofr/pkg/log"
 	"developer.zopsmart.com/go/gofr/pkg/middleware"
+	"github.com/stretchr/testify/assert"
 	"go.opencensus.io/plugin/ochttp"
 )
 
@@ -336,6 +336,22 @@ func TestHttpService_SetHeaders(t *testing.T) {
 	if req.Header.Get("X-Zopsmart-Channel") != "WEB" || req.Header.Get("X-Authenticated-UserId") != "2" ||
 		req.Header.Get("X-Zopsmart-Tenant") != "riu" {
 		t.Error("setting of headers failed")
+	}
+}
+
+func TestHttpService_CSPAuthHeaders(t *testing.T) {
+	opts := &Options{Auth: &Auth{CSPOption: &CSPOption{
+		AppKey:    "mock-app-key",
+		SharedKey: "mock-shared-key",
+	}}}
+
+	httpSvc := NewHTTPServiceWithOptions("http://dummy", log.NewLogger(), opts)
+
+	req, _ := httpSvc.createReq(context.Background(), "GET", "", nil, nil, nil)
+
+	if req.Header.Get("ac") == "" || req.Header.Get("ak") != "mock-app-key" || req.Header.Get("cd") != "" ||
+		req.Header.Get("sv") != "V1" || req.Header.Get("jst") != "1" {
+		t.Errorf("setting of csp auth headers failed")
 	}
 }
 
