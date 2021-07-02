@@ -65,7 +65,12 @@ type cspAuthJSON struct {
 
 // Validate the csp auth headers in given request
 func (c *CSP) Validate(logger log.Logger, r *http.Request, appKey string) error {
-	authContext, err := c.getAuthContext(logger, r.Header.Get(authContextHeader), appKey)
+	ac := r.Header.Get(authContextHeader)
+	if ac == "" {
+		return middleware.ErrMissingHeader
+	}
+
+	authContext, err := c.getAuthContext(logger, ac, appKey)
 	if err != nil {
 		return middleware.ErrInvalidAuthContext
 	}

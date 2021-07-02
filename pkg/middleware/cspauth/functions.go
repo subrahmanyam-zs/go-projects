@@ -29,6 +29,11 @@ func GetBodyHash(r *http.Request) string {
 	bodyBytes, _ := ioutil.ReadAll(r.Body)
 	r.Body = ioutil.NopCloser(bytes.NewBuffer(bodyBytes))
 
+	lenBody := len(bodyBytes)
+	if lenBody == 0 {
+		return ""
+	}
+
 	return HexEncode(Sha256Hash(bodyBytes))
 }
 
