@@ -1,11 +1,13 @@
 package service
 
 import (
+	"bytes"
 	"encoding/json"
 	"io"
 	"net/http"
 	"net/http/httptest"
 	"reflect"
+	"strings"
 	"testing"
 	"time"
 
@@ -254,6 +256,27 @@ func TestNewHTTPServiceWithOptions_Oauth(t *testing.T) {
 
 	if expectedSvc.auth != svc.auth {
 		t.Errorf("Expected: %v \nGot: %v", expectedSvc, svc)
+	}
+}
+
+func TestHttpServiceWithOptions_CSP(t *testing.T) {
+	tcs := []struct {
+		opts Options
+		str  string
+	}{
+		{Options{Auth: &Auth{CSPOption: &CSPOption{AppKey: "mock-app-key", SharedKey: "mock-shared-key"}}}, ""},
+		{Options{Auth: &Auth{CSPOption: &CSPOption{AppKey: "mock-app-key", SharedKey: ""}}}, "CSP Auth is not enabled"},
+	}
+
+	for i, tc := range tcs {
+		b := new(bytes.Buffer)
+		logger := log.NewMockLogger(b)
+
+		_ = NewHTTPServiceWithOptions("http://dummy", logger, &tc.opts)
+
+		if !strings.Contains(b.String(), tc.str) {
+			t.Errorf("TESTCASE[%v] Expected logs contains %v,contains %v", i, tc.str, b.String())
+		}
 	}
 }
 
