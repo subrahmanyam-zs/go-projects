@@ -1,11 +1,9 @@
 package cspauth
 
 const (
-	encryptionBlockSizeBytes = 16
-	cspEncryptionIterations  = 1000
-	lenRandomChars           = 6
-	appKeyHeader             = "ak"
-	clientIDHeader           = "cd"
-	authContextHeader        = "ac"
-	minAppKeyLen             = 12
+	cspEncryptionIterations = 1000
+	lenRandomChars          = 6
+	minAppKeyLen            = 12
+	appKeyHeader            = "ak"
+	authContextHeader       = "ac"
 )

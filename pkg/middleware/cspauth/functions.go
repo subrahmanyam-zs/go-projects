@@ -15,8 +15,8 @@ import (
 	"golang.org/x/crypto/pbkdf2"
 )
 
-func createKey(password, salt []byte) []byte {
-	return pbkdf2.Key(password, salt, cspEncryptionIterations, encryptionBlockSizeBytes, sha1.New)
+func createKey(password, salt []byte, keyLen int) []byte {
+	return pbkdf2.Key(password, salt, cspEncryptionIterations, keyLen, sha1.New)
 }
 
 func getBodyHash(r *http.Request) string {
@@ -32,10 +32,9 @@ func getBodyHash(r *http.Request) string {
 
 // Generate sha256 hash
 func sha256Hash(body []byte) []byte {
-	hash := sha256.New()
-	_, _ = hash.Write(body)
+	hash := sha256.Sum256(body)
 
-	return hash.Sum(nil)
+	return hash[:]
 }
 
 // Generate base64 encoded string
