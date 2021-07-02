@@ -38,7 +38,13 @@ func New(logger log.Logger, opts *Options, cache *Cache) (*CSP, error) {
 		options: opts,
 	}
 
-	if val, ok := cache.keys[opts.AppKey]; ok {
+	cache.mu.Lock()
+
+	val, ok := cache.keys[opts.AppKey]
+
+	cache.mu.Unlock()
+
+	if ok {
 		csp.encryptionKey = val.encryptionKey
 		csp.iv = val.iv
 	} else {
