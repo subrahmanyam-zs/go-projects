@@ -25,44 +25,40 @@ func TestCSPAuth(t *testing.T) {
 
 	tcs := []struct {
 		appKey      string
-		clientID    string
 		authContext string
 		sharedKey   string
 		expCode     int
 		body        string
 	}{
-		{"ak", "cd1", authCtx, "CSP_SHARED_KEY", http.StatusBadRequest, "Dummy body"},
-		{"ak11127983471298348912734", "cd1", "YzI5dFpTQjUwMzdkOQ==", "", http.StatusBadRequest, "Dummy body"},
-		{"ak11127983471298348912734", "", "YzI5dFpTQjUwMzdkOQ==", "CSP_SHARED_KEY", http.StatusBadRequest, "Dummy body"},
-		{"ak11127983471298348912734", "cd1", "YzI5dFpTQjUwMzdkOQ==", "CSP_SHARED_KEY", http.StatusForbidden, "Dummy body"},
-		{"ankling123jerkins4junked", "cd1", authCtx, "CSP_SHARED_KEY", http.StatusForbidden, "Dummy body"},
-		{"ak11127983471298348912734", "cd1",
+		{"ak", authCtx, "CSP_SHARED_KEY", http.StatusBadRequest, "Dummy body"},
+		{"ak11127983471298348912734", "YzI5dFpTQjUwMzdkOQ==", "", http.StatusForbidden, "Dummy body"},
+		{"ak11127983471298348912734", "YzI5dFpTQjUwMzdkOQ==", "CSP_SHARED_KEY", http.StatusForbidden, "Dummy body"},
+		{"ankling123jerkins4junked", authCtx, "CSP_SHARED_KEY", http.StatusForbidden, "Dummy body"},
+		{"ak11127983471298348912734",
 			"d1dPQTFUbGZJVzhtcXlRbzNZQ1lSUW5aWGVJK1g3QnF5SEpiUWxBOUo1TkdpaGFCa1hHQy9SVFQ0Y1krNjlSMExPbmpLZHhKaXB4TFFLbXE3dVBFT" +
 				"GcyOHprRGp4ckxqRHRHdmExbUxJUTJBc29CN0NOSm9BWDJHaE12TFpBdDRNOWcwZlpuR0RVUFlhNGMrZlR0eDV5QU9FQWhvNzllbHZudUU1Q0p4WHNLN2g5OFF" +
 				"hNkIzN2o3cWI3Q0dBRlNYeVNpME95elowU3V5MFpnc1d6UjNjMGtWQVYyNU9hc3orVzdxOHhIWkR2dz1hNTQwZTY=",
 			"CSP_SHARED_KEY", http.StatusForbidden, "Dummy body"},
-		{"ak11127983471298348912734", "cd1", "", "CSP_SHARED_KEY", http.StatusForbidden, "Dummy body"},
-		{"ak11127983471298348912734", "cd1", "c29tZSB", "CSP_SHARED_KEY", http.StatusForbidden, "Dummy body"},
-		{"ak11127983471298348912734", "cd1", authCtx, "CSP_SHARED_KEY", http.StatusForbidden, "Dummy body1"},
-		{"ankling123jerkins4junked", "cd1",
+		{"ak11127983471298348912734", "", "CSP_SHARED_KEY", http.StatusForbidden, "Dummy body"},
+		{"ak11127983471298348912734", "c29tZSB", "CSP_SHARED_KEY", http.StatusForbidden, "Dummy body"},
+		{"ak11127983471298348912734", authCtx, "CSP_SHARED_KEY", http.StatusForbidden, "Dummy body1"},
+		{"ankling123jerkins4junked",
 			"Y1YyM0ptSDJqTmRkNlRCNFArbkp5ck9LaWlXc2NCME9WWmNNUXZ6ZFVRR1VoYnhFRmdvNWpsd3daSjFEWDdrMnJuM1d6Yk9Ic045MTV" +
 				"YVWFUdEQ1V1d5RHZyZ2phOWU5aUVPcXZsM1JUT1lQanFqVFFVZ0tKT1ZqK0VZRDhMYnpTenZ5dFNzbmVKS1hZdW5JdVBBYU8ySDNqY2toaHJFcUxG" +
 				"MEJhajJZN0Y2b2VLRUc0bUoyMGdrazBybDY5NVE1RlZDTW1QdzNkdnZ1TkRTSjlMZmNmSm5DZzFWNnRybm52dG1MQlloSi9LSEZydW8rRm9SOEVNM0Y3Q" +
 				"1pDZUFMQVVoL1FYeWR1c1FoV0wxcm9xMVd0SDdjV0FOZU0xSmtoNnVXM3dYRTI4NjlRb1o3cmFtck5YaW9KcUpSczM5cnFXVXlrRHp2T2pGTWV2NHFiL2U2Vz" +
 				"IydHNwV04xa3VkY0t2OXNUcFlsUUJZPWJhMGZmOQ==",
 			"CSP_SHARED_KEY", http.StatusOK, "Dummy body"},
-		{"ak11127983471298348912734", "cd1", authCtx, "CSP_SHARED_KEY", http.StatusOK, "Dummy body"},
+		{"ak11127983471298348912734", authCtx, "CSP_SHARED_KEY", http.StatusOK, "Dummy body"},
 	}
 
 	for i, tc := range tcs {
 		body := bytes.NewReader([]byte(tc.body))
 		req := httptest.NewRequest(http.MethodPost, "/dummy", body)
 		req.Header.Set("ak", tc.appKey)
-		req.Header.Set("cd", tc.clientID)
 		req.Header.Set("ac", tc.authContext)
 
 		w := httptest.NewRecorder()
-
 		logger := log.NewMockLogger(io.Discard)
 
 		handler := CSPAuth(logger, tc.sharedKey)(&MockHandler{})
@@ -78,7 +74,6 @@ func Test_ExemptPath(t *testing.T) {
 	req := httptest.NewRequest(http.MethodPost, "/.well-known/health-check", nil)
 
 	w := httptest.NewRecorder()
-
 	logger := log.NewMockLogger(io.Discard)
 
 	handler := CSPAuth(logger, "")(&MockHandler{})
