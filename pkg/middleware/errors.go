@@ -44,7 +44,7 @@ func GetDescription(err error) (description string, statusCode int) {
 		statusCode = http.StatusUnauthorized
 	case ErrInvalidAuthContext:
 		description = "The CSP Auth Context is invalid"
-		statusCode = http.StatusUnauthorized
+		statusCode = http.StatusForbidden
 	}
 
 	return
