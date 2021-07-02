@@ -11,6 +11,7 @@ import (
 
 // CSPAuth middleware provides authentication using CSP
 func CSPAuth(logger log.Logger, sharedKey string) func(inner http.Handler) http.Handler {
+	cache := NewCache()
 	return func(inner http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
 			if middleware.ExemptPath(req) {
@@ -20,7 +21,7 @@ func CSPAuth(logger log.Logger, sharedKey string) func(inner http.Handler) http.
 			}
 			opts := getOptions(sharedKey, req)
 
-			csp, err := New(logger, opts)
+			csp, err := New(logger, opts, cache)
 			if err != nil {
 				e := middleware.FetchErrResponseWithCode(http.StatusBadRequest, "Invalid CSP Auth Options", err.Error())
 				middleware.ErrorResponse(w, req, logger, *e)
