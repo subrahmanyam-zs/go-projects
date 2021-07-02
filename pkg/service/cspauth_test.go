@@ -17,7 +17,7 @@ func Test_getAuthContext(t *testing.T) {
 	}
 
 	logger := log.NewMockLogger(io.Discard)
-	csp, _ := New(logger, opts)
+	csp, _ := NewCSP(logger, opts)
 	body := bytes.NewReader([]byte(`{"foo":"bar"}`))
 	req, _ := http.NewRequest("POST", "/dummy", body)
 	ac := csp.getAuthContext(req)
@@ -47,7 +47,7 @@ func Test_validate(t *testing.T) {
 		}
 
 		logger := log.NewMockLogger(io.Discard)
-		_, err := New(logger, opts)
+		_, err := NewCSP(logger, opts)
 
 		if err != tc.err {
 			t.Errorf("TESTCASE[%v] Expected error %v, got %v", i, tc.err, err)

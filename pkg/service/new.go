@@ -109,7 +109,7 @@ func NewHTTPServiceWithOptions(resourceAddr string, logger log.Logger, options *
 	if options.Auth != nil && options.CSPOption != nil {
 		var err error
 
-		httpSvc.csp, err = New(logger, options.CSPOption)
+		httpSvc.csp, err = NewCSP(logger, options.CSPOption)
 		if err != nil {
 			logger.Warnf("CSP Auth is not enabled, %v", err)
 		}
