@@ -3,7 +3,6 @@ package cspauth
 import (
 	"encoding/json"
 	"net/http"
-	"strings"
 
 	"developer.zopsmart.com/go/gofr/pkg/log"
 	"developer.zopsmart.com/go/gofr/pkg/middleware"
@@ -11,7 +10,7 @@ import (
 
 // CSPAuth middleware provides authentication using CSP
 func CSPAuth(logger log.Logger, sharedKey string) func(inner http.Handler) http.Handler {
-	cache := NewCache()
+	csp := New(sharedKey)
 	return func(inner http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
 			if middleware.ExemptPath(req) {
@@ -19,9 +18,8 @@ func CSPAuth(logger log.Logger, sharedKey string) func(inner http.Handler) http.
 
 				return
 			}
-			opts := getOptions(sharedKey, req)
 
-			csp, err := New(logger, opts, cache)
+			appKey, err := csp.getAppKey(req)
 			if err != nil {
 				e := middleware.FetchErrResponseWithCode(http.StatusBadRequest, "Invalid CSP Auth Options", err.Error())
 				middleware.ErrorResponse(w, req, logger, *e)
@@ -29,7 +27,9 @@ func CSPAuth(logger log.Logger, sharedKey string) func(inner http.Handler) http.
 				return
 			}
 
-			err = csp.Validate(logger, req)
+			csp.set(appKey, csp.sharedKey)
+
+			err = csp.Validate(logger, req, appKey)
 			if err != nil {
 				description, statusCode := middleware.GetDescription(err)
 				e := middleware.FetchErrResponseWithCode(statusCode, description, err.Error())
@@ -43,17 +43,13 @@ func CSPAuth(logger log.Logger, sharedKey string) func(inner http.Handler) http.
 	}
 }
 
-func getOptions(sharedKey string, req *http.Request) *Options {
-	ip := req.Header.Get("X-Forwarded-For")
-	if ip == "" {
-		// ip address from the RemoteAddr
-		ip = strings.Split(req.RemoteAddr, ":")[0]
+func (c *CSP) getAppKey(req *http.Request) (string, error) {
+	appKey := req.Header.Get(appKeyHeader)
+	if len(appKey) < minAppKeyLen {
+		return "", ErrEmptyAppKey
 	}
 
-	return &Options{
-		AppKey:      req.Header.Get(appKeyHeader),
-		SharedKey:   sharedKey,
-	}
+	return appKey, nil
 }
 
 type cspAuthJSON struct {
@@ -67,8 +63,8 @@ type cspAuthJSON struct {
 }
 
 // Validate the csp auth headers in given request
-func (c *CSP) Validate(logger log.Logger, r *http.Request) error {
-	authContext, err := c.getAuthContext(logger, r.Header.Get(authContextHeader))
+func (c *CSP) Validate(logger log.Logger, r *http.Request, appKey string) error {
+	authContext, err := c.getAuthContext(logger, r.Header.Get(authContextHeader), appKey)
 	if err != nil {
 		return middleware.ErrInvalidAuthContext
 	}
@@ -85,8 +81,8 @@ func (c *CSP) Validate(logger log.Logger, r *http.Request) error {
 	bodyHash := getBodyHash(r)
 
 	// generate data and its signature for validation
-	dataForSigValidation := authJSON.MachineName + authJSON.RequestDate + authJSON.IPAddress + c.options.AppKey +
-		c.options.SharedKey + authJSON.HTTPMethod + authJSON.UUID + authJSON.ClientID + bodyHash
+	dataForSigValidation := authJSON.MachineName + authJSON.RequestDate + authJSON.IPAddress + appKey +
+		c.sharedKey + authJSON.HTTPMethod + authJSON.UUID + authJSON.ClientID + bodyHash
 
 	computedSignature := base64Encode([]byte(hexEncode(sha256Hash([]byte(dataForSigValidation)))))
 
@@ -97,7 +93,7 @@ func (c *CSP) Validate(logger log.Logger, r *http.Request) error {
 	return nil
 }
 
-func (c *CSP) getAuthContext(logger log.Logger, authContextHeader string) ([]byte, error) {
+func (c *CSP) getAuthContext(logger log.Logger, authContextHeader, appKey string) ([]byte, error) {
 	b64DecodeRandom, err := base64Decode(authContextHeader)
 	if err != nil {
 		logger.Errorf("error while base64 decoding auth context, %v", err)
@@ -118,8 +114,10 @@ func (c *CSP) getAuthContext(logger log.Logger, authContextHeader string) ([]byt
 		return nil, err
 	}
 
+	keys := c.get(appKey)
+
 	// decrypt auth context using encryption key and initial vector
-	decryptedAuthContext, err := decryptData(authContextToDecrypt, c.encryptionKey, c.iv)
+	decryptedAuthContext, err := decryptData(authContextToDecrypt, keys.encryptionKey, keys.iv)
 	if err != nil {
 		logger.Errorf("error occurred while decrypting auth context, %v", err)
 
