@@ -1,6 +1,7 @@
 package gofr
 
 import (
+	awssns "developer.zopsmart.com/go/gofr/pkg/notifier/aws-sns"
 	"strconv"
 	"time"
 
@@ -9,6 +10,25 @@ import (
 	"developer.zopsmart.com/go/gofr/pkg/datastore/pubsub/eventhub"
 	"developer.zopsmart.com/go/gofr/pkg/datastore/pubsub/kafka"
 )
+
+// awsSNSRetry retries connecting to aws SNS
+// once connection is successful, retrying is terminated
+func awsSNSRetry(c *awssns.Config, k *Gofr) {
+	for {
+		time.Sleep(time.Duration(c.ConnRetryDuration) * time.Second)
+
+		k.Logger.Debug("Retrying AWS SNS connection")
+
+		var err error
+
+		k.Notifier, err = awssns.New(c)
+		if err == nil {
+			k.Logger.Info("AWS SNS initialized successfully")
+
+			break
+		}
+	}
+}
 
 // kafkaRetry retries connecting to kafka
 // once connection is successful, retrying is terminated

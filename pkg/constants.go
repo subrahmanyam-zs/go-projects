@@ -17,4 +17,5 @@ const (
 	DefaultAppName    = "gofr-app"
 	DefaultAppVersion = "dev"
 	Framework         = "gofr-" + log.GofrVersion
+	AWSSNS            = "aws-sns"
 )

@@ -2,13 +2,15 @@ package gofr
 
 import (
 	"crypto/tls"
+	awssns "developer.zopsmart.com/go/gofr/pkg/notifier/aws-sns"
+	"github.com/stretchr/testify/assert"
 	"reflect"
 	"testing"
 
-	"github.com/gocql/gocql"
 	"developer.zopsmart.com/go/gofr/pkg/datastore"
 	"developer.zopsmart.com/go/gofr/pkg/datastore/pubsub/kafka"
 	"developer.zopsmart.com/go/gofr/pkg/gofr/config"
+	"github.com/gocql/gocql"
 )
 
 func Test_cassandraConfigFromEnv(t *testing.T) {
@@ -243,4 +245,27 @@ func Test_GetBoolEnv(t *testing.T) {
 			t.Errorf("Expected boolean %t Got %t", tc.output, output)
 		}
 	}
+}
+
+func Test_AWSSNSConfigFromEnv(t *testing.T) {
+	expectedConfig := awssns.Config{
+		AccessKeyID:     "AKIswe",
+		SecretAccessKey: "Vccvsqwesdd",
+		Region:          "us-east-1",
+		Protocol:        "email",
+		Endpoint:        "xyz@zopsmart.com",
+		TopicArn:        "arn:aws:aws-sns:us-east-1:123456789:TestTopic1",
+	}
+	snsConfig := awsSNSConfigFromEnv(&config.MockConfig{
+		Data: map[string]string{
+			"SNS_ACCESS_KEY":        "AKIswe",
+			"SNS_SECRET_ACCESS_KEY": "Vccvsqwesdd",
+			"SNS_REGION":            "us-east-1",
+			"SNS_PROTOCOL":          "email",
+			"SNS_ENDPOINT":          "xyz@zopsmart.com",
+			"SNS_TOPIC_ARN":         "arn:aws:aws-sns:us-east-1:123456789:TestTopic1",
+		},
+	})
+
+	assert.Equal(t, expectedConfig,snsConfig)
 }

@@ -2,12 +2,12 @@ package gofr
 
 import (
 	"context"
+	awssns "developer.zopsmart.com/go/gofr/pkg/notifier/aws-sns"
 	"errors"
 	"os"
 	"strconv"
 	"strings"
 
-	"github.com/prometheus/client_golang/prometheus"
 	"developer.zopsmart.com/go/gofr/pkg"
 	"developer.zopsmart.com/go/gofr/pkg/datastore"
 	"developer.zopsmart.com/go/gofr/pkg/datastore/pubsub/avro"
@@ -17,6 +17,7 @@ import (
 	"developer.zopsmart.com/go/gofr/pkg/gofr/request"
 	"developer.zopsmart.com/go/gofr/pkg/gofr/responder"
 	"developer.zopsmart.com/go/gofr/pkg/log"
+	"github.com/prometheus/client_golang/prometheus"
 	"go.opencensus.io/trace"
 )
 
@@ -107,6 +108,8 @@ func NewWithConfig(c Config) (k *Gofr) {
 	// If Tracing is set, Set tracing
 	_ = enableTracing(c)
 	initializeDataStores(c, gofr)
+
+	initializeNotifiers(c,gofr)
 
 	return gofr
 }
@@ -219,6 +222,8 @@ func NewCMD() *Gofr {
 	// If Tracing is set, Set tracing
 	_ = enableTracing(c)
 	initializeDataStores(c, gofr)
+
+	initializeNotifiers(c,gofr)
 
 	return gofr
 }
@@ -559,4 +564,32 @@ func initializeSolr(c Config, k *Gofr) {
 
 	k.Solr = datastore.NewSolrClient(host, port)
 	k.Logger.Infof("Solr connected. Host: %s, Port: %s \n", host, port)
+}
+
+func initializeNotifiers(c Config, k *Gofr){
+	notifierBackend := c.Get("NOTIFIER_BACKEND")
+	if notifierBackend == "" {
+		return
+	}
+
+	switch notifierBackend {
+	case "SNS":
+		initializeAwsSNS(c, k)
+	}
+}
+func initializeAwsSNS(c Config, k *Gofr) {
+
+	awsConfig := awsSNSConfigFromEnv(c)
+	var err error
+	k.Notifier, err = awssns.New(&awsConfig)
+	k.DatabaseHealth = append(k.DatabaseHealth, k.Notifier.HealthCheck)
+	if err != nil {
+		k.Logger.Errorf("AWS SNS could not be initialized, error: %v\n", err)
+
+		go awsSNSRetry(&awsConfig, k)
+
+		return
+	}
+
+	k.Logger.Infof("AWS SNS initialized")
 }
