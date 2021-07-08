@@ -13,6 +13,10 @@ import (
 	"developer.zopsmart.com/go/gofr/pkg/gofr/types"
 	"developer.zopsmart.com/go/gofr/pkg/log"
 	"developer.zopsmart.com/go/gofr/pkg/middleware"
+	"go.opencensus.io/trace"
+
+	"github.com/go-redis/redis/extra/rediscensus"
+
 	"github.com/go-redis/redis/v8"
 )
 
@@ -65,13 +69,19 @@ func NewRedis(logger log.Logger, config RedisConfig) (Redis, error) {
 		config.Options.Addr = config.HostName + ":" + config.Port
 	}
 
+	_, span := trace.StartSpan(context.Background(), "Redis")
+	defer span.End()
+
 	rc := redis.NewClient(config.Options)
+
 	rLog := QueryLogger{
 		Logger: logger,
 		Hosts:  config.HostName,
 	}
 
 	rc.AddHook(&rLog)
+
+	rc.AddHook(rediscensus.TracingHook{})
 
 	if err := rc.Ping(context.Background()).Err(); err != nil {
 		// Close the redis connection
