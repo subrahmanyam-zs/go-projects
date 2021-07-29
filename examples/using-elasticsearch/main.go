@@ -8,7 +8,6 @@ import (
 
 func main() {
 	k := gofr.New()
-	k.Server.ValidateHeaders = false
 
 	h := handler.New(customer.Customer{})
 

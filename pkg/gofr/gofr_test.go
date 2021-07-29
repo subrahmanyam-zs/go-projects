@@ -11,11 +11,12 @@ import (
 	"testing"
 	"time"
 
-	"github.com/stretchr/testify/assert"
 	"developer.zopsmart.com/go/gofr/pkg/gofr/config"
 	"developer.zopsmart.com/go/gofr/pkg/gofr/request"
 	"developer.zopsmart.com/go/gofr/pkg/gofr/types"
 	"developer.zopsmart.com/go/gofr/pkg/log"
+
+	"github.com/stretchr/testify/assert"
 )
 
 const helloWorld = "Hello World!"
@@ -188,8 +189,6 @@ func TestGofr_Patch(t *testing.T) {
 	k := New()
 	// Added contextInjector middleware
 	k.Server.Router.Use(k.Server.contextInjector)
-
-	k.Server.ValidateHeaders = false
 
 	k.PATCH("/patch", func(c *Context) (interface{}, error) {
 		return "success", nil

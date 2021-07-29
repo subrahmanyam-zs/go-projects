@@ -9,7 +9,6 @@ import (
 func main() {
 	// Create the application object
 	k := gofr.New()
-	k.Server.ValidateHeaders = false
 
 	// initialize the handler
 	h := handlers.New(shop.Shop{})
