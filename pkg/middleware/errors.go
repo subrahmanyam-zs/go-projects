@@ -16,7 +16,6 @@ const (
 	ErrMissingHeader      = Error("missing_header")
 	ErrUnauthorised       = Error("missing_permission")
 	ErrUnauthenticated    = Error("failed_auth")
-	ErrInvalidAuthContext = Error("invalid_csp_auth_context")
 )
 
 func GetDescription(err error) (description string, statusCode int) {
@@ -42,9 +41,6 @@ func GetDescription(err error) (description string, statusCode int) {
 	case ErrUnauthenticated:
 		description = "Authorization error"
 		statusCode = http.StatusUnauthorized
-	case ErrInvalidAuthContext:
-		description = "The CSP Auth Context is invalid"
-		statusCode = http.StatusForbidden
 	}
 
 	return

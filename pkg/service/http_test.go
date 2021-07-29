@@ -339,22 +339,6 @@ func TestHttpService_SetHeaders(t *testing.T) {
 	}
 }
 
-func TestHttpService_CSPAuthHeaders(t *testing.T) {
-	opts := &Options{Auth: &Auth{CSPOption: &CSPOption{
-		AppKey:    "mock-app-key",
-		SharedKey: "mock-shared-key",
-	}}}
-
-	httpSvc := NewHTTPServiceWithOptions("http://dummy", log.NewLogger(), opts)
-
-	req, _ := httpSvc.createReq(context.Background(), "GET", "", nil, nil, nil)
-
-	if req.Header.Get("ac") == "" || req.Header.Get("ak") != "mock-app-key" || req.Header.Get("cd") != "" ||
-		req.Header.Get("sv") != "V1" || req.Header.Get("jst") != "1" {
-		t.Errorf("setting of csp auth headers failed")
-	}
-}
-
 func TestHttpService_SetAuthClientIP(t *testing.T) {
 	s := NewHTTPServiceWithOptions("http://dummy", log.NewLogger(),
 		&Options{Headers: map[string]string{"Authorization": "se31-2fhhvhjf-9049"}})

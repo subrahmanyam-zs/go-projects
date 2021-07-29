@@ -19,7 +19,6 @@ import (
 	"developer.zopsmart.com/go/gofr/pkg/gofr/responder"
 	"developer.zopsmart.com/go/gofr/pkg/log"
 	"developer.zopsmart.com/go/gofr/pkg/middleware"
-	"developer.zopsmart.com/go/gofr/pkg/middleware/cspauth"
 	"developer.zopsmart.com/go/gofr/pkg/middleware/oauth"
 )
 
@@ -102,13 +101,6 @@ func NewServer(c Config, gofr *Gofr) *server {
 }
 
 func (s *server) setupAuth(c Config, gofr *Gofr) {
-	// CSP Auth
-	sharedKey := c.Get("CSP_SHARED_KEY")
-	if sharedKey != "" {
-		gofr.Logger.Log("CSP Auth middleware enabled")
-		s.Router.Use(cspauth.CSPAuth(gofr.Logger, sharedKey))
-	}
-
 	// OAuth
 	if oAuthOptions, oAuthOk := getOAuthOptions(c); oAuthOk {
 		if c.Get("LDAP_ADDR") != "" {

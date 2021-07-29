@@ -38,8 +38,6 @@ type httpService struct {
 	sp            surgeProtector
 	numOfRetries  int
 
-	csp *csp
-
 	cache *cachedHTTPService
 }
 
@@ -265,16 +263,7 @@ func (h *httpService) setHeadersFromContext(ctx context.Context, req *http.Reque
 	if h.auth != "" {
 		req.Header.Add("Authorization", h.auth)
 	}
-	// add headers for csp auth
-	if h.csp != nil  {
-		authContext := h.csp.getAuthContext(req)
 
-		req.Header.Set("ak", h.csp.options.AppKey)
-		req.Header.Set("cd", h.csp.options.ClientID)
-		req.Header.Set("sv", securityVersion)
-		req.Header.Set("jst", securityType)
-		req.Header.Set("ac", authContext)
-	}
 	// add custom headers to the request
 	for i := range h.headerKeys {
 		val, _ := ctx.Value(h.headerKeys[i]).(string)

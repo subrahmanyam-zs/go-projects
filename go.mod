@@ -42,7 +42,6 @@ require (
 	github.com/opencensus-integrations/ocsql v0.1.7
 	github.com/openzipkin/zipkin-go v0.2.2
 	github.com/prometheus/client_golang v0.9.3
-	github.com/satori/go.uuid v1.2.0
 	github.com/stretchr/testify v1.7.0
 	github.com/yugabyte/gocql v0.0.0-20200602185649-ef3952a45ff4
 	go.mongodb.org/mongo-driver v1.3.2
