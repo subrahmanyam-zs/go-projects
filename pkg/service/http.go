@@ -20,7 +20,6 @@ import (
 	"developer.zopsmart.com/go/gofr/pkg/errors"
 	"developer.zopsmart.com/go/gofr/pkg/log"
 	"developer.zopsmart.com/go/gofr/pkg/middleware"
-
 )
 
 type httpService struct {
@@ -84,7 +83,8 @@ func (h *httpService) call(ctx context.Context, method, target string, params ma
 
 		for head := range req.Header {
 			val := req.Header.Get(head)
-			if val != "" {
+			// Don't want to log the CSP headers.
+			if val != "" && !strings.EqualFold(head, "ac") && !strings.EqualFold(head, "ak") {
 				headers[head] = req.Header.Get(head)
 			}
 		}
@@ -266,13 +266,13 @@ func (h *httpService) setHeadersFromContext(ctx context.Context, req *http.Reque
 		req.Header.Add("Authorization", h.auth)
 	}
 	// add headers for csp auth
-	if h.csp != nil  {
+	if h.csp != nil {
 		authContext := h.csp.getAuthContext(req)
 
 		req.Header.Set("ak", h.csp.options.AppKey)
 		req.Header.Set("cd", h.csp.options.ClientID)
 		req.Header.Set("sv", securityVersion)
-		req.Header.Set("jst", securityType)
+		req.Header.Set("st", securityType)
 		req.Header.Set("ac", authContext)
 	}
 	// add custom headers to the request

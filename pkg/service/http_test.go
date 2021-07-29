@@ -531,6 +531,20 @@ func TestHTTPCookieLogging(t *testing.T) {
 	}
 }
 
+// TestCSPHeaderLogging checks, CSP headers are getting logged or not for http client.
+func TestCSPHeaderLogging(t *testing.T) {
+	b := new(bytes.Buffer)
+	url := "http://dummmy"
+	h := NewHTTPServiceWithOptions(url, log.NewMockLogger(b), nil)
+	_, _ = h.call(context.TODO(), "GET", "", nil, nil, map[string]string{"ac": "Some-Random-Value", "ak": "Some-Random-Value"})
+
+	x := b.String()
+	if strings.Contains(x, "\"ac\":") || strings.Contains(x, "\"Ac\":") ||
+		strings.Contains(x, "\"ak\":") || strings.Contains(x, "\"Ak\":") {
+		t.Errorf("Error: Expected no CSP Header, Got: %v", x)
+	}
+}
+
 func Test_AuthCall(t *testing.T) {
 	b := new(bytes.Buffer)
 	logger := log.NewMockLogger(b)

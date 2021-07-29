@@ -13,6 +13,7 @@ import (
 
 	"developer.zopsmart.com/go/gofr/pkg/errors"
 	"developer.zopsmart.com/go/gofr/pkg/log"
+	"developer.zopsmart.com/go/gofr/pkg/middleware"
 	"developer.zopsmart.com/go/gofr/pkg/middleware/cspauth"
 )
 
@@ -74,7 +75,7 @@ func (o *CSPOption) validate() error {
 	}
 
 	if len(o.AppKey) < minLenAppKey {
-		return cspauth.ErrEmptyAppKey
+		return middleware.ErrInvalidAppKey
 	}
 
 	return nil

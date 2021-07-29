@@ -21,23 +21,18 @@ func CSPAuth(logger log.Logger, sharedKey string) func(inner http.Handler) http.
 			}
 
 			appKey, err := csp.getAppKey(req)
-			if err != nil {
-				e := middleware.FetchErrResponseWithCode(http.StatusBadRequest, "Invalid CSP Auth Options", err.Error())
-				middleware.ErrorResponse(w, req, logger, *e)
+			if err == nil {
+				err = csp.Validate(logger, req, appKey)
+				if err == nil {
+					inner.ServeHTTP(w, req)
 
-				return
+					return
+				}
 			}
 
-			err = csp.Validate(logger, req, appKey)
-			if err != nil {
-				description, statusCode := middleware.GetDescription(err)
-				e := middleware.FetchErrResponseWithCode(statusCode, description, err.Error())
-				middleware.ErrorResponse(w, req, logger, *e)
-
-				return
-			}
-
-			inner.ServeHTTP(w, req)
+			description, statusCode := middleware.GetDescription(err)
+			e := middleware.FetchErrResponseWithCode(statusCode, description, "UNAUTHORIZED")
+			middleware.ErrorResponse(w, req, logger, *e)
 		})
 	}
 }
@@ -45,7 +40,8 @@ func CSPAuth(logger log.Logger, sharedKey string) func(inner http.Handler) http.
 func (c *CSP) getAppKey(req *http.Request) (string, error) {
 	appKey := req.Header.Get(appKeyHeader)
 	if len(appKey) < minLenAppKey {
-		return "", ErrEmptyAppKey
+		// ErrInvalidAppKey is raised when app key is is not more than 12 bytes
+		return "", middleware.ErrInvalidAppKey
 	}
 
 	return appKey, nil
@@ -65,7 +61,7 @@ type cspAuthJSON struct {
 func (c *CSP) Validate(logger log.Logger, r *http.Request, appKey string) error {
 	ac := r.Header.Get(authContextHeader)
 	if ac == "" {
-		return middleware.ErrMissingHeader
+		return middleware.ErrMissingCSPHeader
 	}
 
 	authContext, err := c.getAuthContext(logger, ac, appKey)
