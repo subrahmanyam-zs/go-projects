@@ -74,8 +74,6 @@ func Logging(logger logger, omitHeaders string) func(inner http.Handler) http.Ha
 			srw := &StatusResponseWriter{ResponseWriter: w}
 			defer func(res *StatusResponseWriter, req *http.Request) {
 				headers := fetchHeaders(omitHeadersMap, req.Header)
-				// Don't want to log the Cookie.
-				delete(headers, "Cookie")
 
 				l := LogLine{
 					CorrelationID:  correlationID,
@@ -148,6 +146,9 @@ func fetchHeaders(omitHeaders map[string]bool, reqHeaders http.Header) map[strin
 		if _, ok := omitHeaders[lowerCase]; !ok {
 			if lowerCase == "authorization" {
 				processAuthHeader(headers, h, reqHeaders.Get(h))
+			} else if lowerCase == "ac" || lowerCase == "ak" {
+				// Don't want to log the CSP ac and ak headers.
+				continue
 			} else {
 				headers[h] = reqHeaders.Get(h)
 			}
@@ -155,6 +156,9 @@ func fetchHeaders(omitHeaders map[string]bool, reqHeaders http.Header) map[strin
 			headers[h] = "xxx-masked-value-xxx"
 		}
 	}
+
+	// Don't want to log the Cookie.
+	delete(headers, "Cookie")
 
 	return headers
 }

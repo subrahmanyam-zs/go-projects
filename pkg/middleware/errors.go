@@ -14,9 +14,11 @@ const (
 	ErrServiceDown        = Error("service_unavailable")
 	ErrInvalidHeader      = Error("invalid_header")
 	ErrMissingHeader      = Error("missing_header")
+	ErrMissingCSPHeader   = Error("missing_authcontext_header")
 	ErrUnauthorised       = Error("missing_permission")
 	ErrUnauthenticated    = Error("failed_auth")
 	ErrInvalidAuthContext = Error("invalid_csp_auth_context")
+	ErrInvalidAppKey      = Error("app_key_should_be_more_than_12_bytes")
 )
 
 func GetDescription(err error) (description string, statusCode int) {
@@ -42,9 +44,9 @@ func GetDescription(err error) (description string, statusCode int) {
 	case ErrUnauthenticated:
 		description = "Authorization error"
 		statusCode = http.StatusUnauthorized
-	case ErrInvalidAuthContext:
-		description = "The CSP Auth Context is invalid"
-		statusCode = http.StatusForbidden
+	case ErrMissingCSPHeader, ErrInvalidAppKey, ErrInvalidAuthContext:
+		description = "Request was not Authorized "
+		statusCode = http.StatusUnauthorized
 	}
 
 	return

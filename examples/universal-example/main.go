@@ -23,9 +23,6 @@ func main() {
 	// Create the application object
 	k := gofr.New()
 
-	// To disable the header validation
-	k.Server.ValidateHeaders = false
-
 	// Service urls
 	urlHelloAPI := k.Config.Get("GOFR_HELLO_API")
 	urlLoggingService := k.Config.Get("GOFR_LOGGING_SERVICE")

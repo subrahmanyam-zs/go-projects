@@ -8,7 +8,7 @@ import (
 func main() {
 	// create the application object
 	k := gofr.New()
-	k.Server.ValidateHeaders = false
+	
 	// enabling /swagger endpoint for Swagger UI
 	k.EnableSwaggerUI()
 

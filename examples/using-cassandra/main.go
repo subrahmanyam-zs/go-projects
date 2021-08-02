@@ -9,7 +9,6 @@ import (
 func main() {
 	// create the application object
 	k := gofr.New()
-	k.Server.ValidateHeaders = false
 
 	h := handlers.New(person.Person{})
 	// add get handler

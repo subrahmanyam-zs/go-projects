@@ -8,8 +8,6 @@ import (
 func main() {
 	k := gofr.New()
 
-	k.Server.ValidateHeaders = false
-
 	k.POST("/publish", handlers.Publisher)
 	k.GET("/subscribe", handlers.Subscriber)
 

@@ -6,6 +6,8 @@ import (
 	"net/http"
 	"testing"
 
+	"developer.zopsmart.com/go/gofr/pkg/middleware"
+
 	"developer.zopsmart.com/go/gofr/pkg/log"
 	"developer.zopsmart.com/go/gofr/pkg/middleware/cspauth"
 )
@@ -35,7 +37,7 @@ func Test_validate(t *testing.T) {
 		err       error
 	}{
 		{"ankling123jerkins4junked", "cd1", "CSP_SHARED_KEY", nil},
-		{"", "cd1", "CSP_SHARED_KEY", cspauth.ErrEmptyAppKey},
+		{"", "cd1", "CSP_SHARED_KEY", middleware.ErrInvalidAppKey},
 		{"ankling123jerkins4junked", "cd1", "", ErrEmptySharedKey},
 	}
 
