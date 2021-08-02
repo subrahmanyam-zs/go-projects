@@ -1,11 +1,12 @@
 package gofr
 
 import (
-	"developer.zopsmart.com/go/gofr/pkg/notifier"
 	"strings"
 
 	"developer.zopsmart.com/go/gofr/pkg/datastore"
+	"developer.zopsmart.com/go/gofr/pkg/gofr/metrics"
 	"developer.zopsmart.com/go/gofr/pkg/log"
+	"developer.zopsmart.com/go/gofr/pkg/notifier"
 )
 
 type Gofr struct {
@@ -16,6 +17,7 @@ type Gofr struct {
 	Server      *server
 	TemplateDir string
 	Logger      log.Logger
+	Metric      metrics.Metric
 	Notifier    notifier.Notifier
 
 	ResourceMap          map[string][]string

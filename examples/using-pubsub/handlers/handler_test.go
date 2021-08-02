@@ -5,10 +5,13 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
+
 	"developer.zopsmart.com/go/gofr/pkg/datastore/pubsub"
 	"developer.zopsmart.com/go/gofr/pkg/errors"
 	"developer.zopsmart.com/go/gofr/pkg/gofr"
+	"developer.zopsmart.com/go/gofr/pkg/gofr/metrics"
 	"developer.zopsmart.com/go/gofr/pkg/gofr/request"
 	"developer.zopsmart.com/go/gofr/pkg/gofr/types"
 )
@@ -82,6 +85,11 @@ func (m *mockPubSub) CommitOffset(offsets pubsub.TopicPartition) {
 
 func TestProducerHandler(t *testing.T) {
 	k := gofr.New()
+	mockMetric := metrics.NewMockMetric(gomock.NewController(t))
+	k.Metric = mockMetric
+
+	mockMetric.EXPECT().ObserveHistogram(gomock.Any(), gomock.Any()).Return(nil)
+
 	m := mockPubSub{}
 	k.PubSub = &m
 
@@ -122,6 +130,10 @@ func TestProducerHandler(t *testing.T) {
 
 func TestConsumerHandler(t *testing.T) {
 	k := gofr.New()
+	mockMetric := metrics.NewMockMetric(gomock.NewController(t))
+	k.Metric = mockMetric
+
+	mockMetric.EXPECT().ObserveSummary(gomock.Any(), gomock.Any()).Return(nil)
 
 	k.PubSub = &mockPubSub{}
 

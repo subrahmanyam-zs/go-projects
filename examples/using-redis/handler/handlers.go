@@ -1,6 +1,8 @@
 package handler
 
 import (
+	"strconv"
+
 	"developer.zopsmart.com/go/gofr/examples/using-redis/store"
 	"developer.zopsmart.com/go/gofr/pkg/errors"
 	"developer.zopsmart.com/go/gofr/pkg/gofr"
@@ -20,15 +22,46 @@ func New(c store.Store) *Config {
 func (m Config) SetKey(c *gofr.Context) (interface{}, error) {
 	input := make(map[string]string)
 
+	length, err := strconv.ParseFloat(c.Header("Content-Length"), 64)
+	if err != nil {
+		length = 0
+	}
+
+	err = c.Metric.SetGauge(ReqContentLengthGauge, length)
+	if err != nil {
+		return nil, err
+	}
+
 	if err := c.Bind(&input); err != nil {
+		err = c.Metric.IncCounter(InvalidBodyCounter)
+		if err != nil {
+			return nil, err
+		}
+
+		err = c.Metric.IncCounter(NumberOfSetsCounter, "failed")
+		if err != nil {
+			return nil, err
+		}
+
 		return nil, invalidBodyErr{}
 	}
 
 	for key, value := range input {
 		if err := m.store.Set(c, key, value, 0); err != nil {
 			c.Logger.Error("got error: ", err)
+
+			err = c.Metric.IncCounter(NumberOfSetsCounter, "failed")
+			if err != nil {
+				return nil, err
+			}
+
 			return nil, invalidInputErr{}
 		}
+	}
+
+	err = c.Metric.IncCounter(NumberOfSetsCounter, "succeeded")
+	if err != nil {
+		return nil, err
 	}
 
 	return "Successful", nil

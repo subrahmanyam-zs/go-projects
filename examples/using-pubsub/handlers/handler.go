@@ -1,6 +1,8 @@
 package handlers
 
 import (
+	"time"
+
 	"developer.zopsmart.com/go/gofr/pkg/datastore/pubsub"
 	"developer.zopsmart.com/go/gofr/pkg/gofr"
 	"developer.zopsmart.com/go/gofr/pkg/gofr/types"
@@ -14,18 +16,32 @@ type Person struct {
 
 func Producer(c *gofr.Context) (interface{}, error) {
 	id := c.Param("id")
+	start := time.Now()
 
-	return nil, c.PublishEvent("", Person{
+	err := c.PublishEvent("", Person{
 		ID:    id,
 		Name:  "Rohan",
 		Email: "rohan@email.xyz",
 	}, map[string]string{"test": "test"})
+	if err != nil {
+		return nil, err
+	}
+
+	err = c.Metric.ObserveHistogram(PublishEventHistogram, time.Since(start).Seconds())
+
+	return nil, err
 }
 
 func Consumer(c *gofr.Context) (interface{}, error) {
 	p := Person{}
+	start := time.Now()
 
 	message, err := c.Subscribe(&p)
+	if err != nil {
+		return nil, err
+	}
+
+	err = c.Metric.ObserveSummary(ConsumeEventSummary, time.Since(start).Seconds())
 
 	return types.Response{Data: p, Meta: message}, err
 }
