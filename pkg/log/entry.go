@@ -4,8 +4,11 @@ import (
 	"encoding/json"
 	"fmt"
 	"reflect"
+	"runtime"
 	"strings"
 	"time"
+
+	"github.com/gookit/color"
 )
 
 type entry struct {
@@ -20,6 +23,10 @@ type entry struct {
 
 func (e *entry) TerminalOutput() string {
 	levelColor := e.Level.colorCode()
+
+	if runtime.GOOS == "windows" {
+		color.New()
+	}
 
 	s := fmt.Sprintf("\u001B[%dm%s\u001B[0m [%s] ", levelColor, e.Level.String()[0:4], e.Time.Format("15:04:05"))
 
