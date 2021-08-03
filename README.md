@@ -18,7 +18,7 @@ We will trade off performance for ease of use.
   docker run --name gofr-mongo -d -e MONGO_INITDB_ROOT_USERNAME=admin -e MONGO_INITDB_ROOT_PASSWORD=admin123 -p 2004:27017 mongo:latest
   docker run --name gofr-zipkin -d -p 2005:9411 openzipkin/zipkin:latest
   docker run --name gofr-pgsql -d -e POSTGRES_PASSWORD=root123 -p 2006:5432 postgres:12.2
-  docker run --name gofr-mssql -d -e 'ACCEPT_EULA=Y' -e 'SA_PASSWORD=reallyStrongPwd123' -p 2007:1433 microsoft/mssql-server-linux
+  docker run --name gofr-mssql -d -e 'ACCEPT_EULA=Y' -e 'SA_PASSWORD=reallyStrongPwd123' -p 2007:1433 mcr.microsoft.com/mssql/server:2017-latest
   docker run --rm -d -p 2181:2181 -p 443:2008 -p 2008:2008 -p 2009:2009 \
       --env ADVERTISED_LISTENERS=PLAINTEXT://kafka:443,INTERNAL://localhost:2009 \
       --env LISTENERS=PLAINTEXT://0.0.0.0:2008,INTERNAL://0.0.0.0:2009 \
