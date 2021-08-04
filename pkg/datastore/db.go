@@ -6,15 +6,14 @@ import (
 	"os"
 	"strings"
 
-	"github.com/opencensus-integrations/ocsql"
-
-	"github.com/jinzhu/gorm"
-	"github.com/jmoiron/sqlx"
-	"github.com/prometheus/client_golang/prometheus"
 	"developer.zopsmart.com/go/gofr/pkg"
 	"developer.zopsmart.com/go/gofr/pkg/gofr/types"
 	"developer.zopsmart.com/go/gofr/pkg/log"
 	"developer.zopsmart.com/go/gofr/pkg/middleware"
+
+	"github.com/jinzhu/gorm"
+	"github.com/jmoiron/sqlx"
+	"github.com/prometheus/client_golang/prometheus"
 
 	// empty imports are to ensure inits are run for these packages.
 	_ "github.com/jinzhu/gorm/dialects/mssql"
@@ -91,13 +90,7 @@ func NewORM(config *DBConfig) (GORMClient, error) {
 
 	connectionStr := formConnectionStr(config)
 
-	// Register our ocsql wrapper for the provided driver.
-	driverName, err := ocsql.Register(config.Dialect, ocsql.WithAllTraceOptions())
-	if err != nil {
-		return GORMClient{config: config}, err
-	}
-
-	db, err := gorm.Open(driverName, connectionStr)
+	db, err := gorm.Open(config.Dialect, connectionStr)
 	if err != nil {
 		return GORMClient{config: config}, err
 	}
@@ -124,23 +117,12 @@ type SQLXClient struct {
 func NewSQLX(config *DBConfig) (SQLXClient, error) {
 	connectionStr := formConnectionStr(config)
 
-	// Register our ocsql wrapper for the provided driver.
-	driverName, err := ocsql.Register(config.Dialect, ocsql.WithAllTraceOptions())
+	DB, err := sqlx.Connect(config.Dialect, connectionStr)
 	if err != nil {
 		return SQLXClient{config: config}, err
 	}
 
-	// Connect to a database using the ocsql driver wrapper.
-	db, err := sql.Open(driverName, connectionStr)
-
-	if err != nil {
-		return SQLXClient{config: config}, err
-	}
-
-	// Wrap our *sql.DB with sqlx.
-	dbx := sqlx.NewDb(db, driverName)
-
-	return SQLXClient{DB: dbx, config: config}, err
+	return SQLXClient{DB: DB, config: config}, err
 }
 
 // dbConfigFromEnv fetches the DBConfig from environment
