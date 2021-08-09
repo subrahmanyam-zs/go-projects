@@ -19,8 +19,6 @@ type Handler func(c *Context) (interface{}, error)
 func (h Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	c, _ := r.Context().Value(gofrContextkey).(*Context)
 
-	defer c.Trace("gofr-Handler").End()
-
 	data, err := h(c)
 
 	route := mux.CurrentRoute(r)
