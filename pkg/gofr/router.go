@@ -2,6 +2,7 @@ package gofr
 
 import (
 	"fmt"
+	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 	"net/http"
 	"strings"
 
@@ -68,7 +69,9 @@ func (r *router) Route(method, path string, handler Handler) {
 		path = r.prefix + path
 	}
 
-	r.Router.NewRoute().Methods(method).Path(path).Handler(handler)
+	h := otelhttp.NewHandler(handler, "gofr-handler")
+
+	r.Router.NewRoute().Methods(method).Path(path).Handler(h)
 
 	if method == http.MethodGet {
 		r.Router.NewRoute().Methods(http.MethodHead).Path(path).Handler(handler)

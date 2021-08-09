@@ -20,7 +20,7 @@ func TestTraceExporterSuccess(t *testing.T) {
 		port    string
 		appName string
 	}{
-		{"zipkin", "invalid", "2005", "gofr"},
+		{"zipkin", "localhost", "2005", "gofr"},
 	}
 
 	for _, v := range testcases {
@@ -28,7 +28,7 @@ func TestTraceExporterSuccess(t *testing.T) {
 		logger := log.NewMockLogger(b)
 		tp := TraceProvider(v.appName, v.name, v.host, v.port, logger)
 
-		if assert.Nil(t, tp) {
+		if !assert.NotNil(t, tp) {
 			t.Errorf("Failed.\tExpected NotNil Got Nil")
 		}
 	}
