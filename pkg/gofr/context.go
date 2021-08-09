@@ -9,6 +9,10 @@ import (
 	"github.com/dgrijalva/jwt-go"
 	"github.com/gorilla/mux"
 	"github.com/gorilla/websocket"
+
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/trace"
+
 	"developer.zopsmart.com/go/gofr/pkg/datastore/pubsub"
 	"developer.zopsmart.com/go/gofr/pkg/gofr/request"
 	"developer.zopsmart.com/go/gofr/pkg/gofr/responder"
@@ -48,6 +52,13 @@ func (c *Context) reset(w responder.Responder, r request.Request) {
 	c.resp = w
 	c.Context = nil
 	c.Logger = nil
+}
+
+// Trace returns an open telemetry span. We have to always close the span after corresponding work is done.
+func (c *Context) Trace(name string) trace.Span {
+	tr := otel.GetTracerProvider().Tracer("gofr-context")
+	_, span := tr.Start(c.Context, name)
+	return span
 }
 
 // Request returns the underlying HTTP request

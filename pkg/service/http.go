@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"encoding/xml"
 	"fmt"
+	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 	"io"
 	"net"
 	"net/http"
@@ -15,7 +16,6 @@ import (
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
-	"go.opencensus.io/plugin/ochttp"
 
 	"developer.zopsmart.com/go/gofr/pkg/errors"
 	"developer.zopsmart.com/go/gofr/pkg/log"
@@ -324,7 +324,7 @@ func encodeQueryParameters(req *http.Request, params map[string]interface{}) {
 
 func (h *httpService) SetConnectionPool(maxConnections int, idleConnectionTimeout time.Duration) {
 	t := http.Transport{MaxIdleConns: maxConnections, IdleConnTimeout: idleConnectionTimeout}
-	octr := &ochttp.Transport{Base: &t}
+	octr := otelhttp.NewTransport(&t)
 	h.Timeout = idleConnectionTimeout
 	cl := &http.Client{Transport: octr}
 	h.Client = cl

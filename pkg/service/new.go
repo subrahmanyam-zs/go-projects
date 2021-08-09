@@ -2,16 +2,15 @@ package service
 
 import (
 	"encoding/base64"
+	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 	"net/http"
 	"time"
-
-	"github.com/prometheus/client_golang/prometheus"
-	"go.opencensus.io/plugin/ochttp"
 
 	"developer.zopsmart.com/go/gofr/pkg"
 	"developer.zopsmart.com/go/gofr/pkg/gofr/cache"
 	"developer.zopsmart.com/go/gofr/pkg/gofr/types"
 	"developer.zopsmart.com/go/gofr/pkg/log"
+	"github.com/prometheus/client_golang/prometheus"
 )
 
 // Options allows the user set all the options needs for http service like auth, service level headers, caching and surge protection
@@ -66,7 +65,10 @@ var (
 func NewHTTPServiceWithOptions(resourceAddr string, logger log.Logger, options *Options) *httpService {
 	// Register the prometheus metric
 	_ = prometheus.Register(httpServiceResponse)
-	transport := &ochttp.Transport{}
+
+	// Transport for http Client
+	t := http.Transport{}
+	transport := otelhttp.NewTransport(&t)
 
 	httpSvc := &httpService{
 		url:       resourceAddr,

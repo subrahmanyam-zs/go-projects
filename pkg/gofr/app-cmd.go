@@ -5,7 +5,8 @@ import (
 	"os"
 
 	"developer.zopsmart.com/go/gofr/pkg/log"
-	"go.opencensus.io/trace"
+
+	"go.opentelemetry.io/otel/trace"
 )
 
 type cmdApp struct {
@@ -46,6 +47,4 @@ func (app *cmdApp) Start(logger log.Logger) {
 	} else {
 		app.context.resp.Respond(data, nil)
 	}
-
-	app.tracingSpan.End()
 }

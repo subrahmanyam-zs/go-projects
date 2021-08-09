@@ -6,14 +6,14 @@ import (
 	"strconv"
 	"testing"
 
-	"go.opencensus.io/trace"
+	"go.opentelemetry.io/otel/trace"
 )
 
 type MockHandlerForTracing struct{}
 
 // ServeHTTP is used for testing if the request context has traceId
 func (r *MockHandlerForTracing) ServeHTTP(w http.ResponseWriter, req *http.Request) {
-	traceID := trace.FromContext(req.Context()).SpanContext().TraceID.String()
+	traceID := trace.SpanFromContext(req.Context()).SpanContext().TraceID().String()
 	_, _ = w.Write([]byte(traceID))
 }
 

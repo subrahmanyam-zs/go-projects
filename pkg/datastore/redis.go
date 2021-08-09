@@ -7,17 +7,14 @@ import (
 	"strings"
 	"time"
 
-	"github.com/prometheus/client_golang/prometheus"
-
 	"developer.zopsmart.com/go/gofr/pkg"
 	"developer.zopsmart.com/go/gofr/pkg/gofr/types"
 	"developer.zopsmart.com/go/gofr/pkg/log"
 	"developer.zopsmart.com/go/gofr/pkg/middleware"
-	"go.opencensus.io/trace"
 
-	"github.com/go-redis/redis/extra/rediscensus"
-
+	"github.com/go-redis/redis/extra/redisotel"
 	"github.com/go-redis/redis/v8"
+	"github.com/prometheus/client_golang/prometheus"
 )
 
 // Redis is an abstraction that embeds the UniversalClient from go-redis/redis
@@ -69,9 +66,6 @@ func NewRedis(logger log.Logger, config RedisConfig) (Redis, error) {
 		config.Options.Addr = config.HostName + ":" + config.Port
 	}
 
-	_, span := trace.StartSpan(context.Background(), "Redis")
-	defer span.End()
-
 	rc := redis.NewClient(config.Options)
 
 	rLog := QueryLogger{
@@ -81,7 +75,7 @@ func NewRedis(logger log.Logger, config RedisConfig) (Redis, error) {
 
 	rc.AddHook(&rLog)
 
-	rc.AddHook(rediscensus.TracingHook{})
+	rc.AddHook(redisotel.TracingHook{})
 
 	if err := rc.Ping(context.Background()).Err(); err != nil {
 		// Close the redis connection
@@ -192,7 +186,7 @@ func (l *QueryLogger) AfterProcess(ctx context.Context, cmd redis.Cmder) error {
 	l.DataStore = pkg.Redis
 	dur := endTime.Sub(l.StartTime).Seconds()
 
-	l.monitorRedis(s ,dur)
+	l.monitorRedis(s, dur)
 
 	return nil
 }
@@ -220,12 +214,12 @@ func (l *QueryLogger) AfterProcessPipeline(ctx context.Context, cmds []redis.Cmd
 
 	dur := endTime.Sub(l.StartTime).Seconds()
 
-	l.monitorRedis(query ,dur)
+	l.monitorRedis(query, dur)
 
 	return nil
 }
 
-func (l *QueryLogger) monitorRedis(query []string,duration float64) {
+func (l *QueryLogger) monitorRedis(query []string, duration float64) {
 	l.Logger.Debug(l)
 	// push stats to prometheus
 	redisStats.WithLabelValues(query[0], l.Hosts).Observe(duration)

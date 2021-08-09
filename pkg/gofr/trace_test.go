@@ -1,52 +1,59 @@
 package gofr
 
 import (
+	"bytes"
+	"reflect"
 	"testing"
 
-	"go.opencensus.io/trace"
+	"developer.zopsmart.com/go/gofr/pkg/log"
+
+	"github.com/stretchr/testify/assert"
+
+	"go.opentelemetry.io/otel/sdk/trace"
 )
 
-func TestTraceExporter(t *testing.T) {
+func TestTraceExporterSuccess(t *testing.T) {
 	testcases := []struct {
 		// exporter input
 		name    string
 		host    string
 		port    string
 		appName string
-
-		// output
-		exporter trace.Exporter
 	}{
-		{"zipkin", "invalid", "2005", "gofr", nil},
+		{"zipkin", "invalid", "2005", "gofr"},
+	}
+
+	for _, v := range testcases {
+		b := new(bytes.Buffer)
+		logger := log.NewMockLogger(b)
+		tp := TraceProvider(v.appName, v.name, v.host, v.port, logger)
+
+		if assert.Nil(t, tp) {
+			t.Errorf("Failed.\tExpected NotNil Got Nil")
+		}
+	}
+}
+
+func TestTraceExporterFailure(t *testing.T) {
+	testcases := []struct {
+		// exporter input
+		name    string
+		host    string
+		port    string
+		appName string
+		tp      *trace.TracerProvider
+	}{
 		{"not zipkin", "localhost", "2005", "gofr", nil},
 		{"gcp", "fakeproject", "0", "gofr", nil},
 	}
 
 	for _, v := range testcases {
-		exporter := TraceExporter(v.appName, v.name, v.host, v.port)
+		b := new(bytes.Buffer)
+		logger := log.NewMockLogger(b)
+		tp := TraceProvider(v.appName, v.name, v.host, v.port, logger)
 
-		if exporter != v.exporter {
-			t.Errorf("Failed.\tExpected %v\tGot %v\n", v.exporter, exporter)
+		if !reflect.DeepEqual(tp, v.tp) {
+			t.Errorf("Failed.\tExpected %v\tGot %v\n", v.tp, tp)
 		}
-	}
-}
-
-func TestGCPTrace(t *testing.T) {
-	tests := []struct {
-		name      string
-		projectID string
-		want      trace.Exporter
-	}{
-		{"exporter creation failed", "", nil},
-	}
-
-	for _, tt := range tests {
-		tt := tt
-		t.Run(tt.name, func(t *testing.T) {
-			got := getGCPExporter(tt.projectID)
-			if got != tt.want {
-				t.Errorf("getGCPExporter() = %v, want %v", got, tt.want)
-			}
-		})
 	}
 }

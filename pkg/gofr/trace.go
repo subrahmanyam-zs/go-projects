@@ -1,13 +1,18 @@
 package gofr
 
 import (
+	"context"
 	"strings"
 
-	"contrib.go.opencensus.io/exporter/stackdriver"
-	zkExporter "contrib.go.opencensus.io/exporter/zipkin"
-	zk "github.com/openzipkin/zipkin-go"
-	zkHTTP "github.com/openzipkin/zipkin-go/reporter/http"
-	"go.opencensus.io/trace"
+	"developer.zopsmart.com/go/gofr/pkg/log"
+
+	"go.opentelemetry.io/collector/translator/conventions"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/exporters/zipkin"
+	"go.opentelemetry.io/otel/propagation"
+	"go.opentelemetry.io/otel/sdk/resource"
+	"go.opentelemetry.io/otel/sdk/trace"
 )
 
 type exporter struct {
@@ -17,7 +22,7 @@ type exporter struct {
 	appName string
 }
 
-func TraceExporter(appName, exporterName, exporterHost, exporterPort string) trace.Exporter {
+func TraceProvider(appName, exporterName, exporterHost, exporterPort string, logger log.Logger) *trace.TracerProvider {
 	exporterName = strings.ToLower(exporterName)
 	e := exporter{
 		name:    exporterName,
@@ -28,34 +33,40 @@ func TraceExporter(appName, exporterName, exporterHost, exporterPort string) tra
 
 	switch exporterName {
 	case "zipkin":
-		return e.getZipkinExporter()
-	case "gcp":
-		return getGCPExporter(exporterHost)
+		return e.getZipkinExporter(logger)
 	default:
 		return nil
 	}
 }
 
-func (e *exporter) getZipkinExporter() trace.Exporter {
-	localEndpoint, err := zk.NewEndpoint(e.appName, e.host)
-	if err != nil {
-		return nil
-	}
-
+func (e *exporter) getZipkinExporter(logger log.Logger) *trace.TracerProvider {
 	url := "http://" + e.host + ":" + e.port + "/api/v2/spans"
-	reporter := zkHTTP.NewReporter(url)
-	ze := zkExporter.NewExporter(reporter, localEndpoint)
 
-	return ze
-}
-
-func getGCPExporter(projectID string) trace.Exporter {
-	exporter, err := stackdriver.NewExporter(stackdriver.Options{
-		ProjectID: projectID,
-	})
+	exporter, err := zipkin.New(url, zipkin.WithSDKOptions(trace.WithSampler(trace.AlwaysSample())))
 	if err != nil {
-		return nil
+		logger.Errorf("failed to initialize zipkinExporter export pipeline: %v", err)
 	}
 
-	return exporter
+	batcher := trace.NewBatchSpanProcessor(exporter)
+
+	attributes := []attribute.KeyValue{
+		attribute.String(conventions.AttributeTelemetrySDKName, "launcher"),
+		attribute.String(conventions.AttributeTelemetrySDKLanguage, "go"),
+		attribute.String(conventions.AttributeTelemetrySDKVersion, "0.1.0"),
+		attribute.String(conventions.AttributeServiceName, "Gofr-App"),
+	}
+
+	r, _ := resource.New(
+		context.Background(),
+		resource.WithAttributes(attributes...),
+	)
+
+	tp := trace.NewTracerProvider(
+		trace.WithSpanProcessor(batcher),
+		trace.WithResource(r))
+
+	otel.SetTracerProvider(tp)
+	otel.SetTextMapPropagator(propagation.NewCompositeTextMapPropagator(propagation.TraceContext{}, propagation.Baggage{}))
+
+	return tp
 }

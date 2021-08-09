@@ -7,8 +7,6 @@ import (
 	"net/http"
 	"strings"
 	"time"
-
-	"go.opencensus.io/trace"
 )
 
 type message string
@@ -113,10 +111,6 @@ func getCorrelationID(r *http.Request) string {
 	correlationID := r.Header.Get("X-Correlation-Id")
 	if correlationID == "" {
 		correlationID = r.Header.Get("X-B3-TraceId")
-	}
-
-	if correlationID == "" {
-		correlationID = trace.FromContext(r.Context()).SpanContext().TraceID.String()
 	}
 
 	return correlationID

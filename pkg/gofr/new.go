@@ -2,7 +2,6 @@ package gofr
 
 import (
 	"context"
-	awssns "developer.zopsmart.com/go/gofr/pkg/notifier/aws-sns"
 	"errors"
 	"os"
 	"strconv"
@@ -17,8 +16,12 @@ import (
 	"developer.zopsmart.com/go/gofr/pkg/gofr/request"
 	"developer.zopsmart.com/go/gofr/pkg/gofr/responder"
 	"developer.zopsmart.com/go/gofr/pkg/log"
+	awssns "developer.zopsmart.com/go/gofr/pkg/notifier/aws-sns"
+
 	"github.com/prometheus/client_golang/prometheus"
-	"go.opencensus.io/trace"
+
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/trace"
 )
 
 func New() (k *Gofr) {
@@ -109,7 +112,7 @@ func NewWithConfig(c Config) (k *Gofr) {
 	_ = enableTracing(c)
 	initializeDataStores(c, gofr)
 
-	initializeNotifiers(c,gofr)
+	initializeNotifiers(c, gofr)
 
 	return gofr
 }
@@ -215,33 +218,38 @@ func NewCMD() *Gofr {
 
 	cmdApp.context = NewContext(&responder.CMD{}, request.NewCMDRequest(), gofr)
 	// Start tracing span
-	ctx, tSpan := trace.StartSpan(context.Background(), "CMD")
+	var tSpan trace.Span
+
+	tracer := otel.Tracer("gofr")
+	ctx, tSpan := tracer.Start(context.Background(), "CMD")
+
 	cmdApp.context.Context = ctx
-	cmdApp.tracingSpan = tSpan
+	cmdApp.tracingSpan = &tSpan
 
 	// If Tracing is set, Set tracing
 	_ = enableTracing(c)
 	initializeDataStores(c, gofr)
 
-	initializeNotifiers(c,gofr)
+	initializeNotifiers(c, gofr)
 
 	return gofr
 }
 
 func enableTracing(c Config) error {
 	// If Tracing is set, Set tracing
-	exporter := TraceExporter(
+	var logger log.Logger
+	tp := TraceProvider(
 		c.GetOrDefault("APP_NAME", "gofr"),
 		c.Get("TRACER_EXPORTER"),
 		c.Get("TRACER_NAME"),
 		c.Get("TRACER_PORT"),
+		logger,
 	)
-	if exporter == nil {
+	if tp == nil {
 		return errors.New("could not create exporter")
 	}
 
-	trace.RegisterExporter(exporter)
-	trace.ApplyConfig(trace.Config{DefaultSampler: trace.AlwaysSample()})
+	otel.SetTracerProvider(tp)
 
 	return nil
 }
@@ -566,7 +574,7 @@ func initializeSolr(c Config, k *Gofr) {
 	k.Logger.Infof("Solr connected. Host: %s, Port: %s \n", host, port)
 }
 
-func initializeNotifiers(c Config, k *Gofr){
+func initializeNotifiers(c Config, k *Gofr) {
 	notifierBackend := c.Get("NOTIFIER_BACKEND")
 	if notifierBackend == "" {
 		return
