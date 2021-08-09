@@ -2,14 +2,11 @@ package gofr
 
 import (
 	"bytes"
-	"reflect"
 	"testing"
 
 	"developer.zopsmart.com/go/gofr/pkg/log"
 
 	"github.com/stretchr/testify/assert"
-
-	"go.opentelemetry.io/otel/sdk/trace"
 )
 
 func TestTraceExporterSuccess(t *testing.T) {
@@ -28,9 +25,7 @@ func TestTraceExporterSuccess(t *testing.T) {
 		logger := log.NewMockLogger(b)
 		tp := TraceProvider(v.appName, v.name, v.host, v.port, logger)
 
-		if !assert.NotNil(t, tp) {
-			t.Errorf("Failed.\tExpected NotNil Got Nil")
-		}
+		assert.NotNil(t, tp, "Failed.\tExpected NotNil Got Nil")
 	}
 }
 
@@ -41,10 +36,9 @@ func TestTraceExporterFailure(t *testing.T) {
 		host    string
 		port    string
 		appName string
-		tp      *trace.TracerProvider
 	}{
-		{"not zipkin", "localhost", "2005", "gofr", nil},
-		{"gcp", "fakeproject", "0", "gofr", nil},
+		{"not zipkin", "localhost", "2005", "gofr"},
+		{"gcp", "fakeproject", "0", "gofr"},
 	}
 
 	for _, v := range testcases {
@@ -52,8 +46,6 @@ func TestTraceExporterFailure(t *testing.T) {
 		logger := log.NewMockLogger(b)
 		tp := TraceProvider(v.appName, v.name, v.host, v.port, logger)
 
-		if !reflect.DeepEqual(tp, v.tp) {
-			t.Errorf("Failed.\tExpected %v\tGot %v\n", v.tp, tp)
-		}
+		assert.Nil(t, tp, "Failed.\tExpected Nil Got NotNil")
 	}
 }
