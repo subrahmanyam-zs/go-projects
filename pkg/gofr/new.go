@@ -2,7 +2,6 @@ package gofr
 
 import (
 	"context"
-	"errors"
 	"os"
 	"strconv"
 	"strings"
@@ -12,6 +11,7 @@ import (
 	"developer.zopsmart.com/go/gofr/pkg/datastore/pubsub/avro"
 	"developer.zopsmart.com/go/gofr/pkg/datastore/pubsub/eventhub"
 	"developer.zopsmart.com/go/gofr/pkg/datastore/pubsub/kafka"
+	"developer.zopsmart.com/go/gofr/pkg/errors"
 	"developer.zopsmart.com/go/gofr/pkg/gofr/config"
 	"developer.zopsmart.com/go/gofr/pkg/gofr/request"
 	"developer.zopsmart.com/go/gofr/pkg/gofr/responder"
@@ -21,7 +21,6 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 
 	"go.opentelemetry.io/otel"
-	"go.opentelemetry.io/otel/trace"
 )
 
 func New() (k *Gofr) {
@@ -217,14 +216,14 @@ func NewCMD() *Gofr {
 	}
 
 	cmdApp.context = NewContext(&responder.CMD{}, request.NewCMDRequest(), gofr)
-	// Start tracing span
-	var tSpan trace.Span
 
 	tracer := otel.Tracer("gofr")
-	ctx, tSpan := tracer.Start(context.Background(), "CMD")
+
+	// Start tracing span
+	ctx, span := tracer.Start(context.Background(), "CMD")
 
 	cmdApp.context.Context = ctx
-	cmdApp.tracingSpan = &tSpan
+	cmdApp.tracingSpan = &span
 
 	// If Tracing is set, Set tracing
 	_ = enableTracing(c)
@@ -236,7 +235,7 @@ func NewCMD() *Gofr {
 }
 
 func enableTracing(c Config) error {
-	// If Tracing is set, Set tracing
+	// If Tracing is set, initialize tracing
 	var logger log.Logger
 	tp := TraceProvider(
 		c.GetOrDefault("APP_NAME", "gofr"),
@@ -246,7 +245,7 @@ func enableTracing(c Config) error {
 		logger,
 	)
 	if tp == nil {
-		return errors.New("could not create exporter")
+		return errors.Error("could not create exporter")
 	}
 
 	otel.SetTracerProvider(tp)

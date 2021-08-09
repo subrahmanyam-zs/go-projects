@@ -1,7 +1,7 @@
 package gofr
 
 import (
-	"bytes"
+	"io"
 	"testing"
 
 	"developer.zopsmart.com/go/gofr/pkg/log"
@@ -21,8 +21,7 @@ func TestTraceExporterSuccess(t *testing.T) {
 	}
 
 	for _, v := range testcases {
-		b := new(bytes.Buffer)
-		logger := log.NewMockLogger(b)
+		logger := log.NewMockLogger(io.Discard)
 		tp := TraceProvider(v.appName, v.name, v.host, v.port, logger)
 
 		assert.NotNil(t, tp, "Failed.\tExpected NotNil Got Nil")
@@ -42,8 +41,7 @@ func TestTraceExporterFailure(t *testing.T) {
 	}
 
 	for _, v := range testcases {
-		b := new(bytes.Buffer)
-		logger := log.NewMockLogger(b)
+		logger := log.NewMockLogger(io.Discard)
 		tp := TraceProvider(v.appName, v.name, v.host, v.port, logger)
 
 		assert.Nil(t, tp, "Failed.\tExpected Nil Got NotNil")
