@@ -2,12 +2,13 @@ package middleware
 
 import (
 	"context"
-	"developer.zopsmart.com/go/gofr/pkg"
 	"fmt"
 	"net/http"
 
+	"developer.zopsmart.com/go/gofr/pkg"
+
 	"go.opentelemetry.io/otel"
-	"go.opentelemetry.io/otel/semconv/v1.4.0"
+	semconv "go.opentelemetry.io/otel/semconv/v1.4.0"
 	"go.opentelemetry.io/otel/trace"
 )
 
@@ -15,11 +16,10 @@ import (
 func Trace(inner http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
-		var span trace.Span
 
 		tracer := otel.GetTracerProvider().Tracer(pkg.DefaultAppName, trace.WithInstrumentationVersion(pkg.DefaultAppVersion))
 
-		ctx, span = tracer.Start(ctx, fmt.Sprintf("gofr-middleware %s %s", r.Method, r.URL.Path), trace.WithSpanKind(trace.SpanKindClient), trace.WithAttributes(semconv.ServiceNameKey.String("Gofr-App"), semconv.TelemetrySDKNameKey.String("Zipkin")))
+		ctx, span := tracer.Start(ctx, fmt.Sprintf("gofr-middleware %s %s", r.Method, r.URL.Path), trace.WithSpanKind(trace.SpanKindClient), trace.WithAttributes(semconv.ServiceNameKey.String("Gofr-App"), semconv.TelemetrySDKNameKey.String("Zipkin")))
 		defer span.End()
 
 		correlationID := getCorrelationID(r)

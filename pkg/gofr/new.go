@@ -240,7 +240,7 @@ func enableTracing(c Config) error {
 	tp := TraceProvider(
 		c.GetOrDefault("APP_NAME", "gofr"),
 		c.Get("TRACER_EXPORTER"),
-		c.Get("TRACER_NAME"),
+		c.Get("TRACER_HOST"),
 		c.Get("TRACER_PORT"),
 		logger,
 	)

@@ -2,7 +2,6 @@ package service
 
 import (
 	"encoding/base64"
-	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 	"net/http"
 	"time"
 
@@ -10,7 +9,10 @@ import (
 	"developer.zopsmart.com/go/gofr/pkg/gofr/cache"
 	"developer.zopsmart.com/go/gofr/pkg/gofr/types"
 	"developer.zopsmart.com/go/gofr/pkg/log"
+
 	"github.com/prometheus/client_golang/prometheus"
+
+	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 )
 
 // Options allows the user set all the options needs for http service like auth, service level headers, caching and surge protection
