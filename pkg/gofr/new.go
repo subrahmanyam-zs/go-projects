@@ -108,7 +108,7 @@ func NewWithConfig(c Config) (k *Gofr) {
 	s.initializeMetricServerConfig(c)
 
 	// If Tracing is set, Set tracing
-	_ = enableTracing(c)
+	_ = enableTracing(c, logger)
 	initializeDataStores(c, gofr)
 
 	initializeNotifiers(c, gofr)
@@ -226,7 +226,7 @@ func NewCMD() *Gofr {
 	cmdApp.tracingSpan = &span
 
 	// If Tracing is set, Set tracing
-	_ = enableTracing(c)
+	_ = enableTracing(c, logger)
 	initializeDataStores(c, gofr)
 
 	initializeNotifiers(c, gofr)
@@ -234,9 +234,8 @@ func NewCMD() *Gofr {
 	return gofr
 }
 
-func enableTracing(c Config) error {
+func enableTracing(c Config, logger log.Logger) error {
 	// If Tracing is set, initialize tracing
-	var logger log.Logger
 	tp := TraceProvider(
 		c.GetOrDefault("APP_NAME", "gofr"),
 		c.Get("TRACER_EXPORTER"),

@@ -17,8 +17,10 @@ import (
 
 	"developer.zopsmart.com/go/gofr/pkg/log"
 	"developer.zopsmart.com/go/gofr/pkg/middleware"
+
 	"github.com/stretchr/testify/assert"
-	"go.opencensus.io/plugin/ochttp"
+
+	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 )
 
 func testServer() *httptest.Server {
@@ -200,7 +202,8 @@ func Test_Client_ctx_cancel(t *testing.T) {
 }
 
 func TestCallError(t *testing.T) {
-	octr := &ochttp.Transport{}
+	transport := http.Transport{}
+	octr := otelhttp.NewTransport(&transport)
 	c := &http.Client{Transport: octr}
 	client := &httpService{
 		url:    "sample service",
@@ -219,7 +222,8 @@ func TestCallError(t *testing.T) {
 
 func TestLogError(t *testing.T) {
 	b := new(bytes.Buffer)
-	octr := &ochttp.Transport{}
+	transport := http.Transport{}
+	octr := otelhttp.NewTransport(&transport)
 
 	c := &http.Client{Transport: octr}
 	client := &httpService{
