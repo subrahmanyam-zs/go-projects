@@ -69,8 +69,7 @@ func NewHTTPServiceWithOptions(resourceAddr string, logger log.Logger, options *
 	_ = prometheus.Register(httpServiceResponse)
 
 	// Transport for http Client
-	t := http.Transport{}
-	transport := otelhttp.NewTransport(&t)
+	transport := otelhttp.NewTransport(nil)
 
 	httpSvc := &httpService{
 		url:       resourceAddr,
