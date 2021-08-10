@@ -6,6 +6,7 @@ import (
 	"io"
 	"os"
 	"runtime/debug"
+	"strconv"
 	"sync"
 )
 
@@ -77,6 +78,11 @@ func (k *logger) log(level level, format string, args ...interface{}) {
 		/*CorrelationID for middleware apart from Performance log.
 		For performance log the correlationID comes from Logline struct defined in logging.go.*/
 		e.CorrelationID, _ = correlationID.(string)
+	}
+
+	id, err := strconv.Atoi(e.CorrelationID)
+	if err == nil && id == 0 {
+		e.CorrelationID = ""
 	}
 
 	// Deleting the correlationId in case of any duplication.
