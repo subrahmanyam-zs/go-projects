@@ -37,7 +37,7 @@ func TestTraceExporterFailure(t *testing.T) {
 		appName string
 	}{
 		{"not zipkin", "localhost", "2005", "gofr"},
-		{"gcp", "fakeproject", "0", "gofr"},
+		{"gcp", "fakeproject", "0", "gofr-dev"},
 	}
 
 	for _, v := range testcases {
