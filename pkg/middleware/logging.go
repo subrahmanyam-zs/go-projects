@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/base64"
 	"encoding/json"
+	"go.opentelemetry.io/otel/trace"
 	"net/http"
 	"strings"
 	"time"
@@ -111,6 +112,11 @@ func getCorrelationID(r *http.Request) string {
 	correlationID := r.Header.Get("X-Correlation-Id")
 	if correlationID == "" {
 		correlationID = r.Header.Get("X-B3-TraceId")
+	}
+
+	if correlationID == "" {
+		correlationID = trace.SpanFromContext(r.Context()).SpanContext().TraceID().String()
+		r.Header.Set("X-Correlation-Id", correlationID)
 	}
 
 	return correlationID
