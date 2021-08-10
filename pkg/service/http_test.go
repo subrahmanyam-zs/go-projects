@@ -146,14 +146,13 @@ func TestService_GetRetry(t *testing.T) {
 			_, _ = w.Write(reBytes)
 		}))
 
-		b := new(bytes.Buffer)
 		opts := &Options{NumOfRetries: tc.numOfRetries}
 		// Assigning the test server url
 		if tc.url == "server-url" {
 			tc.url = ts.URL
 		}
 
-		h := NewHTTPServiceWithOptions(tc.url, log.NewMockLogger(b), opts)
+		h := NewHTTPServiceWithOptions(tc.url, log.NewMockLogger(io.Discard), opts)
 		// The non-zero value of ResponseHeaderTimeout, specifies the amount of time to wait for a server's response headers
 		// after fully writing the request
 		http.DefaultTransport.(*http.Transport).ResponseHeaderTimeout = timeout * time.Millisecond
@@ -354,7 +353,7 @@ func TestHttpService_CSPAuthHeaders(t *testing.T) {
 	req, _ := httpSvc.createReq(context.Background(), "GET", "", nil, nil, nil)
 
 	if req.Header.Get("ac") == "" || req.Header.Get("ak") != "mock-app-key" || req.Header.Get("cd") != "" ||
-		req.Header.Get("sv") != "V1" || req.Header.Get("jst") != "1" {
+		req.Header.Get("sv") != "V1" || req.Header.Get("st") != "1" {
 		t.Errorf("setting of csp auth headers failed")
 	}
 }
@@ -633,7 +632,7 @@ func Test_authorizationHeaderSet(t *testing.T) {
 	}{
 		{
 			headers:             map[string]string{"Authorization": "some-random", "X-Correlation-ID": "Random"},
-			authorizationHeader: "Basic a3JvZ286WHorfDRjS3ckSFokQ1BafQ==",
+			authorizationHeader: "Basic Z29mcjpwd2Q=",
 		},
 	}
 
