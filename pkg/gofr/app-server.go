@@ -11,7 +11,6 @@ import (
 
 	"github.com/gorilla/websocket"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
-	"go.opentelemetry.io/otel/trace"
 	"golang.org/x/net/context"
 
 	"developer.zopsmart.com/go/gofr/pkg/errors"
@@ -227,14 +226,8 @@ func (s *server) contextInjector(inner http.Handler) http.Handler {
 		c.Context = r.Context()
 		*r = *r.WithContext(ctx.WithValue(c, gofrContextkey, c))
 
-		correlationID := r.Header.Get("X-Correlation-Id")
-		if correlationID == "" {
-			correlationID = r.Header.Get("X-B3-TraceId")
-		}
-		if correlationID == "" {
-			correlationID = trace.SpanFromContext(r.Context()).SpanContext().TraceID().String()
-			r.Header.Set("X-Correlation-Id", correlationID)
-		}
+
+		correlationID := middleware.GetCorrelationID(r)
 
 		c.Logger = log.NewCorrelationLogger(correlationID)
 
