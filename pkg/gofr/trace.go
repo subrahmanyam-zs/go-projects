@@ -2,7 +2,7 @@ package gofr
 
 import (
 	"context"
-
+	"fmt"
 	"strings"
 
 	"developer.zopsmart.com/go/gofr/pkg/log"
@@ -23,7 +23,7 @@ type exporter struct {
 	appName string
 }
 
-func TraceProvider(appName, exporterName, exporterHost, exporterPort string, logger log.Logger) *trace.TracerProvider {
+func TraceProvider(appName, exporterName, exporterHost, exporterPort string, logger log.Logger, config Config) *trace.TracerProvider {
 	exporterName = strings.ToLower(exporterName)
 	e := exporter{
 		name:    exporterName,
@@ -34,14 +34,14 @@ func TraceProvider(appName, exporterName, exporterHost, exporterPort string, log
 
 	switch exporterName {
 	case "zipkin":
-		return e.getZipkinExporter(logger)
+		return e.getZipkinExporter(config, logger)
 	default:
 		return nil
 	}
 }
 
-func (e *exporter) getZipkinExporter(logger log.Logger) *trace.TracerProvider {
-	url := "http://" + e.host + ":" + e.port + "/api/v2/spans"
+func (e *exporter) getZipkinExporter(c Config, logger log.Logger) *trace.TracerProvider {
+	url := fmt.Sprintf("http://%s:%s/api/v2/spans", e.host, e.port)
 
 	exporter, err := zipkin.New(url, zipkin.WithSDKOptions(trace.WithSampler(trace.AlwaysSample())))
 	if err != nil {
@@ -53,18 +53,16 @@ func (e *exporter) getZipkinExporter(logger log.Logger) *trace.TracerProvider {
 	attributes := []attribute.KeyValue{
 		attribute.String(conventions.AttributeTelemetrySDKName, "launcher"),
 		attribute.String(conventions.AttributeTelemetrySDKLanguage, "go"),
-		attribute.String(conventions.AttributeTelemetrySDKVersion, "0.1.0"),
-		attribute.String(conventions.AttributeServiceName, "Gofr-App"),
+		attribute.String(conventions.AttributeTelemetrySDKVersion, c.Get("APP_VERSION")),
+		attribute.String(conventions.AttributeServiceName, c.Get("APP_NAME")),
 	}
 
-	r, _ := resource.New(
-		context.Background(),
-		resource.WithAttributes(attributes...),
-	)
+	r, err := resource.New(context.Background(), resource.WithAttributes(attributes...))
+	if err != nil {
+		logger.Errorf("error creating resource")
+	}
 
-	tp := trace.NewTracerProvider(
-		trace.WithSpanProcessor(batcher),
-		trace.WithResource(r))
+	tp := trace.NewTracerProvider(trace.WithSpanProcessor(batcher), trace.WithResource(r))
 
 	otel.SetTracerProvider(tp)
 	otel.SetTextMapPropagator(propagation.NewCompositeTextMapPropagator(propagation.TraceContext{}, propagation.Baggage{}))

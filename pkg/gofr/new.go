@@ -242,6 +242,7 @@ func enableTracing(c Config, logger log.Logger) error {
 		c.Get("TRACER_HOST"),
 		c.Get("TRACER_PORT"),
 		logger,
+		c,
 	)
 	if tp == nil {
 		return errors.Error("could not create exporter")

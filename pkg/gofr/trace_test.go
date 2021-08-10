@@ -4,6 +4,7 @@ import (
 	"io"
 	"testing"
 
+	"developer.zopsmart.com/go/gofr/pkg/gofr/config"
 	"developer.zopsmart.com/go/gofr/pkg/log"
 
 	"github.com/stretchr/testify/assert"
@@ -21,8 +22,7 @@ func TestTraceExporterSuccess(t *testing.T) {
 	}
 
 	for _, v := range testcases {
-		logger := log.NewMockLogger(io.Discard)
-		tp := TraceProvider(v.appName, v.name, v.host, v.port, logger)
+		tp := TraceProvider(v.appName, v.name, v.host, v.port, log.NewMockLogger(io.Discard), &config.MockConfig{})
 
 		assert.NotNil(t, tp, "Failed.\tExpected NotNil Got Nil")
 	}
@@ -37,12 +37,11 @@ func TestTraceExporterFailure(t *testing.T) {
 		appName string
 	}{
 		{"not zipkin", "localhost", "2005", "gofr"},
-		{"gcp", "fakeproject", "0", "gofr-dev"},
+		{"gcp", "fakeproject", "0", "sample-api"},
 	}
 
 	for _, v := range testcases {
-		logger := log.NewMockLogger(io.Discard)
-		tp := TraceProvider(v.appName, v.name, v.host, v.port, logger)
+		tp := TraceProvider(v.appName, v.name, v.host, v.port, log.NewMockLogger(io.Discard), &config.MockConfig{})
 
 		assert.Nil(t, tp, "Failed.\tExpected Nil Got NotNil")
 	}

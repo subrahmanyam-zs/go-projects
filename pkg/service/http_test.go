@@ -201,8 +201,7 @@ func Test_Client_ctx_cancel(t *testing.T) {
 }
 
 func TestCallError(t *testing.T) {
-	transport := http.Transport{}
-	octr := otelhttp.NewTransport(&transport)
+	octr := otelhttp.NewTransport(nil)
 	c := &http.Client{Transport: octr}
 	client := &httpService{
 		url:    "sample service",
@@ -221,8 +220,7 @@ func TestCallError(t *testing.T) {
 
 func TestLogError(t *testing.T) {
 	b := new(bytes.Buffer)
-	transport := http.Transport{}
-	octr := otelhttp.NewTransport(&transport)
+	octr := otelhttp.NewTransport(nil)
 
 	c := &http.Client{Transport: octr}
 	client := &httpService{

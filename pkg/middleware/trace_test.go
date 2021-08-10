@@ -22,7 +22,7 @@ func (r *MockHandlerForTracing) ServeHTTP(w http.ResponseWriter, req *http.Reque
 
 func TestTrace(t *testing.T) {
 	url := "http://localhost:2005/api/v2/spans"
-	exporter, err := zipkin.New(url, zipkin.WithSDKOptions(trace.WithSampler(trace.AlwaysSample())))
+	exporter, _ := zipkin.New(url, zipkin.WithSDKOptions(trace.WithSampler(trace.AlwaysSample())))
 	batcher := trace.NewBatchSpanProcessor(exporter)
 
 	tp := trace.NewTracerProvider(trace.WithSpanProcessor(batcher))
