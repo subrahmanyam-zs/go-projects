@@ -53,8 +53,8 @@ func (e *exporter) getZipkinExporter(c Config, logger log.Logger) *trace.TracerP
 	attributes := []attribute.KeyValue{
 		attribute.String(conventions.AttributeTelemetrySDKName, "launcher"),
 		attribute.String(conventions.AttributeTelemetrySDKLanguage, "go"),
-		attribute.String(conventions.AttributeTelemetrySDKVersion, c.Get("APP_VERSION")),
-		attribute.String(conventions.AttributeServiceName, c.Get("APP_NAME")),
+		attribute.String(conventions.AttributeTelemetrySDKVersion, c.GetOrDefault("APP_VERSION","Dev")),
+		attribute.String(conventions.AttributeServiceName, c.GetOrDefault("APP_NAME","Gofr-App")),
 	}
 
 	r, err := resource.New(context.Background(), resource.WithAttributes(attributes...))
