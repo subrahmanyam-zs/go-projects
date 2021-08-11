@@ -3,11 +3,13 @@ module developer.zopsmart.com/go/gofr
 go 1.16
 
 require (
+	cloud.google.com/go v0.90.0 // indirect
 	cloud.google.com/go/storage v1.14.0
 	github.com/Azure/azure-amqp-common-go/v3 v3.1.0
 	github.com/Azure/azure-event-hubs-go/v3 v3.3.7
 	github.com/Azure/azure-storage-blob-go v0.13.0
 	github.com/Azure/go-autorest/autorest v0.11.19
+	github.com/GoogleCloudPlatform/opentelemetry-operations-go/exporter/trace v1.0.0-RC2
 	github.com/Shopify/sarama v1.29.1
 	github.com/aws/aws-sdk-go v1.38.68
 	github.com/aws/aws-sdk-go-v2/credentials v1.1.2
@@ -19,7 +21,7 @@ require (
 	github.com/go-redis/redis/extra/redisotel v0.3.0
 	github.com/go-redis/redis/v8 v8.8.2
 	github.com/gocql/gocql v0.0.0-20200228163523-cd4b606dd2fb
-	github.com/golang/mock v1.5.0
+	github.com/golang/mock v1.6.0
 	github.com/golang/protobuf v1.5.2
 	github.com/google/uuid v1.3.0
 	github.com/gookit/color v1.4.2
@@ -48,8 +50,11 @@ require (
 	go.opentelemetry.io/otel/sdk v1.0.0-RC2
 	go.opentelemetry.io/otel/trace v1.0.0-RC2
 	golang.org/x/crypto v0.0.0-20210616213533-5ff15b29337e
-	golang.org/x/net v0.0.0-20210614182718-04defd469f4e
-	golang.org/x/text v0.3.6
-	google.golang.org/api v0.48.0
-	google.golang.org/grpc v1.39.0
+	golang.org/x/net v0.0.0-20210805182204-aaa1db679c0d
+	golang.org/x/oauth2 v0.0.0-20210810183815-faf39c7919d5 // indirect
+	golang.org/x/sys v0.0.0-20210809222454-d867a43fc93e // indirect
+	golang.org/x/text v0.3.7
+	google.golang.org/api v0.52.0
+	google.golang.org/genproto v0.0.0-20210811021853-ddbe55d93216 // indirect
+	google.golang.org/grpc v1.39.1
 )

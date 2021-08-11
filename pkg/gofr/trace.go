@@ -14,6 +14,8 @@ import (
 	"go.opentelemetry.io/otel/propagation"
 	"go.opentelemetry.io/otel/sdk/resource"
 	"go.opentelemetry.io/otel/sdk/trace"
+
+	cloudtrace "github.com/GoogleCloudPlatform/opentelemetry-operations-go/exporter/trace"
 )
 
 type exporter struct {
@@ -35,6 +37,8 @@ func TraceProvider(appName, exporterName, exporterHost, exporterPort string, log
 	switch exporterName {
 	case "zipkin":
 		return e.getZipkinExporter(config, logger)
+	case "gcp":
+		return getGCPExporter(config, exporterHost, logger)
 	default:
 		return nil
 	}
@@ -51,10 +55,9 @@ func (e *exporter) getZipkinExporter(c Config, logger log.Logger) *trace.TracerP
 	batcher := trace.NewBatchSpanProcessor(exporter)
 
 	attributes := []attribute.KeyValue{
-		attribute.String(conventions.AttributeTelemetrySDKName, "launcher"),
 		attribute.String(conventions.AttributeTelemetrySDKLanguage, "go"),
-		attribute.String(conventions.AttributeTelemetrySDKVersion, c.GetOrDefault("APP_VERSION","Dev")),
-		attribute.String(conventions.AttributeServiceName, c.GetOrDefault("APP_NAME","Gofr-App")),
+		attribute.String(conventions.AttributeTelemetrySDKVersion, c.GetOrDefault("APP_VERSION", "Dev")),
+		attribute.String(conventions.AttributeServiceName, c.GetOrDefault("APP_NAME", "Gofr-App")),
 	}
 
 	r, err := resource.New(context.Background(), resource.WithAttributes(attributes...))
@@ -63,6 +66,36 @@ func (e *exporter) getZipkinExporter(c Config, logger log.Logger) *trace.TracerP
 	}
 
 	tp := trace.NewTracerProvider(trace.WithSpanProcessor(batcher), trace.WithResource(r))
+
+	otel.SetTracerProvider(tp)
+	otel.SetTextMapPropagator(propagation.NewCompositeTextMapPropagator(propagation.TraceContext{}, propagation.Baggage{}))
+
+	return tp
+}
+
+func getGCPExporter(c Config, projectID string, logger log.Logger) *trace.TracerProvider {
+	exporter, err := cloudtrace.New(cloudtrace.WithProjectID(projectID))
+	if err != nil {
+		logger.Errorf("%v", err)
+	}
+
+	attributes := []attribute.KeyValue{
+		attribute.String(conventions.AttributeTelemetrySDKLanguage, "go"),
+		attribute.String(conventions.AttributeTelemetrySDKVersion, c.GetOrDefault("APP_VERSION", "Dev")),
+		attribute.String(conventions.AttributeServiceName, c.GetOrDefault("APP_NAME", "Gofr-App")),
+	}
+
+	r, err := resource.New(context.Background(), resource.WithAttributes(attributes...))
+	if err != nil {
+		logger.Errorf("error creating resource")
+	}
+
+	tp := trace.NewTracerProvider(
+		// For this example code we use sdktrace.AlwaysSample sampler to sample all traces.
+		// In a production application, use sdktrace.ProbabilitySampler with a desired probability.
+		trace.WithSampler(trace.AlwaysSample()),
+		trace.WithBatcher(exporter),
+		trace.WithResource(r))
 
 	otel.SetTracerProvider(tp)
 	otel.SetTextMapPropagator(propagation.NewCompositeTextMapPropagator(propagation.TraceContext{}, propagation.Baggage{}))
