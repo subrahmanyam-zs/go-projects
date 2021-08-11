@@ -245,7 +245,10 @@ func enableTracing(c Config, logger log.Logger) error {
 		c,
 	)
 	if tp == nil {
+		logger.Warnf("Tracing not enabled")
 		return errors.Error("could not create exporter")
+	} else {
+		logger.Info("Exporting traces to "+c.Get("TRACER_EXPORTER"))
 	}
 
 	otel.SetTracerProvider(tp)
