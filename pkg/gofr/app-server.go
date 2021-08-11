@@ -77,6 +77,7 @@ func NewServer(c Config, gofr *Gofr) *server {
 
 	// Add NewRelic based on Config
 	appName := c.Get("APP_NAME")
+	appVersion:=c.Get("APP_VERSION")
 	nrLicense := c.Get("NEWRELIC_LICENSE")
 
 	if appName != "" && nrLicense != "" {
@@ -86,7 +87,7 @@ func NewServer(c Config, gofr *Gofr) *server {
 	s.Router.Use(s.wsConnCreate)
 	s.Router.Use(s.serverPushFlush)
 	s.Router.Use(middleware.PropagateHeaders)
-	s.Router.Use(middleware.Trace)
+	s.Router.Use(middleware.Trace(appName,appVersion))
 	s.Router.Use(middleware.CORS(s.mwVars))
 	s.Router.Use(middleware.Logging(gofr.Logger, s.mwVars["LOG_OMIT_HEADERS"]))
 	s.Router.Use(middleware.PrometheusMiddleware)

@@ -29,7 +29,7 @@ func TestTrace(t *testing.T) {
 
 	otel.SetTracerProvider(tp)
 
-	handler := Trace(&MockHandlerForTracing{})
+	handler := Trace("Gofr-App","dev")(&MockHandlerForTracing{})
 	req := httptest.NewRequest("GET", "/dummy", nil)
 
 	recorder := httptest.NewRecorder()
