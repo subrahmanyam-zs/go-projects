@@ -2,7 +2,6 @@ package handler
 
 import (
 	"strconv"
-	"time"
 
 	"developer.zopsmart.com/go/gofr/examples/using-redis/store"
 	"developer.zopsmart.com/go/gofr/pkg/errors"
@@ -70,9 +69,6 @@ func (m Config) SetKey(c *gofr.Context) (interface{}, error) {
 
 // GetKey is a handler function of type gofr.Handler, it fetches keys
 func (m Config) GetKey(c *gofr.Context) (interface{}, error) {
-	s := c.Trace("redis-handler")
-	time.Sleep(2 * time.Millisecond)
-	s.End()
 	// fetch the path parameter as specified in the route
 	key := c.PathParam("key")
 	if key == "" {
