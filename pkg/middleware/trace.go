@@ -15,7 +15,7 @@ func Trace(appName, appVersion, tracerExporter string) func(inner http.Handler) 
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			ctx := r.Context()
 
-			tracer := otel.GetTracerProvider().Tracer(appName, trace.WithInstrumentationVersion(appVersion))
+			tracer := otel.GetTracerProvider().Tracer("gofr", trace.WithInstrumentationVersion(appVersion))
 
 			ctx, span := tracer.Start(ctx, fmt.Sprintf("%s-Middleware %s %s", appName, r.Method, r.URL.Path), trace.WithSpanKind(trace.SpanKindClient), trace.WithAttributes(semconv.ServiceNameKey.String(appName), semconv.TelemetrySDKNameKey.String(tracerExporter)))
 			defer span.End()

@@ -6,13 +6,12 @@ import (
 	"strings"
 	"time"
 
+	"github.com/gorilla/mux"
+	"github.com/prometheus/client_golang/prometheus"
 	"developer.zopsmart.com/go/gofr/pkg/errors"
 	"developer.zopsmart.com/go/gofr/pkg/gofr/template"
 	"developer.zopsmart.com/go/gofr/pkg/gofr/types"
 	"developer.zopsmart.com/go/gofr/pkg/middleware"
-
-	"github.com/gorilla/mux"
-	"github.com/prometheus/client_golang/prometheus"
 )
 
 type Handler func(c *Context) (interface{}, error)

@@ -19,6 +19,7 @@ func TestTraceExporterSuccess(t *testing.T) {
 		appName string
 	}{
 		{"zipkin", "localhost", "2005", "gofr"},
+		{"gcp", "localhost", "2005", "gofr"},
 	}
 
 	for _, v := range testcases {
