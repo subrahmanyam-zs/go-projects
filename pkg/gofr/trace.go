@@ -50,6 +50,7 @@ func (e *exporter) getZipkinExporter(c Config, logger log.Logger) *trace.TracerP
 	exporter, err := zipkin.New(url, zipkin.WithSDKOptions(trace.WithSampler(trace.AlwaysSample())))
 	if err != nil {
 		logger.Errorf("failed to initialize zipkinExporter export pipeline: %v", err)
+		return nil
 	}
 
 	batcher := trace.NewBatchSpanProcessor(exporter)
@@ -62,7 +63,8 @@ func (e *exporter) getZipkinExporter(c Config, logger log.Logger) *trace.TracerP
 
 	r, err := resource.New(context.Background(), resource.WithAttributes(attributes...))
 	if err != nil {
-		logger.Errorf("error creating resource")
+		logger.Errorf("error in creating the resource")
+		return nil
 	}
 
 	tp := trace.NewTracerProvider(trace.WithSpanProcessor(batcher), trace.WithResource(r))
@@ -77,6 +79,7 @@ func getGCPExporter(c Config, projectID string, logger log.Logger) *trace.Tracer
 	exporter, err := cloudtrace.New(cloudtrace.WithProjectID(projectID))
 	if err != nil {
 		logger.Errorf("%v", err)
+		return nil
 	}
 
 	attributes := []attribute.KeyValue{
@@ -88,6 +91,7 @@ func getGCPExporter(c Config, projectID string, logger log.Logger) *trace.Tracer
 	r, err := resource.New(context.Background(), resource.WithAttributes(attributes...))
 	if err != nil {
 		logger.Errorf("error creating resource")
+		return nil
 	}
 
 	tp := trace.NewTracerProvider(

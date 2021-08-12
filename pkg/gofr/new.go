@@ -108,7 +108,13 @@ func NewWithConfig(c Config) (k *Gofr) {
 	s.initializeMetricServerConfig(c)
 
 	// If Tracing is set, Set tracing
-	_ = enableTracing(c, logger)
+	err = enableTracing(c, logger)
+	if err != nil {
+		logger.Error(err)
+	} else {
+		logger.Info("Exporting traces to " + c.Get("TRACER_EXPORTER"))
+	}
+
 	initializeDataStores(c, gofr)
 
 	initializeNotifiers(c, gofr)
@@ -226,7 +232,13 @@ func NewCMD() *Gofr {
 	cmdApp.tracingSpan = &span
 
 	// If Tracing is set, Set tracing
-	_ = enableTracing(c, logger)
+	err = enableTracing(c, logger)
+	if err != nil {
+		logger.Error(err)
+	} else {
+		logger.Info("Exporting traces to " + c.Get("TRACER_EXPORTER"))
+	}
+
 	initializeDataStores(c, gofr)
 
 	initializeNotifiers(c, gofr)
@@ -245,10 +257,7 @@ func enableTracing(c Config, logger log.Logger) error {
 		c,
 	)
 	if tp == nil {
-		logger.Warnf("Tracing not enabled")
-		return errors.Error("could not create exporter")
-	} else {
-		logger.Info("Exporting traces to "+c.Get("TRACER_EXPORTER"))
+		return errors.Error("Tracing not enabled")
 	}
 
 	otel.SetTracerProvider(tp)
