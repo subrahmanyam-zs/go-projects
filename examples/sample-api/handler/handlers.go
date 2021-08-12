@@ -65,8 +65,8 @@ func (h handler) Trace(c *gofr.Context) (interface{}, error) {
 		wg.Done()
 	}()
 
-	// Ping redis 5 times concurrently and wait.
-	count := 10
+	// Ping redis 2 times concurrently and wait.
+	count := 2
 	wg.Add(count)
 	for i := 0; i < count; i++ {
 		go func() {
