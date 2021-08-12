@@ -19,7 +19,6 @@ func TestTraceExporterSuccess(t *testing.T) {
 		appName string
 	}{
 		{"zipkin", "localhost", "2005", "gofr"},
-		{"gcp", "localhost", "2005", "gofr"},
 	}
 
 	for _, v := range testcases {
@@ -38,6 +37,7 @@ func TestTraceExporterFailure(t *testing.T) {
 		appName string
 	}{
 		{"not zipkin", "localhost", "2005", "gofr"},
+		{"zipkin", "localhost", "asd", "gofr"},
 		{"gcp", "fakeproject", "0", "sample-api"},
 	}
 
