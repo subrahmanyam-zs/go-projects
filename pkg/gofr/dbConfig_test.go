@@ -2,15 +2,16 @@ package gofr
 
 import (
 	"crypto/tls"
-	awssns "developer.zopsmart.com/go/gofr/pkg/notifier/aws-sns"
-	"github.com/stretchr/testify/assert"
 	"reflect"
 	"testing"
+
+	"github.com/gocql/gocql"
+	"github.com/stretchr/testify/assert"
 
 	"developer.zopsmart.com/go/gofr/pkg/datastore"
 	"developer.zopsmart.com/go/gofr/pkg/datastore/pubsub/kafka"
 	"developer.zopsmart.com/go/gofr/pkg/gofr/config"
-	"github.com/gocql/gocql"
+	awssns "developer.zopsmart.com/go/gofr/pkg/notifier/aws-sns"
 )
 
 func Test_cassandraConfigFromEnv(t *testing.T) {
@@ -228,6 +229,32 @@ func Test_mongoDBConfigFromEnv(t *testing.T) {
 	}
 }
 
+func Test_dynamoDBConfigFromEnv(t *testing.T) {
+	input := &config.MockConfig{
+		Data: map[string]string{
+			"DYNAMODB_REGION":            "ap-south-1",
+			"DYNAMODB_ENDPOINT_URL":      "http://localhost:8000",
+			"DYNAMODB_ACCESS_KEY_ID":     "access-key-id",
+			"DYNAMODB_SECRET_ACCESS_KEY": "access-key",
+			"DYNAMODB_CONN_RETRY":        "2",
+		},
+	}
+
+	expConfig := datastore.DynamoDBConfig{
+		Region:            "ap-south-1",
+		Endpoint:          "http://localhost:8000",
+		AccessKeyID:       "access-key-id",
+		SecretAccessKey:   "access-key",
+		ConnRetryDuration: 2,
+	}
+
+	cfg := dynamoDBConfigFromEnv(input)
+
+	if !reflect.DeepEqual(cfg, expConfig) {
+		t.Errorf("Got: %v,expected:%v", cfg, expConfig)
+	}
+}
+
 func Test_GetBoolEnv(t *testing.T) {
 	testcases := []struct {
 		env    string
@@ -267,5 +294,5 @@ func Test_AWSSNSConfigFromEnv(t *testing.T) {
 		},
 	})
 
-	assert.Equal(t, expectedConfig,snsConfig)
+	assert.Equal(t, expectedConfig, snsConfig)
 }

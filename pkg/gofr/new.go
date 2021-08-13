@@ -2,11 +2,14 @@ package gofr
 
 import (
 	"context"
-	awssns "developer.zopsmart.com/go/gofr/pkg/notifier/aws-sns"
 	"errors"
 	"os"
 	"strconv"
 	"strings"
+
+	"go.opencensus.io/trace"
+
+	"github.com/prometheus/client_golang/prometheus"
 
 	"developer.zopsmart.com/go/gofr/pkg"
 	"developer.zopsmart.com/go/gofr/pkg/datastore"
@@ -17,8 +20,7 @@ import (
 	"developer.zopsmart.com/go/gofr/pkg/gofr/request"
 	"developer.zopsmart.com/go/gofr/pkg/gofr/responder"
 	"developer.zopsmart.com/go/gofr/pkg/log"
-	"github.com/prometheus/client_golang/prometheus"
-	"go.opencensus.io/trace"
+	awssns "developer.zopsmart.com/go/gofr/pkg/notifier/aws-sns"
 )
 
 func New() (k *Gofr) {
@@ -109,7 +111,7 @@ func NewWithConfig(c Config) (k *Gofr) {
 	_ = enableTracing(c)
 	initializeDataStores(c, gofr)
 
-	initializeNotifiers(c,gofr)
+	initializeNotifiers(c, gofr)
 
 	return gofr
 }
@@ -223,7 +225,7 @@ func NewCMD() *Gofr {
 	_ = enableTracing(c)
 	initializeDataStores(c, gofr)
 
-	initializeNotifiers(c,gofr)
+	initializeNotifiers(c, gofr)
 
 	return gofr
 }
@@ -269,6 +271,30 @@ func initializeDataStores(c Config, k *Gofr) {
 
 	// Solr
 	initializeSolr(c, k)
+
+	// DynamoDB
+	initializeDynamoDB(c, k)
+}
+
+func initializeDynamoDB(c Config, k *Gofr) {
+	cfg := dynamoDBConfigFromEnv(c)
+
+	if cfg.SecretAccessKey != "" && cfg.AccessKeyID != "" {
+		var err error
+
+		k.DynamoDB, err = datastore.NewDynamoDB(k.Logger, cfg)
+		k.DatabaseHealth = append(k.DatabaseHealth, k.DynamoDBHealthCheck)
+
+		if err != nil {
+			k.Logger.Errorf("DynamoDB could not be initialized, error: %v\n", err)
+
+			go dynamoRetry(cfg, k)
+
+			return
+		}
+
+		k.Logger.Infof("DynamoDB initialized at %v", cfg.Endpoint)
+	}
 }
 
 // initializeRedis initializes the Redis client in the Gofr struct if the Redis configuration is set
@@ -566,7 +592,7 @@ func initializeSolr(c Config, k *Gofr) {
 	k.Logger.Infof("Solr connected. Host: %s, Port: %s \n", host, port)
 }
 
-func initializeNotifiers(c Config, k *Gofr){
+func initializeNotifiers(c Config, k *Gofr) {
 	notifierBackend := c.Get("NOTIFIER_BACKEND")
 	if notifierBackend == "" {
 		return

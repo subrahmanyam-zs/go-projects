@@ -5,9 +5,15 @@ import (
 	"database/sql"
 	"encoding/csv"
 	"encoding/json"
+	"fmt"
+	"io/ioutil"
 	"os"
 	"strconv"
 	"strings"
+
+	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/service/dynamodb"
+	"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbattribute"
 )
 
 const (
@@ -470,4 +476,43 @@ func (d *Seeder) setRedisHashMaps(tableName string) error {
 	}
 
 	return nil
+}
+
+func (d *Seeder) RefreshDynamoDB(t tester, tableNames ...string) {
+	for _, tableName := range tableNames {
+		fileLoc := fmt.Sprintf("%s/%s.json", d.path, tableName)
+
+		raw, err := ioutil.ReadFile(fileLoc)
+		if err != nil {
+			t.Errorf("Got error reading file: %s", err)
+
+			return
+		}
+
+		var items []map[string]interface{}
+
+		err = json.Unmarshal(raw, &items)
+		if err != nil {
+			t.Error(err)
+
+			return
+		}
+
+		for _, item := range items {
+			av, err := dynamodbattribute.MarshalMap(item)
+			if err != nil {
+				t.Errorf("Got error while marshalling map: %s", err)
+			}
+
+			input := &dynamodb.PutItemInput{
+				Item:      av,
+				TableName: aws.String(tableName),
+			}
+
+			_, err = d.DynamoDB.PutItem(input)
+			if err != nil {
+				t.Errorf("Got error while calling PutItem: %s", err)
+			}
+		}
+	}
 }

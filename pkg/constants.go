@@ -16,6 +16,7 @@ const (
 	EventHub          = "eventhub"
 	DefaultAppName    = "gofr-app"
 	DefaultAppVersion = "dev"
+	DynamoDB          = "dynamoDB"
 	Framework         = "gofr-" + log.GofrVersion
 	AWSSNS            = "aws-sns"
 )

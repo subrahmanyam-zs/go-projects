@@ -2,16 +2,17 @@ package gofr
 
 import (
 	"crypto/tls"
-	awssns "developer.zopsmart.com/go/gofr/pkg/notifier/aws-sns"
 	"strconv"
 	"strings"
+
+	"github.com/gocql/gocql"
 
 	"developer.zopsmart.com/go/gofr/pkg"
 	"developer.zopsmart.com/go/gofr/pkg/datastore"
 	"developer.zopsmart.com/go/gofr/pkg/datastore/pubsub/avro"
 	"developer.zopsmart.com/go/gofr/pkg/datastore/pubsub/eventhub"
 	"developer.zopsmart.com/go/gofr/pkg/datastore/pubsub/kafka"
-	"github.com/gocql/gocql"
+	awssns "developer.zopsmart.com/go/gofr/pkg/notifier/aws-sns"
 )
 
 // cassandraDBConfigFromEnv returns configuration from environment variables to client so it can connect to cassandra
@@ -178,6 +179,7 @@ func eventhubConfigFromEnv(c Config) eventhub.Config {
 		ConnRetryDuration: getRetryDuration(c.Get("EVENTHUB_CONN_RETRY")),
 	}
 }
+
 func awsSNSConfigFromEnv(c Config) awssns.Config {
 
 	return awssns.Config{
@@ -187,5 +189,15 @@ func awsSNSConfigFromEnv(c Config) awssns.Config {
 		TopicArn:        c.Get("SNS_TOPIC_ARN"),
 		Protocol:        c.Get("SNS_PROTOCOL"),
 		Endpoint:        c.Get("SNS_ENDPOINT"),
+	}
+}
+
+func dynamoDBConfigFromEnv(c Config) datastore.DynamoDBConfig {
+	return datastore.DynamoDBConfig{
+		Region:            c.Get("DYNAMODB_REGION"),
+		Endpoint:          c.Get("DYNAMODB_ENDPOINT_URL"),
+		AccessKeyID:       c.Get("DYNAMODB_ACCESS_KEY_ID"),
+		SecretAccessKey:   c.Get("DYNAMODB_SECRET_ACCESS_KEY"),
+		ConnRetryDuration: getRetryDuration(c.Get("DYNAMODB_CONN_RETRY")),
 	}
 }

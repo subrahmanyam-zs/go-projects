@@ -3,6 +3,7 @@ package gofr
 import (
 	"bytes"
 	"encoding/json"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -51,6 +52,52 @@ func (m mockConfig) Get(key string) string {
 
 func (m mockConfig) GetOrDefault(key, d string) string {
 	return d
+}
+
+func Test_initializeDynamoDB(t *testing.T) {
+	tcs := []struct {
+		config Config
+		output string
+	}{
+		{
+			&config.MockConfig{Data: map[string]string{
+				"DYNAMODB_ACCESS_KEY_ID":     "access-key-id",
+				"DYNAMODB_SECRET_ACCESS_KEY": "access-key",
+				"DYNAMODB_REGION":            "",
+				"DYNAMODB_ENDPOINT_URL":      "",
+				"DYNAMODB_CONN_RETRY":        "2",
+			}},
+			"couldn't connect to DynamoDB",
+		},
+		{
+			config.NewGoDotEnvProvider(log.NewMockLogger(io.Discard), "../../configs"),
+			"DynamoDB initialized",
+		},
+	}
+
+	for _, tc := range tcs {
+		k := NewWithConfig(tc.config)
+		b := new(bytes.Buffer)
+
+		k.Logger = log.NewMockLogger(b)
+		initializeDynamoDB(tc.config, k)
+
+		if !strings.Contains(b.String(), tc.output) {
+			t.Errorf("FAILED, expected: `%v` in the logs, got: %v", tc.output, b.String())
+		}
+	}
+}
+
+func Test_initializeDynamoDB_EmptyLog(t *testing.T) {
+	k := New()
+	b := new(bytes.Buffer)
+
+	k.Logger = log.NewMockLogger(b)
+	initializeDynamoDB(&config.MockConfig{Data: map[string]string{}}, k)
+
+	if strings.Contains(strings.ToLower(b.String()), "dynamodb") {
+		t.Errorf("FAILED, did not expect DynamoDB in logs")
+	}
 }
 
 func Test_initializeRedis(t *testing.T) {

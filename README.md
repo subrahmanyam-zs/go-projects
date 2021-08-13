@@ -30,6 +30,7 @@ We will trade off performance for ease of use.
   
   docker run --name gofr-yugabyte -d -p2021:7000 -p2010:9000 -p2023:5433 -p2011:9042 -v ~/yb_data:/home/yugabyte/var yugabytedb/yugabyte:latest bin/yugabyted start --daemon=false
   docker run -d --name gofr-elasticsearch -p 2012:9200 -p 2013:9300 -e "discovery.type=single-node" elasticsearch:6.8.6 
+  docker run -d --name gofr-dynamodb -p 8000:8000 amazon/dynamodb-local
   ```
   Please note that the recommended local port for the services are different than the actual ports. 
   This is done to avoid conflict with the local installation on developer machines. This method also allows
