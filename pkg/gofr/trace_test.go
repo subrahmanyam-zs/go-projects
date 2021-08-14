@@ -11,21 +11,17 @@ import (
 )
 
 func TestTraceExporterSuccess(t *testing.T) {
-	testcases := []struct {
+	testcases := struct {
 		// exporter input
 		name    string
 		host    string
 		port    string
 		appName string
-	}{
-		{"zipkin", "localhost", "2005", "gofr"},
-	}
+	}{"zipkin", "localhost", "2005", "gofr"}
 
-	for _, v := range testcases {
-		tp := TraceProvider(v.appName, v.name, v.host, v.port, log.NewMockLogger(io.Discard), &config.MockConfig{})
+	tp := TraceProvider(testcases.appName, testcases.name, testcases.host, testcases.port, log.NewMockLogger(io.Discard), &config.MockConfig{})
 
-		assert.NotNil(t, tp, "Failed.\tExpected NotNil Got Nil")
-	}
+	assert.NotNil(t, tp, "Failed.\tExpected NotNil Got Nil")
 }
 
 func TestTraceExporterFailure(t *testing.T) {
