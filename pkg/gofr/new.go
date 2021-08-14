@@ -112,7 +112,7 @@ func NewWithConfig(c Config) (k *Gofr) {
 	if err != nil {
 		logger.Error(err)
 	} else {
-		logger.Info("Exporting traces to " + c.Get("TRACER_EXPORTER"))
+		logger.Infof("Exporting traces to %v", c.Get("TRACER_EXPORTER"))
 	}
 
 	initializeDataStores(c, gofr)
@@ -236,7 +236,7 @@ func NewCMD() *Gofr {
 	if err != nil {
 		logger.Error(err)
 	} else {
-		logger.Info("Exporting traces to " + c.Get("TRACER_EXPORTER"))
+		logger.Infof("Exporting traces to %v", c.Get("TRACER_EXPORTER"))
 	}
 
 	initializeDataStores(c, gofr)
