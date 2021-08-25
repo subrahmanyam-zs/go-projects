@@ -20,13 +20,13 @@ We will trade off performance for ease of use.
   docker run --name gofr-pgsql -d -e POSTGRES_PASSWORD=root123 -p 2006:5432 postgres:12.2
   docker run --name gofr-mssql -d -e 'ACCEPT_EULA=Y' -e 'SA_PASSWORD=reallyStrongPwd123' -p 2007:1433 mcr.microsoft.com/mssql/server:2017-latest
   docker run --rm -d -p 2181:2181 -p 443:2008 -p 2008:2008 -p 2009:2009 \
-      --env ADVERTISED_LISTENERS=PLAINTEXT://kafka:443,INTERNAL://localhost:2009 \
-      --env LISTENERS=PLAINTEXT://0.0.0.0:2008,INTERNAL://0.0.0.0:2009 \
-      --env SECURITY_PROTOCOL_MAP=PLAINTEXT:PLAINTEXT,INTERNAL:PLAINTEXT \
-      --env INTER_BROKER=INTERNAL \
-      --env KAFKA_CREATE_TOPICS="test:36:1,krisgeus:12:1:compact" \
-      --name gofr-kafka \
-      krisgeus/docker-kafka
+    --env ADVERTISED_LISTENERS=PLAINTEXT://localhost:2008,INTERNAL://localhost:2009 \
+    --env LISTENERS=PLAINTEXT://0.0.0.0:2008,INTERNAL://0.0.0.0:2009 \
+    --env SECURITY_PROTOCOL_MAP=PLAINTEXT:PLAINTEXT,INTERNAL:PLAINTEXT \
+    --env INTER_BROKER=INTERNAL \
+    --env KAFKA_CREATE_TOPICS="test-topic" \
+    --name gofr-kafka \
+    krisgeus/docker-kafka
   
   docker run --name gofr-yugabyte -d -p2021:7000 -p2010:9000 -p2023:5433 -p2011:9042 -v ~/yb_data:/home/yugabyte/var yugabytedb/yugabyte:latest bin/yugabyted start --daemon=false
   docker run -d --name gofr-elasticsearch -p 2012:9200 -p 2013:9300 -e "discovery.type=single-node" elasticsearch:6.8.6 
