@@ -106,10 +106,14 @@ func NewWithConfig(c Config) (k *Gofr) {
 	s.initializeMetricServerConfig(c)
 
 	// If Tracing is set, Set tracing
-	_ = enableTracing(c)
+	err = enableTracing(c)
+	if err == nil {
+		gofr.Logger.Logf("tracing is enabled on, %v:%v", c.Get("TRACER_HOST"), c.Get("TRACER_PORT"))
+	}
+
 	initializeDataStores(c, gofr)
 
-	initializeNotifiers(c,gofr)
+	initializeNotifiers(c, gofr)
 
 	return gofr
 }
@@ -220,10 +224,14 @@ func NewCMD() *Gofr {
 	cmdApp.tracingSpan = tSpan
 
 	// If Tracing is set, Set tracing
-	_ = enableTracing(c)
+	err = enableTracing(c)
+	if err == nil {
+		gofr.Logger.Logf("tracing is enabled on, %v %v:%v", c.Get("TRACER_EXPORTER"), c.Get("TRACER_HOST"), c.Get("TRACER_PORT"))
+	}
+
 	initializeDataStores(c, gofr)
 
-	initializeNotifiers(c,gofr)
+	initializeNotifiers(c, gofr)
 
 	return gofr
 }
@@ -233,7 +241,7 @@ func enableTracing(c Config) error {
 	exporter := TraceExporter(
 		c.GetOrDefault("APP_NAME", "gofr"),
 		c.Get("TRACER_EXPORTER"),
-		c.Get("TRACER_NAME"),
+		c.Get("TRACER_HOST"),
 		c.Get("TRACER_PORT"),
 	)
 	if exporter == nil {
@@ -566,7 +574,7 @@ func initializeSolr(c Config, k *Gofr) {
 	k.Logger.Infof("Solr connected. Host: %s, Port: %s \n", host, port)
 }
 
-func initializeNotifiers(c Config, k *Gofr){
+func initializeNotifiers(c Config, k *Gofr) {
 	notifierBackend := c.Get("NOTIFIER_BACKEND")
 	if notifierBackend == "" {
 		return
