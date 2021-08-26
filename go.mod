@@ -51,8 +51,8 @@ require (
 	go.opencensus.io v0.22.5
 	go.opentelemetry.io/otel v0.20.0 // indirect
 	golang.org/x/crypto v0.0.0-20210513164829-c07d793c2f9a
-	golang.org/x/net v0.0.0-20210226172049-e18ecbb05110
-	golang.org/x/text v0.3.5
+	golang.org/x/net v0.0.0-20210825183410-e898025ed96a
+	golang.org/x/text v0.3.6
 	google.golang.org/api v0.40.0
 	google.golang.org/grpc v1.35.0
 	gopkg.in/check.v1 v1.0.0-20201130134442-10cb98267c6c // indirect
