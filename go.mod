@@ -24,7 +24,7 @@ require (
 	github.com/go-sql-driver/mysql v1.5.0 // indirect
 	github.com/gocql/gocql v0.0.0-20191106222750-ae2f7fc85f32
 	github.com/golang/mock v1.4.4
-	github.com/golang/protobuf v1.4.3
+	google.golang.org/protobuf v1.27.1
 	github.com/google/uuid v1.2.0
 	github.com/gookit/color v1.4.2
 	github.com/gorilla/mux v1.7.3
