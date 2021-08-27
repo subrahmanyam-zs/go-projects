@@ -2,7 +2,6 @@ package gofr
 
 import (
 	"crypto/tls"
-	awssns "developer.zopsmart.com/go/gofr/pkg/notifier/aws-sns"
 	"strconv"
 	"strings"
 
@@ -11,6 +10,8 @@ import (
 	"developer.zopsmart.com/go/gofr/pkg/datastore/pubsub/avro"
 	"developer.zopsmart.com/go/gofr/pkg/datastore/pubsub/eventhub"
 	"developer.zopsmart.com/go/gofr/pkg/datastore/pubsub/kafka"
+	awssns "developer.zopsmart.com/go/gofr/pkg/notifier/aws-sns"
+
 	"github.com/gocql/gocql"
 )
 
@@ -116,8 +117,9 @@ func kafkaConfigFromEnv(c Config) *kafka.Config {
 	config := &kafka.Config{
 		Brokers: hosts,
 		SASL: kafka.SASLConfig{
-			User:     c.Get("KAFKA_SASL_USER"),
-			Password: c.Get("KAFKA_SASL_PASS"),
+			User:      c.Get("KAFKA_SASL_USER"),
+			Password:  c.Get("KAFKA_SASL_PASS"),
+			Mechanism: c.Get("KAFKA_SASL_MECHANISM"),
 		},
 		Topics:            topics,
 		MaxRetry:          maxRetry,

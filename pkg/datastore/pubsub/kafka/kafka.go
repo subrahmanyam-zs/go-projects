@@ -11,16 +11,22 @@ import (
 
 	"github.com/Shopify/sarama"
 	"github.com/prometheus/client_golang/prometheus"
+
+	"golang.org/x/net/context"
+
 	"developer.zopsmart.com/go/gofr/pkg"
 	"developer.zopsmart.com/go/gofr/pkg/datastore/pubsub"
 	"developer.zopsmart.com/go/gofr/pkg/datastore/pubsub/avro"
 	"developer.zopsmart.com/go/gofr/pkg/errors"
 	"developer.zopsmart.com/go/gofr/pkg/gofr/types"
 	"developer.zopsmart.com/go/gofr/pkg/log"
-	"golang.org/x/net/context"
 )
 
-const ErrConsumeMsg = errors.Error("error while consuming the message")
+const (
+	ErrConsumeMsg       = errors.Error("error while consuming the message")
+	SASLTypeSCRAMSHA512 = "SCRAM-SHA-512"
+	errInvalidMechanism = errors.Error("Invalid SASL Mechanism")
+)
 
 type Kafka struct {
 	config *Config
@@ -148,6 +154,7 @@ func NewKafkaFromEnv() (*Kafka, error) {
 	topic := os.Getenv("KAFKA_TOPIC") // CSV string
 	user := os.Getenv("KAFKA_SASL_USER")
 	password := os.Getenv("KAFKA_SASL_PASS")
+	mechanism := os.Getenv("KAFKA_SASL_MECHANISM")
 
 	// converting the CSV string to slice of string
 	topics := strings.Split(topic, ",")
@@ -155,8 +162,9 @@ func NewKafkaFromEnv() (*Kafka, error) {
 	config := &Config{
 		Brokers: hosts,
 		SASL: SASLConfig{
-			User:     user,
-			Password: password,
+			User:      user,
+			Password:  password,
+			Mechanism: mechanism,
 		},
 		Topics: topics,
 	}
@@ -196,6 +204,10 @@ func New(config *Config, logger log.Logger) (*Kafka, error) {
 	_ = prometheus.Register(publishFailureCount)
 	_ = prometheus.Register(publishSuccessCount)
 	_ = prometheus.Register(publishTotalCount)
+
+	if config.SASL.Mechanism != SASLTypeSCRAMSHA512 && config.SASL.User != "" {
+		return nil, errInvalidMechanism
+	}
 
 	populateOffsetTopic(config)
 	convertKafkaConfig(config)
@@ -367,6 +379,13 @@ func processSASLConfigs(s SASLConfig, conf *sarama.Config) {
 		conf.Net.TLS.Enable = true
 		conf.Net.TLS.Config = &tls.Config{
 			InsecureSkipVerify: true, //nolint:gosec // TLS InsecureSkipVerify set true.
+		}
+
+		if s.Mechanism == SASLTypeSCRAMSHA512 {
+			conf.Net.SASL.Mechanism = sarama.SASLMechanism(s.Mechanism)
+			conf.Net.SASL.SCRAMClientGeneratorFunc = func() sarama.SCRAMClient {
+				return &XDGSCRAMClient{HashGeneratorFcn: SHA512}
+			}
 		}
 	}
 }

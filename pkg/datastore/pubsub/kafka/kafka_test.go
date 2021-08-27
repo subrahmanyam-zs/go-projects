@@ -2,6 +2,8 @@ package kafka
 
 import (
 	"bytes"
+	"crypto/sha512"
+	"crypto/tls"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -14,6 +16,7 @@ import (
 
 	"github.com/Shopify/sarama"
 	"github.com/stretchr/testify/assert"
+
 	"developer.zopsmart.com/go/gofr/pkg"
 	"developer.zopsmart.com/go/gofr/pkg/datastore/pubsub"
 	"developer.zopsmart.com/go/gofr/pkg/datastore/pubsub/avro"
@@ -297,6 +300,39 @@ func Test_convertKafkaConfig(t *testing.T) {
 	expectedConfig.Producer.Partitioner = nil
 
 	assert.Equal(t, expectedConfig, kafkaConfig.Config)
+}
+
+func Test_processSASLConfigs(t *testing.T) {
+	expConfig := sarama.NewConfig()
+
+	expConfig.Net.SASL.User = "testuser"
+	expConfig.Net.SASL.Password = "password"
+	expConfig.Net.SASL.Handshake = true
+	expConfig.Net.SASL.Enable = true
+	expConfig.Net.TLS.Enable = true
+	expConfig.Net.TLS.Config = &tls.Config{
+		InsecureSkipVerify: true, //nolint:gosec // TLS InsecureSkipVerify set true.
+	}
+	expConfig.Net.SASL.Mechanism = SASLTypeSCRAMSHA512
+	expConfig.Net.SASL.SCRAMClientGeneratorFunc = func() sarama.SCRAMClient {
+		return &XDGSCRAMClient{HashGeneratorFcn: sha512.New}
+	}
+
+	saslConfig := SASLConfig{
+		User:      "testuser",
+		Password:  "password",
+		Mechanism: SASLTypeSCRAMSHA512,
+	}
+
+	conf := sarama.NewConfig()
+	processSASLConfigs(saslConfig, conf)
+
+	conf.Net.SASL.SCRAMClientGeneratorFunc = nil
+	expConfig.Net.SASL.SCRAMClientGeneratorFunc = nil
+	conf.Producer.Partitioner = nil
+	expConfig.Producer.Partitioner = nil
+
+	assert.Equal(t, expConfig, conf)
 }
 
 func TestKafkaHealthCheck(t *testing.T) {
