@@ -21,17 +21,16 @@ require (
 	github.com/go-ldap/ldap/v3 v3.1.8
 	github.com/go-redis/redis/extra/rediscensus v0.2.0
 	github.com/go-redis/redis/v8 v8.8.2
-	github.com/go-sql-driver/mysql v1.5.0 // indirect
 	github.com/gocql/gocql v0.0.0-20191106222750-ae2f7fc85f32
 	github.com/golang/mock v1.4.4
-	google.golang.org/protobuf v1.27.1
+	github.com/golang/protobuf v1.5.2
 	github.com/google/uuid v1.2.0
 	github.com/gookit/color v1.4.2
 	github.com/gorilla/mux v1.7.3
 	github.com/gorilla/websocket v1.4.2
 	github.com/grpc-ecosystem/go-grpc-middleware v1.2.0
 	github.com/hamba/avro v1.5.3
-	github.com/jinzhu/gorm v1.9.11
+	github.com/jinzhu/gorm v1.9.16
 	github.com/jmoiron/sqlx v1.2.1-0.20190826204134-d7d95172beb5
 	github.com/joho/godotenv v1.3.0
 	github.com/lib/pq v1.3.0 // indirect
@@ -54,6 +53,7 @@ require (
 	golang.org/x/text v0.3.6
 	google.golang.org/api v0.40.0
 	google.golang.org/grpc v1.35.0
+	google.golang.org/protobuf v1.27.1 // indirect
 	gopkg.in/check.v1 v1.0.0-20201130134442-10cb98267c6c // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 )

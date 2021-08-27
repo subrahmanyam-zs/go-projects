@@ -57,7 +57,7 @@ func TestGORM(t *testing.T) {
 		name    string
 		args    args
 		wantErr bool
-	}{"database name not selected error", args{"testing", UP, "20200302020202"}, true}
+	}{"panic if database name not selected", args{"testing", UP, "20200302020202"}, true}
 
 	g := &GORM{
 		database: database.DB,
@@ -67,8 +67,15 @@ func TestGORM(t *testing.T) {
 		t.Errorf("postRun() error = %v, wantErr %v", err, tt.wantErr)
 	}
 
-	if err := g.preRun(tt.args.app, tt.args.method, tt.args.name); (err != nil) != tt.wantErr {
-		t.Errorf("preRun() error = %v, wantErr %v", err, tt.wantErr)
+	defer func() {
+		if err := recover(); err == nil {
+			t.Errorf("Expected panic got nil")
+		}
+	}()
+
+	err := g.preRun(tt.args.app, tt.args.method, tt.args.name)
+	if err != nil {
+		t.Errorf("Unexpected Error")
 	}
 }
 

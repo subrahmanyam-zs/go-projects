@@ -4,11 +4,12 @@ import (
 	"database/sql"
 	"time"
 
-	"github.com/jinzhu/gorm"
-	"github.com/jmoiron/sqlx"
 	"developer.zopsmart.com/go/gofr/pkg/datastore/pubsub"
 	"developer.zopsmart.com/go/gofr/pkg/gofr/types"
 	"developer.zopsmart.com/go/gofr/pkg/log"
+
+	"github.com/jinzhu/gorm"
+	"github.com/jmoiron/sqlx"
 )
 
 type DataStore struct {
@@ -43,8 +44,12 @@ func (ds *DataStore) GORM() *gorm.DB {
 
 	if db, ok := ds.ORM.(GORMClient); ok {
 		ds.gorm = db
+
 		if db.DB != nil {
-			ds.rdb.DB = db.DB.DB()
+			s, ok := db.DB.CommonDB().(*sql.DB)
+			if ok {
+				ds.rdb.DB = s
+			}
 		}
 
 		return db.DB
@@ -84,7 +89,12 @@ func (ds *DataStore) DB() *SQLClient {
 	}
 
 	if db := ds.GORM(); db != nil {
-		return &SQLClient{DB: ds.GORM().DB(), config: ds.gorm.config, logger: ds.Logger}
+		sqlDB, ok := db.CommonDB().(*sql.DB)
+		if !ok {
+			return &SQLClient{DB: nil, config: ds.gorm.config, logger: ds.Logger}
+		}
+
+		return &SQLClient{DB: sqlDB, config: ds.gorm.config, logger: ds.Logger}
 	}
 
 	if db := ds.SQLX(); db != nil {
@@ -110,8 +120,10 @@ func (ds *DataStore) SetORM(client interface{}) {
 		ds.gorm = v
 
 		if v.DB != nil {
-			ds.rdb.DB, ds.rdb.config, ds.rdb.logger = v.DB.DB(), v.config, ds.Logger
-			ds.ORM = v.DB
+			if sqlDB, ok := v.DB.CommonDB().(*sql.DB); ok {
+				ds.rdb.DB, ds.rdb.config, ds.rdb.logger = sqlDB, v.config, ds.Logger
+				ds.ORM = v.DB
+			}
 		}
 	case SQLXClient:
 		if v.DB != nil {
