@@ -9,11 +9,13 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/dgrijalva/jwt-go"
+	"github.com/golang-jwt/jwt/v4"
+
+	"golang.org/x/net/context"
+
 	"developer.zopsmart.com/go/gofr/pkg/gofr/request"
 	"developer.zopsmart.com/go/gofr/pkg/middleware"
 	"developer.zopsmart.com/go/gofr/pkg/middleware/oauth"
-	"golang.org/x/net/context"
 )
 
 func TestContext_Param(t *testing.T) {

@@ -4,7 +4,7 @@ import (
 	"context"
 	"net/http"
 
-	"github.com/dgrijalva/jwt-go"
+	"github.com/golang-jwt/jwt/v4"
 
 	"developer.zopsmart.com/go/gofr/pkg/middleware"
 

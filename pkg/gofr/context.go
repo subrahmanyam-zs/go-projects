@@ -6,14 +6,15 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/dgrijalva/jwt-go"
-	"github.com/gorilla/mux"
-	"github.com/gorilla/websocket"
 	"developer.zopsmart.com/go/gofr/pkg/datastore/pubsub"
 	"developer.zopsmart.com/go/gofr/pkg/gofr/request"
 	"developer.zopsmart.com/go/gofr/pkg/gofr/responder"
 	"developer.zopsmart.com/go/gofr/pkg/log"
 	"developer.zopsmart.com/go/gofr/pkg/middleware/oauth"
+
+	"github.com/golang-jwt/jwt/v4"
+	"github.com/gorilla/mux"
+	"github.com/gorilla/websocket"
 )
 
 type Context struct {

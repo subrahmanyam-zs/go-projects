@@ -16,12 +16,12 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/s3 v1.2.1
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/bmizerany/assert v0.0.0-20160611221934-b7ed37b82869
-	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/getkin/kin-openapi v0.3.1
 	github.com/go-ldap/ldap/v3 v3.1.8
 	github.com/go-redis/redis/extra/rediscensus v0.2.0
 	github.com/go-redis/redis/v8 v8.8.2
 	github.com/gocql/gocql v0.0.0-20191106222750-ae2f7fc85f32
+	github.com/golang-jwt/jwt/v4 v4.0.0
 	github.com/golang/mock v1.4.4
 	github.com/golang/protobuf v1.5.2
 	github.com/google/uuid v1.2.0
@@ -45,7 +45,7 @@ require (
 	github.com/stretchr/testify v1.7.0
 	github.com/xdg/scram v1.0.3
 	github.com/yugabyte/gocql v0.0.0-20200602185649-ef3952a45ff4
-	go.mongodb.org/mongo-driver v1.3.2
+	go.mongodb.org/mongo-driver v1.7.1
 	go.opencensus.io v0.22.5
 	go.opentelemetry.io/otel v0.20.0 // indirect
 	golang.org/x/crypto v0.0.0-20210513164829-c07d793c2f9a

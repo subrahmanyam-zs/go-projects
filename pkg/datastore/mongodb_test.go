@@ -16,30 +16,23 @@ import (
 	"developer.zopsmart.com/go/gofr/pkg/log"
 )
 
-func TestGetNewMongoDB(t *testing.T) {
-	testcases := []struct {
-		config MongoConfig
-		expErr error
-	}{
-		{
-			MongoConfig{"fake_host", "9999", "admin", "admin123", "test", false, false, 30},
-			context.DeadlineExceeded,
-		},
-		{
-			MongoConfig{"", "", "", "", "test", false, false, 30},
-			errors.New("authsource without username is invalid"),
-		},
+func TestGetNewMongoDB_ContextErr(t *testing.T) {
+	mongoConfig := MongoConfig{"fake_host", "9999", "admin", "admin123", "test", false, false, 30}
+	expErr := context.DeadlineExceeded
+
+	_, err := GetNewMongoDB(log.NewLogger(), &mongoConfig)
+	if err != nil && !strings.Contains(err.Error(), expErr.Error()) {
+		t.Errorf("Error in testcase. Expected: %v, Got: %v", expErr, err)
 	}
+}
 
-	for i := range testcases {
-		_, err := GetNewMongoDB(log.NewLogger(), &testcases[i].config)
-		if err != nil && !strings.Contains(err.Error(), testcases[i].expErr.Error()) {
-			t.Errorf("Error in testcase %v. Expected: %v, Got: %v", i, testcases[i].expErr, err)
-		}
+func TestGetNewMongoDB_ConnectionError(t *testing.T) {
+	config := MongoConfig{"", "", "", "", "test", false, false, 30}
+	expErr := errors.New("error validating uri: username required if URI contains user info")
 
-		if err == nil && testcases[i].expErr != nil {
-			t.Errorf("Error in testcase %v. Expected: %v, Got: %v", i, testcases[i].expErr, err)
-		}
+	_, err := GetNewMongoDB(log.NewLogger(), &config)
+	if err != nil && !strings.Contains(err.Error(), expErr.Error()) {
+		t.Errorf("Error in testcase. Expected: %v, Got: %v", expErr, err)
 	}
 }
 

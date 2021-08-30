@@ -11,12 +11,11 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/bmizerany/assert"
-
+	"developer.zopsmart.com/go/gofr/pkg/log"
 	"developer.zopsmart.com/go/gofr/pkg/middleware"
 
-	"github.com/dgrijalva/jwt-go"
-	"developer.zopsmart.com/go/gofr/pkg/log"
+	"github.com/bmizerany/assert"
+	"github.com/golang-jwt/jwt/v4"
 )
 
 func TestValidateErrors(t *testing.T) {
