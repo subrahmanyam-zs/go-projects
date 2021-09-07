@@ -72,6 +72,12 @@ var (
 // PrometheusMiddleware implements mux.MiddlewareFunc.
 func PrometheusMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if ExemptPath(r) {
+			next.ServeHTTP(w, r)
+
+			return
+		}
+
 		start := time.Now()
 
 		route := mux.CurrentRoute(r)
