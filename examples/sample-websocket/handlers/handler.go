@@ -5,10 +5,16 @@ import (
 	"developer.zopsmart.com/go/gofr/pkg/gofr/template"
 )
 
-func WSHandler(c *gofr.Context) (i interface{}, err error) {
+func WSHandler(c *gofr.Context) (interface{}, error) {
+	var (
+		mt      int
+		message []byte
+		err     error
+	)
+
 	if c.WebSocketConnection != nil {
 		for {
-			mt, message, err := c.WebSocketConnection.ReadMessage()
+			mt, message, err = c.WebSocketConnection.ReadMessage()
 			if err != nil {
 				c.Logger.Error("read:", err)
 				break

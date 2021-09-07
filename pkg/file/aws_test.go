@@ -7,7 +7,8 @@ import (
 	"testing"
 
 	"github.com/aws/aws-sdk-go-v2/service/s3"
-	"github.com/bmizerany/assert"
+	"github.com/stretchr/testify/assert"
+
 	"developer.zopsmart.com/go/gofr/pkg/errors"
 )
 

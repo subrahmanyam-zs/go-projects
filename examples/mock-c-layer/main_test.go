@@ -19,17 +19,17 @@ func TestIntegration(t *testing.T) {
 		expectedStatusCode int
 		body               []byte
 	}{
-		{"GET", "brand?id=1", 200, nil},
-		{"POST", "brand", 201, []byte(`{"name":"brand 1"}`)},
+		{http.MethodGet, "brand?id=1", 200, nil},
+		{http.MethodPost, "brand", 201, []byte(`{"name":"brand 1"}`)},
 
-		{"GET", "brand", 500, nil},
-		{"POST", "brand", 500, []byte(`{"name":"brand 3"}`)},
+		{http.MethodGet, "brand", 500, nil},
+		{http.MethodPost, "brand", 500, []byte(`{"name":"brand 3"}`)},
 
-		{"GET", "unknown", 404, nil},
-		{"GET", "brand/id", 404, nil},
+		{http.MethodGet, "unknown", 404, nil},
+		{http.MethodGet, "brand/id", 404, nil},
 
-		{"PUT", "brand", 404, nil},
-		{"DELETE", "brand", 404, nil},
+		{http.MethodPut, "brand", 404, nil},
+		{http.MethodDelete, "brand", 404, nil},
 	}
 
 	for _, tc := range testcases {

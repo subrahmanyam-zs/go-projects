@@ -67,7 +67,6 @@ func New(c *Config) (notifier.Notifier, error) {
 }
 
 func (s *SNS) Publish(value interface{}) (err error) {
-
 	data, ok := value.([]byte)
 	if !ok {
 		data, err = json.Marshal(value)
@@ -82,10 +81,10 @@ func (s *SNS) Publish(value interface{}) (err error) {
 	}
 
 	_, err = s.sns.Publish(input)
-
 	if err != nil {
 		return err
 	}
+
 	return nil
 }
 

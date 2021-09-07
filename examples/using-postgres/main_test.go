@@ -1,7 +1,6 @@
 package main
 
 import (
-	"bytes"
 	"net/http"
 	"os"
 	"testing"
@@ -47,23 +46,17 @@ func TestIntegration(t *testing.T) {
 	go main()
 	time.Sleep(time.Second * 5)
 
-	tcs := []struct {
-		method             string
-		endpoint           string
-		expectedStatusCode int
-		body               []byte
-	}{
-		{"GET", "customer", 200, nil},
+	req, _ := request.NewMock(http.MethodGet, "http://localhost:9092/customer", nil)
+	c := http.Client{}
+
+	resp, err := c.Do(req)
+	if resp == nil || err != nil {
+		t.Error(err)
+		return
 	}
 
-	for _, tc := range tcs {
-		req, _ := request.NewMock(tc.method, "http://localhost:9092/"+tc.endpoint, bytes.NewBuffer(tc.body))
-		c := http.Client{}
-
-		//nolint: bodyclose, no response body to close
-		resp, _ := c.Do(req)
-		if resp != nil && resp.StatusCode != tc.expectedStatusCode {
-			t.Errorf("Failed.\tExpected %v\tGot %v\n", tc.expectedStatusCode, resp.StatusCode)
-		}
+	if resp.StatusCode != http.StatusOK {
+		t.Errorf("Failed.\tExpected %v\tGot %v\n", http.StatusOK, resp.StatusCode)
+		_ = resp.Body.Close()
 	}
 }

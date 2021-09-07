@@ -22,7 +22,7 @@ func (e employee) Get(ctx *gofr.Context, filter entity.Employee) []entity.Employ
 	)
 
 	whereClause, values := getWhereClause(filter)
-	//nolint:gosec // string concatenation is required for query
+
 	query := "SELECT id, name, phone, email, city FROM employees" + whereClause
 	item := ctx.Cassandra.Session.Query(query, values...).Iter()
 
@@ -73,7 +73,6 @@ func getWhereClause(e entity.Employee) (whereClause string, values []interface{}
 	}
 
 	if len(conditions) > 0 {
-		//nolint:gosec // needed query as it is.
 		whereClause = " WHERE " + strings.Join(conditions, " AND ") + " ALLOW FILTERING"
 	}
 

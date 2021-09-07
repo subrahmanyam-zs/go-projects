@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"net/http"
 	"net/http/httptest"
 	"net/url"
 	"reflect"
@@ -65,7 +66,7 @@ func TestHelloNameHandler(t *testing.T) {
 
 func TestPostNameHandler(t *testing.T) {
 	var jsonStr = []byte(`{"Username":"username"}`)
-	r := httptest.NewRequest("POST", "/post", bytes.NewBuffer(jsonStr))
+	r := httptest.NewRequest(http.MethodPost, "/post", bytes.NewBuffer(jsonStr))
 	req := request.NewHTTPRequest(r)
 
 	r.Header.Set("Content-Type", "application/json")
@@ -93,7 +94,7 @@ func TestPostNameHandlerfail(t *testing.T) {
 	// invalid JSON passed
 	var jsonStr = []byte(`{"Username":}`)
 
-	r := httptest.NewRequest("POST", "/post", bytes.NewBuffer(jsonStr))
+	r := httptest.NewRequest(http.MethodPost, "/post", bytes.NewBuffer(jsonStr))
 	r.Header.Set("Content-Type", "application/json")
 	req := request.NewHTTPRequest(r)
 	c := gofr.NewContext(nil, req, gofr.New())

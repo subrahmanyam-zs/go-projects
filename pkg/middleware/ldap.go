@@ -111,6 +111,7 @@ func LDAP(logger log.Logger, options *LDAPOptions) func(inner http.Handler) http
 	}
 }
 
+//nolint:interfacer //We have to use our custom logger here.
 func (l *Ldap) Validate(logger log.Logger, r *http.Request) error {
 	var requiredGroups []string
 

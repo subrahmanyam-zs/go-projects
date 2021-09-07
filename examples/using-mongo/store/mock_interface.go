@@ -7,9 +7,9 @@ package store
 import (
 	reflect "reflect"
 
-	gomock "github.com/golang/mock/gomock"
 	models "developer.zopsmart.com/go/gofr/examples/using-mongo/entity"
 	gofr "developer.zopsmart.com/go/gofr/pkg/gofr"
+	gomock "github.com/golang/mock/gomock"
 )
 
 // MockCustomer is a mock of Customer interface

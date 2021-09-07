@@ -2,6 +2,8 @@ package handler
 
 import (
 	"fmt"
+	"net/http"
+	"strings"
 
 	"developer.zopsmart.com/go/gofr/pkg/errors"
 	"developer.zopsmart.com/go/gofr/pkg/gofr"
@@ -20,15 +22,15 @@ func HelloName(c *gofr.Context) (interface{}, error) {
 // ErrorHandler always returns an error
 func ErrorHandler(c *gofr.Context) (interface{}, error) {
 	return nil, &errors.Response{
-		StatusCode: 500,
+		StatusCode: http.StatusInternalServerError,
 		Code:       "UNKNOWN_ERROR",
 		Reason:     "unknown error occurred",
 	}
 }
 
 type resp struct {
-	Name    string
-	Company string
+	Name    string `json:"name"`
+	Company string `json:"company"`
 }
 
 // JSONHandler is a handler function of type gofr.Handler, it responds with a JSON message
@@ -39,6 +41,18 @@ func JSONHandler(c *gofr.Context) (interface{}, error) {
 	}
 
 	return r, nil
+}
+
+// UserHandler is a handler function of type gofr.Handler, it responds with a JSON message
+func UserHandler(c *gofr.Context) (interface{}, error) {
+	name := c.PathParam("name")
+
+	switch strings.ToLower(name) {
+	case "vikash":
+		return resp{Name: "Vikash", Company: "ZopSmart"}, nil
+	default:
+		return nil, errors.EntityNotFound{Entity: "user", ID: name}
+	}
 }
 
 func HelloLogHandler(c *gofr.Context) (interface{}, error) {

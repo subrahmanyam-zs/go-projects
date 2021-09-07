@@ -5,6 +5,8 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
+
 	"developer.zopsmart.com/go/gofr/pkg/datastore"
 	"developer.zopsmart.com/go/gofr/pkg/errors"
 	"developer.zopsmart.com/go/gofr/pkg/gofr"
@@ -15,7 +17,7 @@ func TestGetSetDelete(t *testing.T) {
 	c := gofr.NewContext(nil, nil, k)
 	c.Context = context.Background()
 
-	//initializing the seeder
+	// initializing the seeder
 	seeder := datastore.NewSeeder(&k.DataStore, "../db")
 	seeder.RefreshRedis(t, "store")
 
@@ -37,24 +39,9 @@ func testSetWithError(t *testing.T, k *gofr.Gofr, c *gofr.Context) {
 }
 
 func testSet(t *testing.T, c *gofr.Context) {
-	tests := []struct {
-		key         string
-		value       string
-		expectedErr error
-	}{
-		{
-			key:         "someKey123",
-			value:       "someValue123",
-			expectedErr: nil,
-		},
-	}
-
-	for _, test := range tests {
-		err := Model{}.Set(c, test.key, test.value, 0)
-
-		if !reflect.DeepEqual(err, test.expectedErr) {
-			t.Errorf("FAILED, Expected: %v, Got: %v", test.expectedErr, err)
-		}
+	err := Model{}.Set(c, "someKey123", "someValue123", 0)
+	if err != nil {
+		t.Errorf("FAILED, Expected no error, Got: %v", err)
 	}
 }
 
@@ -64,16 +51,8 @@ func testGet(t *testing.T, c *gofr.Context) {
 		expected string
 		err      error
 	}{
-		{
-			key:      "someKey123",
-			expected: "someValue123",
-			err:      nil,
-		},
-		{
-			key:      "someKey",
-			expected: "",
-			err:      errors.DB{},
-		},
+		{key: "someKey123", expected: "someValue123", err: nil},
+		{key: "someKey", expected: "", err: errors.DB{}},
 	}
 
 	for i, test := range tests {
@@ -83,15 +62,7 @@ func testGet(t *testing.T, c *gofr.Context) {
 			t.Errorf("FAILED, Expected: %v, Got: %v", test.expected, got)
 		}
 
-		if test.err == nil {
-			if err != nil {
-				t.Errorf("Testcase: %v FAILED", i)
-			}
-		} else {
-			if _, ok := err.(errors.DB); ok == false {
-				t.Errorf("Testcase: %v FAILED", i)
-			}
-		}
+		assert.IsType(t, test.err, err, "Testcase: %v FAILED", i)
 	}
 }
 

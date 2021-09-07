@@ -36,21 +36,26 @@ func initializeTest(t *testing.T) *gofr.Gofr {
 
 func createMap(input []*entity.Person) map[entity.Person]int {
 	output := make(map[entity.Person]int)
-	for _, val := range input {
-		output[*val] += 1
 
+	for _, val := range input {
+		if val != nil {
+			output[*val]++
+		}
 	}
+
 	return output
 }
 
 func isSubset(supSet, subSet []*entity.Person) bool {
 	set := createMap(supSet)
 	subset := createMap(subSet)
-	for k, _ := range subset {
+
+	for k := range subset {
 		if val, ok := set[k]; !ok || val != subset[k] {
 			return false
 		}
 	}
+
 	return true
 }
 

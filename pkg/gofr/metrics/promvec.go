@@ -6,7 +6,7 @@ import (
 	"developer.zopsmart.com/go/gofr/pkg/errors"
 )
 
-var (
+const (
 	// metricErr raised if metric is invalid or already registered
 	metricErr      = errors.Error("invalid/duplicate metrics collector registration attempted")
 	metricNotFound = errors.Error("metric with given name is not registered")

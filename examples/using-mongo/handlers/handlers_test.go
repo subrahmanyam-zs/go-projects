@@ -3,12 +3,14 @@ package handlers
 import (
 	"encoding/json"
 	errors2 "errors"
+	"net/http"
 	"net/http/httptest"
 	"reflect"
 	"strings"
 	"testing"
 
 	"github.com/golang/mock/gomock"
+
 	"developer.zopsmart.com/go/gofr/examples/using-mongo/entity"
 	"developer.zopsmart.com/go/gofr/examples/using-mongo/store"
 	"developer.zopsmart.com/go/gofr/pkg/errors"
@@ -26,8 +28,8 @@ func initializeHandlersTest(t *testing.T) (*store.MockCustomer, Customer, *gofr.
 	return customerStore, customer, k
 }
 
+//nolint:govet //in table driven tests we don't add the key in the struct
 func TestCustomer_Get(t *testing.T) {
-	//nolint: govet, table tests
 	testCases := []struct {
 		queryParams  string
 		expectedResp interface{}
@@ -41,7 +43,7 @@ func TestCustomer_Get(t *testing.T) {
 	customerStore, customer, k := initializeHandlersTest(t)
 
 	for index, tc := range testCases {
-		req := httptest.NewRequest("GET", "/customer?"+tc.queryParams, nil)
+		req := httptest.NewRequest(http.MethodGet, "/customer?"+tc.queryParams, nil)
 		r := request.NewHTTPRequest(req)
 		context2 := gofr.NewContext(nil, r, k)
 

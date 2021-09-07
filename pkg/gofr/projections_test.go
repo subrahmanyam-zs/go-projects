@@ -1,10 +1,12 @@
 package gofr
 
 import (
+	"net/http"
 	"net/http/httptest"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+
 	"developer.zopsmart.com/go/gofr/pkg/gofr/request"
 )
 
@@ -38,7 +40,7 @@ func TestContext_Projections_success(t *testing.T) {
 	}
 
 	for i, tc := range testCases {
-		r := httptest.NewRequest("GET", tc.target, nil)
+		r := httptest.NewRequest(http.MethodGet, tc.target, nil)
 		req := request.NewHTTPRequest(r)
 
 		c := NewContext(nil, req, &k)
@@ -75,7 +77,7 @@ func TestContext_Projections_errors(t *testing.T) {
 	}
 
 	for i, tc := range testcases {
-		r := httptest.NewRequest("GET", tc.target, nil)
+		r := httptest.NewRequest(http.MethodGet, tc.target, nil)
 		req := request.NewHTTPRequest(r)
 
 		c := NewContext(nil, req, &k)

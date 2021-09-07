@@ -26,6 +26,7 @@ type DataStore struct {
 	PubSub        pubsub.PublisherSubscriber
 	Solr          Client
 	Elasticsearch Elasticsearch
+	DynamoDB      DynamoDB
 }
 
 type QueryLogger struct {
@@ -164,4 +165,8 @@ func (ds *DataStore) RedisHealthCheck() types.Health {
 
 func (ds *DataStore) PubSubHealthCheck() types.Health {
 	return ds.PubSub.HealthCheck()
+}
+
+func (ds *DataStore) DynamoDBHealthCheck() types.Health {
+	return ds.DynamoDB.HealthCheck()
 }

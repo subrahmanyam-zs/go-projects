@@ -7,9 +7,9 @@ package store
 import (
 	reflect "reflect"
 
-	gomock "github.com/golang/mock/gomock"
 	entity "developer.zopsmart.com/go/gofr/examples/using-ycql/entity"
 	gofr "developer.zopsmart.com/go/gofr/pkg/gofr"
+	gomock "github.com/golang/mock/gomock"
 )
 
 // MockShop is a mock of Shop interface

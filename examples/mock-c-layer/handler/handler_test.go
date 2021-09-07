@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
+	"net/http"
 	"net/http/httptest"
 	"reflect"
 	"testing"
@@ -16,7 +17,7 @@ import (
 )
 
 func TestBrand_Get(t *testing.T) {
-	//nolint: govet, table tests
+	//nolint:govet  // table tests
 	testCases := []struct {
 		reqID        string
 		expectedResp []store.Model
@@ -34,7 +35,7 @@ func TestBrand_Get(t *testing.T) {
 	k := gofr.New()
 
 	for _, tc := range testCases {
-		req := httptest.NewRequest("GET", "/dummy?id="+tc.reqID, nil)
+		req := httptest.NewRequest(http.MethodGet, "/dummy?id="+tc.reqID, nil)
 		r := request.NewHTTPRequest(req)
 		context := gofr.NewContext(nil, r, k)
 		data, err := consumer.Get(context)
@@ -69,7 +70,7 @@ func TestBrand_Create(t *testing.T) {
 	k := gofr.New()
 
 	for _, tc := range testCases {
-		req := httptest.NewRequest("GET", "/dummy", bytes.NewBuffer(tc.request))
+		req := httptest.NewRequest(http.MethodGet, "/dummy", bytes.NewBuffer(tc.request))
 		r := request.NewHTTPRequest(req)
 		context := gofr.NewContext(nil, r, k)
 		resp, err := consumer.Create(context)
@@ -98,7 +99,7 @@ func TestBrand_CreateError(t *testing.T) {
 	expectedError := errors2.InvalidParam{Param: []string{"request body"}}
 	body := []byte(`{"id":"1"}`)
 
-	req := httptest.NewRequest("GET", "/dummy", bytes.NewBuffer(body))
+	req := httptest.NewRequest(http.MethodGet, "/dummy", bytes.NewBuffer(body))
 	r := request.NewHTTPRequest(req)
 
 	context := gofr.NewContext(nil, r, k)
@@ -121,7 +122,7 @@ func TestBrand_CreateErrorBody(t *testing.T) {
 
 	k := gofr.New()
 	expectedError := errors2.InvalidParam{Param: []string{"request body"}}
-	req := httptest.NewRequest("GET", "/dummy", errReader(0))
+	req := httptest.NewRequest(http.MethodGet, "/dummy", errReader(0))
 	r := request.NewHTTPRequest(req)
 	context := gofr.NewContext(nil, r, k)
 	_, err := consumer.Create(context)

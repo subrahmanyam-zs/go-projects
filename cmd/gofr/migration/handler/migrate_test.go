@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
+
 	"developer.zopsmart.com/go/gofr/pkg/errors"
 )
 
@@ -13,6 +14,7 @@ func Test_createMain(t *testing.T) {
 	currDir, _ := os.Getwd()
 
 	ctrl := gomock.NewController(t)
+
 	defer func() {
 		ctrl.Finish()
 

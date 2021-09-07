@@ -1,3 +1,5 @@
+// +build !integration
+
 package main
 
 import (
@@ -8,7 +10,7 @@ import (
 	"developer.zopsmart.com/go/gofr/pkg/gofr/request"
 )
 
-// nolint, need to wait for topic to be created so retry logic is to be added
+// nolint // need to wait for topic to be created so retry logic is to be added
 func TestServerRun(t *testing.T) {
 	go main()
 	time.Sleep(3 * time.Second)

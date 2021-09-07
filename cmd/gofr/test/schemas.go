@@ -1,6 +1,7 @@
 package test
 
 import (
+	"net/http"
 	"reflect"
 
 	"github.com/getkin/kin-openapi/openapi3"
@@ -60,16 +61,16 @@ func (s *Swagger) convertIntoIntegrationTestSchema() IntegrationTestSchema {
 	for k := range s.openapiSwagger.Paths {
 		v := s.openapiSwagger.Paths[k]
 
-		getVal := getIntergrationTestSchema(v.Get, "GET", k)
+		getVal := getIntergrationTestSchema(v.Get, http.MethodGet, k)
 		resultSchema.TestCases = populateSlice(resultSchema.TestCases, getVal)
 
-		postVal := getIntergrationTestSchema(v.Post, "POST", k)
+		postVal := getIntergrationTestSchema(v.Post, http.MethodPost, k)
 		resultSchema.TestCases = populateSlice(resultSchema.TestCases, postVal)
 
-		putVal := getIntergrationTestSchema(v.Put, "PUT", k)
+		putVal := getIntergrationTestSchema(v.Put, http.MethodPut, k)
 		resultSchema.TestCases = populateSlice(resultSchema.TestCases, putVal)
 
-		deleteVal := getIntergrationTestSchema(v.Delete, "DELETE", k)
+		deleteVal := getIntergrationTestSchema(v.Delete, http.MethodDelete, k)
 		resultSchema.TestCases = populateSlice(resultSchema.TestCases, deleteVal)
 	}
 

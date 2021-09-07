@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"encoding/xml"
 	"fmt"
+	"net/http"
 )
 
 func (h *httpService) Get(ctx context.Context, api string, params map[string]interface{}) (*Response, error) {
@@ -13,23 +14,23 @@ func (h *httpService) Get(ctx context.Context, api string, params map[string]int
 		return h.cache.Get(ctx, api, params)
 	}
 
-	return h.call(ctx, "GET", api, params, nil, nil)
+	return h.call(ctx, http.MethodGet, api, params, nil, nil)
 }
 
 func (h *httpService) Post(ctx context.Context, api string, params map[string]interface{}, body []byte) (*Response, error) {
-	return h.call(ctx, "POST", api, params, body, nil)
+	return h.call(ctx, http.MethodPost, api, params, body, nil)
 }
 
 func (h *httpService) Put(ctx context.Context, api string, params map[string]interface{}, body []byte) (*Response, error) {
-	return h.call(ctx, "PUT", api, params, body, nil)
+	return h.call(ctx, http.MethodPut, api, params, body, nil)
 }
 
 func (h *httpService) Patch(ctx context.Context, api string, params map[string]interface{}, body []byte) (*Response, error) {
-	return h.call(ctx, "PATCH", api, params, body, nil)
+	return h.call(ctx, http.MethodPatch, api, params, body, nil)
 }
 
 func (h *httpService) Delete(ctx context.Context, api string, body []byte) (*Response, error) {
-	return h.call(ctx, "DELETE", api, nil, body, nil)
+	return h.call(ctx, http.MethodDelete, api, nil, body, nil)
 }
 
 func (h *httpService) GetWithHeaders(ctx context.Context, api string, params map[string]interface{},
@@ -43,28 +44,32 @@ func (h *httpService) GetWithHeaders(ctx context.Context, api string, params map
 
 func (h *httpService) PostWithHeaders(ctx context.Context, api string, params map[string]interface{}, body []byte,
 	headers map[string]string) (*Response, error) {
-	return h.call(ctx, "POST", api, params, body, headers)
+	return h.call(ctx, http.MethodPost, api, params, body, headers)
 }
 
 func (h *httpService) PutWithHeaders(ctx context.Context, api string, params map[string]interface{}, body []byte,
 	headers map[string]string) (*Response, error) {
-	return h.call(ctx, "PUT", api, params, body, headers)
+	return h.call(ctx, http.MethodPut, api, params, body, headers)
 }
 
 func (h *httpService) PatchWithHeaders(ctx context.Context, api string, params map[string]interface{}, body []byte,
 	headers map[string]string) (*Response, error) {
-	return h.call(ctx, "PATCH", api, params, body, headers)
+	return h.call(ctx, http.MethodPatch, api, params, body, headers)
 }
 
 func (h *httpService) DeleteWithHeaders(ctx context.Context, api string, body []byte, headers map[string]string) (*Response, error) {
-	return h.call(ctx, "DELETE", api, nil, body, headers)
+	return h.call(ctx, http.MethodDelete, api, nil, body, headers)
 }
 
 // Bind takes Response and binds it to i based on content-type.
 func (h *httpService) Bind(resp []byte, i interface{}) error {
 	var err error
 
-	switch h.contentType {
+	h.mu.Lock()
+	contentType := h.contentType
+	h.mu.Unlock()
+
+	switch contentType {
 	case XML:
 		err = xml.NewDecoder(bytes.NewBuffer(resp)).Decode(&i)
 	case TEXT:
@@ -82,7 +87,11 @@ func (h *httpService) Bind(resp []byte, i interface{}) error {
 func (h *httpService) BindStrict(resp []byte, i interface{}) error {
 	var err error
 
-	switch h.contentType {
+	h.mu.Lock()
+	contentType := h.contentType
+	h.mu.Unlock()
+
+	switch contentType {
 	case XML:
 		err = xml.NewDecoder(bytes.NewBuffer(resp)).Decode(&i)
 	case TEXT:

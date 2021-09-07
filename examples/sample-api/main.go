@@ -8,7 +8,7 @@ import (
 func main() {
 	// create the application object
 	k := gofr.New()
-	
+
 	// enabling /swagger endpoint for Swagger UI
 	k.EnableSwaggerUI()
 
@@ -18,8 +18,11 @@ func main() {
 	// handler can access the parameters from context.
 	k.GET("/hello", handler.HelloName)
 
-	// handler function can send response in JSON using c.JSON
+	// handler function can send response in JSON
 	k.GET("/json", handler.JSONHandler)
+
+	// handler returns response based on PathParam
+	k.GET("/user/{name}", handler.UserHandler)
 
 	// Handler function which throws error
 	k.GET("/error", handler.ErrorHandler)

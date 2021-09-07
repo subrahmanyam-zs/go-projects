@@ -79,7 +79,7 @@ func TestModel_GetKey(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		r := httptest.NewRequest("GET", "http://dummy", nil)
+		r := httptest.NewRequest(http.MethodGet, "http://dummy", nil)
 
 		req := request.NewHTTPRequest(r)
 		c := gofr.NewContext(nil, req, k)
@@ -121,7 +121,7 @@ func TestModel_DeleteKey(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		r := httptest.NewRequest("DELETE", "http://dummy", nil)
+		r := httptest.NewRequest(http.MethodDelete, "http://dummy", nil)
 
 		req := request.NewHTTPRequest(r)
 		c := gofr.NewContext(nil, req, k)
@@ -169,7 +169,7 @@ func TestModel_SetKey(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		r := httptest.NewRequest("POST", "http://dummy", bytes.NewReader(test.body))
+		r := httptest.NewRequest(http.MethodPost, "http://dummy", bytes.NewReader(test.body))
 
 		req := request.NewHTTPRequest(r)
 		c := gofr.NewContext(nil, req, k)
@@ -186,7 +186,7 @@ func TestSetKey_SetGaugeError(t *testing.T) {
 	k := gofr.New()
 	m := New(mockStore{})
 
-	r := httptest.NewRequest("POST", "http://dummy", nil)
+	r := httptest.NewRequest(http.MethodPost, "http://dummy", nil)
 
 	req := request.NewHTTPRequest(r)
 	c := gofr.NewContext(nil, req, k)
@@ -236,12 +236,13 @@ func TestSetKey_IncCounterError(t *testing.T) {
 	mockMetric := metrics.NewMockMetric(gomock.NewController(t))
 	k.Metric = mockMetric
 	expErr := errors.Error("error case")
+
 	mockMetric.EXPECT().SetGauge(gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
 	mockMetric.EXPECT().IncCounter(gomock.Any()).Return(nil)
 	mockMetric.EXPECT().IncCounter(gomock.Any(), gomock.Any()).Return(expErr).AnyTimes()
 
 	for i, tc := range tcs {
-		r := httptest.NewRequest("POST", "http://dummy", bytes.NewReader(tc.body))
+		r := httptest.NewRequest(http.MethodPost, "http://dummy", bytes.NewReader(tc.body))
 		req := request.NewHTTPRequest(r)
 		c := gofr.NewContext(nil, req, k)
 

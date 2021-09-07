@@ -18,7 +18,7 @@ func New(c store.Store) *Config {
 	}
 }
 
-// SetKey is a handler function of type gofr.Handler, it sets keys
+//nolint:gocognit // SetKey is a handler function of type gofr.Handler, it sets keys
 func (m Config) SetKey(c *gofr.Context) (interface{}, error) {
 	input := make(map[string]string)
 
@@ -32,7 +32,7 @@ func (m Config) SetKey(c *gofr.Context) (interface{}, error) {
 		return nil, err
 	}
 
-	if err := c.Bind(&input); err != nil {
+	if err = c.Bind(&input); err != nil {
 		err = c.Metric.IncCounter(InvalidBodyCounter)
 		if err != nil {
 			return nil, err
@@ -47,7 +47,7 @@ func (m Config) SetKey(c *gofr.Context) (interface{}, error) {
 	}
 
 	for key, value := range input {
-		if err := m.store.Set(c, key, value, 0); err != nil {
+		if err = m.store.Set(c, key, value, 0); err != nil {
 			c.Logger.Error("got error: ", err)
 
 			err = c.Metric.IncCounter(NumberOfSetsCounter, "failed")

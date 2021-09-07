@@ -62,8 +62,8 @@ func TestSubscriberHandler(t *testing.T) {
 	}
 
 	for _, tc := range tests {
-
 		mockService.EXPECT().SubscribeWithResponse(gomock.Any()).Return(&notifier.Message{}, tc.wantErr)
+
 		_, err := Subscriber(ctx)
 
 		assert.ErrorIsf(t, err, tc.wantErr, "%v Error expected %v but got : %v", tc.desc, tc.wantErr, err)

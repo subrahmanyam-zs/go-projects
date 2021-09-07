@@ -1,3 +1,5 @@
+// +build !integration
+
 package oauth
 
 import (
@@ -7,7 +9,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/bmizerany/assert"
+	"github.com/stretchr/testify/assert"
 
 	"developer.zopsmart.com/go/gofr/pkg/log"
 	"developer.zopsmart.com/go/gofr/pkg/middleware"
@@ -53,7 +55,7 @@ func TestLDAPOAuth(t *testing.T) {
 
 		handler := LDAPOAuth(mockLogger, &ldapOptions, oAuthOptions)(&MockHandlerForLDAPOAuth{})
 		w := httptest.NewRecorder()
-		request := httptest.NewRequest("GET", testCase.endPoint, nil)
+		request := httptest.NewRequest(http.MethodGet, testCase.endPoint, nil)
 		request.Header.Set("Authorization", testCase.authHeader)
 		handler.ServeHTTP(w, request)
 		assert.Equal(t, testCase.expectedCode, w.Code)
@@ -107,8 +109,12 @@ func TestVerifyOptions(t *testing.T) {
 		mockLogger := log.NewMockLogger(b)
 
 		result := verifyOptions(mockLogger, &ldapOptions, &oAuthOptions)
+
 		assert.Equal(t, expectedResult, result, i)
-		assert.T(t, strings.Contains(b.String(), testCase.errorMessage), testCase.errorMessage, b.String(), i)
+
+		if !strings.Contains(b.String(), testCase.errorMessage) {
+			t.Errorf("Expected %v in logs", testCase.errorMessage)
+		}
 	}
 }
 

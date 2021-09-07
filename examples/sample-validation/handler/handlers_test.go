@@ -3,6 +3,7 @@ package handler
 import (
 	"bytes"
 	"encoding/json"
+	"net/http"
 	"net/http/httptest"
 	"reflect"
 	"testing"
@@ -21,8 +22,8 @@ func TestValidateEntry(t *testing.T) {
 		body          Details
 		expectedError error
 	}{
-		{"POST", "http://localhost:9010/phone", Details{"+912123456789098", "c.r@yahoo.com"}, nil},
-		{"POST", "http://localhost:9010/phone", Details{}, errors.InvalidParam{Param: []string{"Phone Number length"}}},
+		{http.MethodPost, "http://localhost:9010/phone", Details{"+912123456789098", "c.r@yahoo.com"}, nil},
+		{http.MethodPost, "http://localhost:9010/phone", Details{}, errors.InvalidParam{Param: []string{"Phone Number length"}}},
 	}
 
 	for index, tc := range testcases {

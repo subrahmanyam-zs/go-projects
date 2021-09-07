@@ -9,15 +9,15 @@ import (
 	"developer.zopsmart.com/go/gofr/pkg/gofr"
 )
 
-type Customer struct {
+type customer struct {
 	store store.Customer
 }
 
-func New(c store.Customer) *Customer {
-	return &Customer{store: c}
+func New(c store.Customer) customer {
+	return customer{store: c}
 }
 
-func (c Customer) Index(context *gofr.Context) (interface{}, error) {
+func (c customer) Index(context *gofr.Context) (interface{}, error) {
 	name := context.Param("name")
 
 	resp, err := c.store.Get(context, name)
@@ -28,7 +28,7 @@ func (c Customer) Index(context *gofr.Context) (interface{}, error) {
 	return resp, nil
 }
 
-func (c Customer) Read(context *gofr.Context) (interface{}, error) {
+func (c customer) Read(context *gofr.Context) (interface{}, error) {
 	id := context.PathParam("id")
 
 	if id == "" {
@@ -43,7 +43,7 @@ func (c Customer) Read(context *gofr.Context) (interface{}, error) {
 	return resp, nil
 }
 
-func (c Customer) Update(context *gofr.Context) (interface{}, error) {
+func (c customer) Update(context *gofr.Context) (interface{}, error) {
 	id := context.PathParam("id")
 	if id == "" {
 		return nil, errors.MissingParam{Param: []string{"id"}}
@@ -63,7 +63,7 @@ func (c Customer) Update(context *gofr.Context) (interface{}, error) {
 	return resp, nil
 }
 
-func (c Customer) Create(context *gofr.Context) (interface{}, error) {
+func (c customer) Create(context *gofr.Context) (interface{}, error) {
 	var cust model.Customer
 	if err := context.Bind(&cust); err != nil {
 		return nil, errors.InvalidParam{Param: []string{"body"}}
@@ -76,7 +76,7 @@ func (c Customer) Create(context *gofr.Context) (interface{}, error) {
 
 	return resp, nil
 }
-func (c Customer) Delete(context *gofr.Context) (interface{}, error) {
+func (c customer) Delete(context *gofr.Context) (interface{}, error) {
 	i := context.PathParam("id")
 	if i == "" {
 		return nil, errors.MissingParam{Param: []string{"id"}}

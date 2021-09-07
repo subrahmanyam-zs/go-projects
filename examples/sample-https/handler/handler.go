@@ -2,6 +2,7 @@ package handler
 
 import (
 	"fmt"
+	"net/http"
 
 	"developer.zopsmart.com/go/gofr/pkg/errors"
 	"developer.zopsmart.com/go/gofr/pkg/gofr"
@@ -43,7 +44,7 @@ func PostName(c *gofr.Context) (interface{}, error) {
 }
 
 func ErrorHandler(c *gofr.Context) (interface{}, error) {
-	return nil, &errors.Response{StatusCode: 404}
+	return nil, &errors.Response{StatusCode: http.StatusNotFound}
 }
 
 // MultipleErrorHandler returns multiple errors and

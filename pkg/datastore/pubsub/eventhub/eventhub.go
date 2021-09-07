@@ -11,6 +11,7 @@ import (
 	eventhub "github.com/Azure/azure-event-hubs-go/v3"
 	"github.com/Azure/go-autorest/autorest/azure"
 	"github.com/prometheus/client_golang/prometheus"
+
 	"developer.zopsmart.com/go/gofr/pkg"
 	"developer.zopsmart.com/go/gofr/pkg/datastore/pubsub"
 	"developer.zopsmart.com/go/gofr/pkg/datastore/pubsub/avro"
@@ -276,6 +277,7 @@ func (e *Eventhub) IsSet() bool {
 }
 
 // NewEventHubWithAvro initialize EventHub with Avro when EventHubConfig and AvroConfig are right
+//nolint:interfacer //`logger` can be `github.com/stretchr/testify/assert.TestingT`
 func NewEventHubWithAvro(config *AvroWithEventhubConfig, logger log.Logger) (pubsub.PublisherSubscriber, error) {
 	eventHub, err := New(&config.EventhubConfig)
 	if err != nil {

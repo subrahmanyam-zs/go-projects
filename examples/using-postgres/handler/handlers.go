@@ -87,7 +87,7 @@ func (m Customer) Update(c *gofr.Context) (interface{}, error) {
 	}
 
 	var cust model.Customer
-	if err := c.Bind(&cust); err != nil {
+	if err = c.Bind(&cust); err != nil {
 		c.Logger.Errorf("error in binding: %v", err)
 		return nil, errors.InvalidParam{Param: []string{"body"}}
 	}

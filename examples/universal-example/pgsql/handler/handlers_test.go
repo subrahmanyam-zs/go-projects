@@ -2,10 +2,12 @@ package handler
 
 import (
 	"bytes"
+	"net/http"
 	"net/http/httptest"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+
 	"developer.zopsmart.com/go/gofr/examples/universal-example/pgsql/entity"
 	gofrError "developer.zopsmart.com/go/gofr/pkg/errors"
 	"developer.zopsmart.com/go/gofr/pkg/gofr"
@@ -61,7 +63,7 @@ func TestPgsqlEmployee_Get(t *testing.T) {
 
 	for i, tc := range tests {
 		w := httptest.NewRecorder()
-		r := httptest.NewRequest("GET", "/dummy?"+tc.mockParamStr, nil)
+		r := httptest.NewRequest(http.MethodGet, "/dummy?"+tc.mockParamStr, nil)
 		req := request.NewHTTPRequest(r)
 		res := responder.NewContextualResponder(w, r)
 		c := gofr.NewContext(res, req, k)
@@ -86,7 +88,7 @@ func TestPgsqlEmployee_Create(t *testing.T) {
 
 	for i, tc := range tests {
 		w := httptest.NewRecorder()
-		r := httptest.NewRequest("POST", "http://dummy", bytes.NewReader(tc.body))
+		r := httptest.NewRequest(http.MethodPost, "http://dummy", bytes.NewReader(tc.body))
 		req := request.NewHTTPRequest(r)
 		res := responder.NewContextualResponder(w, r)
 		c := gofr.NewContext(res, req, k)

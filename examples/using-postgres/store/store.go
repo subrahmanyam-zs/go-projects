@@ -24,16 +24,26 @@ type Store interface {
 }
 
 func (m Model) Get(c *gofr.Context) (*[]model.Customer, error) {
-	customers := make([]model.Customer, 0)
-
-	var customer model.Customer
-	rows, err := c.DB().Query("SELECT * FROM customers")
+	rows, err := c.DB().QueryContext(c, "SELECT * FROM customers")
 	if err != nil {
 		return nil, errors.DB{Err: err}
 	}
 
+	defer func() {
+		_ = rows.Close()
+		_ = rows.Err() // or modify return value
+	}()
+
+	customers := make([]model.Customer, 0)
+
 	for rows.Next() {
-		rows.Scan(&customer.ID, &customer.Name)
+		var customer model.Customer
+
+		err := rows.Scan(&customer.ID, &customer.Name)
+		if err != nil {
+			return nil, err
+		}
+
 		customers = append(customers, customer)
 	}
 
@@ -43,8 +53,7 @@ func (m Model) Get(c *gofr.Context) (*[]model.Customer, error) {
 func (m Model) GetByID(c *gofr.Context, id int) (*model.Customer, error) {
 	var customer model.Customer
 
-	err := c.DB().QueryRow(" SELECT * FROM customers where id=$1", id).Scan(&customer.ID, &customer.Name)
-
+	err := c.DB().QueryRowContext(c, " SELECT * FROM customers where id=$1", id).Scan(&customer.ID, &customer.Name)
 	if err == sql.ErrNoRows {
 		return nil, errors.EntityNotFound{
 			Entity: "customer",
@@ -56,28 +65,29 @@ func (m Model) GetByID(c *gofr.Context, id int) (*model.Customer, error) {
 }
 
 func (m Model) Update(c *gofr.Context, customer model.Customer) (*model.Customer, error) {
-	_, err := c.DB().Exec("UPDATE customers SET name = $1 WHERE id = $2", customer.Name, customer.ID)
+	_, err := c.DB().ExecContext(c, "UPDATE customers SET name=$1 WHERE id=$2", customer.Name, customer.ID)
 	if err != nil {
 		return nil, errors.DB{Err: err}
 	}
 
-	return m.GetByID(c, customer.ID)
+	return &customer, nil
 }
 
 func (m Model) Create(c *gofr.Context, customer model.Customer) (*model.Customer, error) {
-	_, err := c.DB().Exec("INSERT INTO customers(name) VALUES($1)", customer.Name)
+	var resp model.Customer
 
+	err := c.DB().QueryRowContext(c, "INSERT INTO customers(name) VALUES($1) RETURNING id, name", customer.Name).Scan(
+		&resp.ID, &resp.Name,
+	)
 	if err != nil {
 		return nil, errors.DB{Err: err}
 	}
 
-	var lastID int
-	err = c.DB().QueryRow(`SELECT MAX(ID) AS MAX_ID FROM customers`).Scan(&lastID)
-	return m.GetByID(c, lastID)
+	return &resp, nil
 }
 
 func (m Model) Delete(c *gofr.Context, id int) error {
-	_, err := c.DB().Exec("DELETE FROM customers where id=$1", id)
+	_, err := c.DB().ExecContext(c, "DELETE FROM customers where id=$1", id)
 	if err != nil {
 		return errors.DB{Err: err}
 	}

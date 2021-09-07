@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"encoding/json"
+	"net/http"
 	"net/http/httptest"
 	"reflect"
 	"strings"
@@ -9,6 +10,7 @@ import (
 
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
+
 	"developer.zopsmart.com/go/gofr/examples/universal-example/cassandra/entity"
 	"developer.zopsmart.com/go/gofr/examples/universal-example/cassandra/store"
 	"developer.zopsmart.com/go/gofr/pkg/errors"
@@ -73,7 +75,7 @@ func TestCassandraEmployee_Create(t *testing.T) {
 
 	for i, tc := range tests {
 		input := strings.NewReader(tc.query)
-		r := httptest.NewRequest("POST", "/dummy", input)
+		r := httptest.NewRequest(http.MethodPost, "/dummy", input)
 		req := request.NewHTTPRequest(r)
 		context := gofr.NewContext(nil, req, k)
 
@@ -107,7 +109,7 @@ func TestCassandraEmployee_Create_InvalidInput_JsonError(t *testing.T) {
 
 	for i, tc := range tests {
 		input := strings.NewReader(tc.query)
-		r := httptest.NewRequest("POST", "/dummy", input)
+		r := httptest.NewRequest(http.MethodPost, "/dummy", input)
 		req := request.NewHTTPRequest(r)
 		context := gofr.NewContext(nil, req, k)
 

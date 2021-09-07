@@ -6,6 +6,7 @@ import (
 	"developer.zopsmart.com/go/gofr/examples/using-mongo/entity"
 	"developer.zopsmart.com/go/gofr/pkg/errors"
 	"developer.zopsmart.com/go/gofr/pkg/gofr"
+
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )

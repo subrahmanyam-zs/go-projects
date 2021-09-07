@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/gorilla/mux"
+
 	"developer.zopsmart.com/go/gofr/pkg/errors"
 	"developer.zopsmart.com/go/gofr/pkg/gofr/template"
 	"developer.zopsmart.com/go/gofr/pkg/log"

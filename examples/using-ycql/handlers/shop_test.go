@@ -2,12 +2,14 @@ package handlers
 
 import (
 	"encoding/json"
+	"net/http"
 	"net/http/httptest"
 	"reflect"
 	"strings"
 	"testing"
 
 	"github.com/golang/mock/gomock"
+
 	"developer.zopsmart.com/go/gofr/examples/using-ycql/entity"
 	"developer.zopsmart.com/go/gofr/examples/using-ycql/store"
 	"developer.zopsmart.com/go/gofr/pkg/errors"
@@ -44,7 +46,7 @@ func TestShop_Get(t *testing.T) {
 	shopStore, shop, k := initializeHandlerTest(t)
 
 	for i, tc := range tests {
-		req := httptest.NewRequest("GET", "/shop?"+tc.queryParams, nil)
+		req := httptest.NewRequest(http.MethodGet, "/shop?"+tc.queryParams, nil)
 		r := request.NewHTTPRequest(req)
 		context := gofr.NewContext(nil, r, k)
 
@@ -84,7 +86,7 @@ func TestShop_Create(t *testing.T) {
 
 	for i, tc := range tests {
 		in := strings.NewReader(tc.input)
-		req := httptest.NewRequest("POST", "/dummy", in)
+		req := httptest.NewRequest(http.MethodPost, "/dummy", in)
 		r := request.NewHTTPRequest(req)
 		context := gofr.NewContext(nil, r, k)
 
@@ -135,7 +137,7 @@ func TestShop_Update(t *testing.T) {
 
 	for i, tc := range tests {
 		in := strings.NewReader(tc.input)
-		req := httptest.NewRequest("PUT", "/shop/"+tc.id, in)
+		req := httptest.NewRequest(http.MethodPut, "/shop/"+tc.id, in)
 		r := request.NewHTTPRequest(req)
 		context := gofr.NewContext(nil, r, k)
 
@@ -175,7 +177,7 @@ func TestPerson_Delete(t *testing.T) {
 	personStore, person, k := initializeHandlerTest(t)
 
 	for i, tc := range tests {
-		req := httptest.NewRequest("PUT", "/persons/"+tc.id, nil)
+		req := httptest.NewRequest(http.MethodPut, "/persons/"+tc.id, nil)
 		r := request.NewHTTPRequest(req)
 		context := gofr.NewContext(nil, r, k)
 

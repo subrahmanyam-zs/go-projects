@@ -2,11 +2,14 @@ package gofr
 
 import (
 	"context"
-	awssns "developer.zopsmart.com/go/gofr/pkg/notifier/aws-sns"
 	"errors"
 	"os"
 	"strconv"
 	"strings"
+
+	"go.opencensus.io/trace"
+
+	"github.com/prometheus/client_golang/prometheus"
 
 	"developer.zopsmart.com/go/gofr/pkg"
 	"developer.zopsmart.com/go/gofr/pkg/datastore"
@@ -17,8 +20,7 @@ import (
 	"developer.zopsmart.com/go/gofr/pkg/gofr/request"
 	"developer.zopsmart.com/go/gofr/pkg/gofr/responder"
 	"developer.zopsmart.com/go/gofr/pkg/log"
-	"github.com/prometheus/client_golang/prometheus"
-	"go.opencensus.io/trace"
+	awssns "developer.zopsmart.com/go/gofr/pkg/notifier/aws-sns"
 )
 
 func New() (k *Gofr) {
@@ -277,10 +279,35 @@ func initializeDataStores(c Config, k *Gofr) {
 
 	// Solr
 	initializeSolr(c, k)
+
+	// DynamoDB
+	initializeDynamoDB(c, k)
+}
+
+func initializeDynamoDB(c Config, k *Gofr) {
+	cfg := dynamoDBConfigFromEnv(c)
+
+	if cfg.SecretAccessKey != "" && cfg.AccessKeyID != "" {
+		var err error
+
+		k.DynamoDB, err = datastore.NewDynamoDB(k.Logger, cfg)
+		k.DatabaseHealth = append(k.DatabaseHealth, k.DynamoDBHealthCheck)
+
+		if err != nil {
+			k.Logger.Errorf("DynamoDB could not be initialized, error: %v\n", err)
+
+			go dynamoRetry(cfg, k)
+
+			return
+		}
+
+		k.Logger.Infof("DynamoDB initialized at %v", cfg.Endpoint)
+	}
 }
 
 // initializeRedis initializes the Redis client in the Gofr struct if the Redis configuration is set
 // in the environment, in case of an error, it logs the error
+//nolint:interfacer //`c` can be `github.com/go-redis/redis/v8.ConsistentHash`
 func initializeRedis(c Config, k *Gofr) {
 	rc := datastore.RedisConfig{
 		HostName:                c.Get("REDIS_HOST"),
@@ -309,7 +336,7 @@ func initializeRedis(c Config, k *Gofr) {
 
 // initializeDB initializes the ORM object in the Gofr struct if the DB configuration is set
 // in the environment, in case of an error, it logs the error
-// nolint:gocognit // breaking down function will reduce readability
+//nolint:interfacer,gocognit //breaking down function will reduce readability
 func initializeDB(c Config, k *Gofr) {
 	dc := datastore.DBConfig{
 		HostName:          c.Get("DB_HOST"),
@@ -540,28 +567,29 @@ func getYcqlConfigs(c Config) datastore.CassandraCfg {
 }
 
 func initializeElasticsearch(c Config, k *Gofr) {
-	elasticSearchCfg := getElasticSearchConfigFromEnv(c)
+	elasticSearchCfg := elasticSearchConfigFromEnv(c)
 
-	if elasticSearchCfg.Host == "" || elasticSearchCfg.Port == 0 {
+	if (elasticSearchCfg.Host == "" || len(elasticSearchCfg.Ports) == 0) && elasticSearchCfg.CloudID == "" {
 		return
 	}
 
 	var err error
 
-	k.Elasticsearch, err = datastore.NewElasticsearchClient(&elasticSearchCfg)
+	k.Elasticsearch, err = datastore.NewElasticsearchClient(k.Logger, &elasticSearchCfg)
 	k.DatabaseHealth = append(k.DatabaseHealth, k.ElasticsearchHealthCheck)
 
 	if err != nil {
-		k.Logger.Errorf("could not connect to Elasticsearch, HOST: %s, PORT: %v, Error: %v\n", elasticSearchCfg.Host, elasticSearchCfg.Port, err)
+		k.Logger.Errorf("could not connect to elasticsearch, HOST: %s, PORT: %v, Error: %v\n", elasticSearchCfg.Host, elasticSearchCfg.Ports, err)
 
 		go elasticSearchRetry(&elasticSearchCfg, k)
 
 		return
 	}
 
-	k.Logger.Infof("connected to Elasticsearch, HOST: %s, PORT: %v\n", elasticSearchCfg.Host, elasticSearchCfg.Port)
+	k.Logger.Infof("connected to elasticsearch, HOST: %s, PORT: %v\n", elasticSearchCfg.Host, elasticSearchCfg.Ports)
 }
 
+//nolint:interfacer //`c` can be `github.com/go-redis/redis/v8.ConsistentHash`
 func initializeSolr(c Config, k *Gofr) {
 	host := c.Get("SOLR_HOST")
 	port := c.Get("SOLR_PORT")
@@ -576,21 +604,23 @@ func initializeSolr(c Config, k *Gofr) {
 
 func initializeNotifiers(c Config, k *Gofr) {
 	notifierBackend := c.Get("NOTIFIER_BACKEND")
+
 	if notifierBackend == "" {
 		return
 	}
 
-	switch notifierBackend {
-	case "SNS":
+	if notifierBackend == "SNS" {
 		initializeAwsSNS(c, k)
 	}
 }
 func initializeAwsSNS(c Config, k *Gofr) {
-
 	awsConfig := awsSNSConfigFromEnv(c)
+
 	var err error
+
 	k.Notifier, err = awssns.New(&awsConfig)
 	k.DatabaseHealth = append(k.DatabaseHealth, k.Notifier.HealthCheck)
+
 	if err != nil {
 		k.Logger.Errorf("AWS SNS could not be initialized, error: %v\n", err)
 

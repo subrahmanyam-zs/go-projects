@@ -36,7 +36,11 @@ func Image(c *gofr.Context) (interface{}, error) {
 	i, _, _ := image.Decode(f)
 
 	b := new(bytes.Buffer)
-	png.Encode(b, i)
+
+	err := png.Encode(b, i)
+	if err != nil {
+		return nil, err
+	}
 
 	return template.File{
 		Content:     b.Bytes(),

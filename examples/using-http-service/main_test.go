@@ -1,8 +1,9 @@
 package main
 
 import (
-	"bytes"
+	"io/ioutil"
 	"net/http"
+	"reflect"
 	"testing"
 	"time"
 
@@ -14,23 +15,29 @@ func TestIntegration(t *testing.T) {
 	time.Sleep(3 * time.Second)
 
 	tcs := []struct {
-		method             string
 		endpoint           string
 		expectedStatusCode int
-		body               []byte
 	}{
-		{"GET", "brand1", 404, nil},
-		{"GET", "brand/1", 200, nil},
+		{"user/ ", http.StatusBadRequest},
+		{"dummyendpoint", http.StatusNotFound},
 	}
 
 	for _, tc := range tcs {
-		req, _ := request.NewMock(tc.method, "http://localhost:9091/"+tc.endpoint, bytes.NewBuffer(tc.body))
+		req, _ := request.NewMock(http.MethodGet, "http://localhost:9091/"+tc.endpoint, nil)
 		c := http.Client{}
 
 		resp, _ := c.Do(req)
 
-		if resp != nil && resp.StatusCode != tc.expectedStatusCode {
-			t.Errorf("Failed.\tExpected %v\tGot %v\n", tc.expectedStatusCode, resp.StatusCode)
+		if resp != nil {
+			if resp.StatusCode != tc.expectedStatusCode {
+				t.Errorf("Failed.\tExpected %v\tGot %v\n", tc.expectedStatusCode, resp.StatusCode)
+			}
+
+			bodyBytes, _ := ioutil.ReadAll(resp.Body)
+
+			if reflect.DeepEqual(bodyBytes, nil) {
+				t.Errorf("Failed.\tExpected %v\tGot %v\n", tc.expectedStatusCode, resp.StatusCode)
+			}
 		}
 
 		resp.Body.Close()

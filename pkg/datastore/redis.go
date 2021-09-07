@@ -192,7 +192,7 @@ func (l *QueryLogger) AfterProcess(ctx context.Context, cmd redis.Cmder) error {
 	l.DataStore = pkg.Redis
 	dur := endTime.Sub(l.StartTime).Seconds()
 
-	l.monitorRedis(s ,dur)
+	l.monitorRedis(s, dur)
 
 	return nil
 }
@@ -213,6 +213,7 @@ func (l *QueryLogger) AfterProcessPipeline(ctx context.Context, cmds []redis.Cmd
 		query = strings.TrimSuffix(query, "]")
 		l.Query[i] = query
 	}
+
 	query := strings.Split(l.Query[0], " ")
 
 	l.Duration = endTime.Sub(l.StartTime).Microseconds()
@@ -220,12 +221,12 @@ func (l *QueryLogger) AfterProcessPipeline(ctx context.Context, cmds []redis.Cmd
 
 	dur := endTime.Sub(l.StartTime).Seconds()
 
-	l.monitorRedis(query ,dur)
+	l.monitorRedis(query, dur)
 
 	return nil
 }
 
-func (l *QueryLogger) monitorRedis(query []string,duration float64) {
+func (l *QueryLogger) monitorRedis(query []string, duration float64) {
 	l.Logger.Debug(l)
 	// push stats to prometheus
 	redisStats.WithLabelValues(query[0], l.Hosts).Observe(duration)

@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+
 	"developer.zopsmart.com/go/gofr/pkg/errors"
 	"developer.zopsmart.com/go/gofr/pkg/gofr"
 	"developer.zopsmart.com/go/gofr/pkg/gofr/request"
@@ -85,6 +86,31 @@ func TestJSONHandler(t *testing.T) {
 
 	if !reflect.DeepEqual(expected, got) {
 		t.Errorf("FAILED, Expected: %v, Got: %v", expected, got)
+	}
+}
+
+func TestUserHandler(t *testing.T) {
+	tests := []struct {
+		name string
+		resp interface{}
+		err  error
+	}{
+		{"Vikash", resp{Name: "Vikash", Company: "ZopSmart"}, nil},
+		{"ABC", nil, errors.EntityNotFound{Entity: "user", ID: "ABC"}},
+	}
+
+	for _, tc := range tests {
+		r := httptest.NewRequest("GET", "http://dummy", nil)
+		req := request.NewHTTPRequest(r)
+
+		c := gofr.NewContext(nil, req, nil)
+		c.SetPathParams(map[string]string{"name": tc.name})
+
+		resp, err := UserHandler(c)
+
+		assert.Equal(t, tc.err, err)
+
+		assert.Equal(t, tc.resp, resp)
 	}
 }
 

@@ -87,7 +87,6 @@ func (k *logger) log(level level, format string, args ...interface{}) {
 	} else {
 		_ = json.NewEncoder(k.out).Encode(e)
 	}
-
 }
 
 func isJSON(s interface{}) (ok bool, hashmap map[string]interface{}) {

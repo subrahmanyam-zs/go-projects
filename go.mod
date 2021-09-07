@@ -21,6 +21,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/s3 v1.13.0
 	github.com/bmizerany/assert v0.0.0-20160611221934-b7ed37b82869
 	github.com/cespare/xxhash/v2 v2.1.2 // indirect
+	github.com/elastic/go-elasticsearch/v7 v7.14.0
 	github.com/getkin/kin-openapi v0.74.0
 	github.com/go-asn1-ber/asn1-ber v1.5.3 // indirect
 	github.com/go-ldap/ldap/v3 v3.4.1
@@ -49,8 +50,6 @@ require (
 	github.com/mattn/go-sqlite3 v2.0.3+incompatible // indirect
 	github.com/mitchellh/mapstructure v1.4.1 // indirect
 	github.com/newrelic/go-agent v3.14.1+incompatible
-	github.com/olivere/elastic v6.2.37+incompatible // indirect
-	github.com/olivere/elastic/v6 v6.2.1
 	github.com/openzipkin/zipkin-go v0.2.5
 	github.com/pierrec/lz4 v2.6.1+incompatible // indirect
 	github.com/prometheus/client_golang v1.11.0

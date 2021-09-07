@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+
 	"developer.zopsmart.com/go/gofr/pkg/datastore/pubsub"
 	"developer.zopsmart.com/go/gofr/pkg/errors"
 	"developer.zopsmart.com/go/gofr/pkg/gofr"
@@ -94,6 +95,7 @@ func (m *mockPubSub) Ping() error {
 	return nil
 }
 
+//nolint:gosimple //redundant `return` statement
 func (m *mockPubSub) CommitOffset(offsets pubsub.TopicPartition) {
 	return
 }

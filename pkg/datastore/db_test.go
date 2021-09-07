@@ -63,9 +63,8 @@ func TestNewORM(t *testing.T) {
 			return
 		}
 
-		var users []string
-
-		if err := db.LogMode(true).Table("user").Pluck("user", &users).Error; err != nil {
+		_, err = db.LogMode(true).DB().Exec("SELECT User FROM mysql.user")
+		if err != nil {
 			t.Errorf("FAILED, Could not run sql command, got error: %v\n", err)
 		}
 	}

@@ -20,6 +20,7 @@ import (
 )
 
 // getPublicKey returns a JWK based public key for the given KID
+//nolint:interfacer //Using GOFR logger instead of testify/assert.TestingT
 func (o *OAuth) loadJWK(logger log.Logger) ([]PublicKey, error) {
 	// if key is not present in memory get it from endpoint
 	resp, err := http.Get(o.options.JWKPath)

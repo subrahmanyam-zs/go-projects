@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+
 	"developer.zopsmart.com/go/gofr/examples/universal-example/cassandra/entity"
 	"developer.zopsmart.com/go/gofr/pkg/datastore"
 	"developer.zopsmart.com/go/gofr/pkg/gofr"

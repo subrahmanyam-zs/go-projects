@@ -11,7 +11,9 @@ import (
 
 	"github.com/gorilla/websocket"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
+
 	"go.opencensus.io/trace"
+
 	"golang.org/x/net/context"
 
 	"developer.zopsmart.com/go/gofr/pkg/errors"
@@ -93,6 +95,7 @@ func NewServer(c Config, gofr *Gofr) *server {
 	s.Router.Use(middleware.PrometheusMiddleware)
 
 	s.setupAuth(c, gofr)
+
 	return s
 }
 
@@ -129,8 +132,8 @@ func (s *server) handleMetrics(l log.Logger) {
 
 //nolint:gocognit // reducing the cognitive complexity reduces the readability
 func (s *server) Start(logger log.Logger) {
-	s.Router.Route("GET", "/.well-known/health-check", HealthHandler)
-	s.Router.Route("GET", "/.well-known/heartbeat", HeartBeatHandler)
+	s.Router.Route(http.MethodGet, "/.well-known/health-check", HealthHandler)
+	s.Router.Route(http.MethodGet, "/.well-known/heartbeat", HeartBeatHandler)
 	s.Router.Route(http.MethodGet, "/.well-known/openapi.json", OpenAPIHandler)
 
 	s.handleMetrics(logger)
@@ -268,6 +271,7 @@ func (s *server) redirectHandler(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, path, http.StatusMovedPermanently)
 }
 
+//nolint:interfacer //cannot replace (c Config)
 func getMWVars(c Config) (result map[string]string) {
 	result = make(map[string]string)
 
@@ -288,6 +292,7 @@ func getMWVars(c Config) (result map[string]string) {
 	return
 }
 
+//nolint:interfacer //cannot replace c Config
 func getOAuthOptions(c Config) (options oauth.Options, ok bool) {
 	options = oauth.Options{}
 	if JWKPath := c.Get("JWKS_ENDPOINT"); JWKPath != "" {

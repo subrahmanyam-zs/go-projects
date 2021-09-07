@@ -11,7 +11,7 @@ env:
   CONTAINER_IMAGE: sample-api:${{ github.sha }}
 
 jobs:
-  Dockerize: 
+  Dockerize:
     runs-on: ubuntu-latest
     steps:
       - name: Configure AWS credentials

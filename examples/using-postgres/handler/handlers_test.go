@@ -4,6 +4,7 @@ import (
 	"bytes"
 	errors2 "errors"
 	"fmt"
+	"net/http"
 	"net/http/httptest"
 	"reflect"
 	"testing"
@@ -101,7 +102,7 @@ func TestModel_AddCustomer(t *testing.T) {
 
 	for _, test := range tests {
 		w := httptest.NewRecorder()
-		r := httptest.NewRequest("POST", "http://dummy", bytes.NewReader(test.body))
+		r := httptest.NewRequest(http.MethodPost, "http://dummy", bytes.NewReader(test.body))
 
 		req := request.NewHTTPRequest(r)
 		res := responder.NewContextualResponder(w, r)
@@ -151,7 +152,7 @@ func TestModel_UpdateCustomer(t *testing.T) {
 
 	for _, test := range tests {
 		w := httptest.NewRecorder()
-		r := httptest.NewRequest("POST", "http://dummy", bytes.NewReader(test.body))
+		r := httptest.NewRequest(http.MethodPost, "http://dummy", bytes.NewReader(test.body))
 
 		req := request.NewHTTPRequest(r)
 		res := responder.NewContextualResponder(w, r)
@@ -209,7 +210,7 @@ func TestModel_GetCustomerById(t *testing.T) {
 
 	for _, test := range tests {
 		w := httptest.NewRecorder()
-		r := httptest.NewRequest("GET", "http://dummy", nil)
+		r := httptest.NewRequest(http.MethodGet, "http://dummy", nil)
 
 		req := request.NewHTTPRequest(r)
 		res := responder.NewContextualResponder(w, r)
@@ -259,7 +260,7 @@ func TestModel_DeleteCustomer(t *testing.T) {
 
 	for _, test := range tests {
 		w := httptest.NewRecorder()
-		r := httptest.NewRequest("GET", "http://dummy", nil)
+		r := httptest.NewRequest(http.MethodGet, "http://dummy", nil)
 
 		req := request.NewHTTPRequest(r)
 		res := responder.NewContextualResponder(w, r)
@@ -296,7 +297,7 @@ func TestModel_GetCustomers(t *testing.T) {
 
 	for _, test := range tests {
 		w := httptest.NewRecorder()
-		r := httptest.NewRequest("GET", "http://dummy?"+test.mockParamStr, nil)
+		r := httptest.NewRequest(http.MethodGet, "http://dummy?"+test.mockParamStr, nil)
 
 		req := request.NewHTTPRequest(r)
 		res := responder.NewContextualResponder(w, r)

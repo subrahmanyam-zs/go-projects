@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"developer.zopsmart.com/go/gofr/pkg/log"
+
 	"go.opencensus.io/plugin/ochttp"
 )
 
@@ -41,7 +42,7 @@ func NewSOAPClient(resourceURL string, logger log.Logger, user, pass string) *so
 
 // Call is a soap call for the given SOAP Action and body. The only allowed method in SOAP is POST
 func (s *soapService) Call(ctx context.Context, action string, body []byte) (*Response, error) {
-	return s.call(ctx, "POST", "", nil, body, map[string]string{"SOAPAction": action, "Content-Type": "text/xml"})
+	return s.call(ctx, http.MethodPost, "", nil, body, map[string]string{"SOAPAction": action, "Content-Type": "text/xml"})
 }
 
 // CallWithHeaders is a soap call for the given SOAP Action and body. The only allowed method in SOAP is POST
@@ -53,7 +54,7 @@ func (s *soapService) CallWithHeaders(ctx context.Context, action string, body [
 	headers["SOAPAction"] = action
 	headers["Content-Type"] = "text/xml"
 
-	return s.call(ctx, "POST", "", nil, body, headers)
+	return s.call(ctx, http.MethodPost, "", nil, body, headers)
 }
 
 func (s *soapService) Bind(resp []byte, i interface{}) error {

@@ -15,7 +15,7 @@ import (
 	"developer.zopsmart.com/go/gofr/pkg/gofr/request"
 )
 
-// nolint, need to wait for topic to be created so retry logic is to be added
+// nolint // need to wait for topic to be created so retry logic is to be added
 func TestServerRun(t *testing.T) {
 	// avro schema registry test server
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -55,8 +55,8 @@ func TestServerRun(t *testing.T) {
 		expectedResponse   string
 		expectedStatusCode int
 	}{
-		{1, "GET", "http://localhost:9111/pub?id=1", "", 200},
-		{2, "GET", "http://localhost:9111/sub", "1", 200},
+		{1, http.MethodGet, "http://localhost:9111/pub?id=1", "", 200},
+		{2, http.MethodGet, "http://localhost:9111/sub", "1", 200},
 	}
 
 	for _, tc := range tcs {

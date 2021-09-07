@@ -13,9 +13,11 @@ func main() {
 
 	k.GET("hello", func(c *gofr.Context) (i interface{}, err error) {
 		name := c.PathParam("name")
+
 		if name == "" {
-			return fmt.Sprint("Hello!"), nil
+			return "Hello!", nil
 		}
+
 		return fmt.Sprintf("Hello %s!", name), nil
 	})
 

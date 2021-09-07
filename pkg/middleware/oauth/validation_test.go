@@ -56,7 +56,7 @@ func TestValidateErrors(t *testing.T) {
 	}
 
 	for i, v := range testcases {
-		req := httptest.NewRequest("GET", "/dummy", nil)
+		req := httptest.NewRequest(http.MethodGet, "/dummy", nil)
 		req.Header.Set("Authorization", v.token)
 
 		key := PublicKey{
@@ -90,7 +90,7 @@ func TestValidateErrors(t *testing.T) {
 }
 
 func TestValidateSuccess(t *testing.T) {
-	req := httptest.NewRequest("GET", "/dummy", nil)
+	req := httptest.NewRequest(http.MethodGet, "/dummy", nil)
 	req.Header.Set("Authorization",
 		"bearer eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6IjIwMTEtMDQtMjk9PSJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmF"+
 			"tZSI6IkpvaG4gRG9lIiwiYWRtaW4iOnRydWUsImlhdCI6MTUxNjIzOTAyMn0.B5C9tz71T-PjyoMH-gv198iNFguDZ5SpVcwrgdLxU83A92"+
@@ -104,7 +104,7 @@ func TestValidateSuccess(t *testing.T) {
 		"Nk-5N4od_bUMGvOb0q3ApbfzbwIt94daToPjhfLy4xf8UoNhh_Lq14CNHCZXNgGeter5TvnHnDBN4oDfw6nziKdJnslNkUJ2hHsqp8VObUK57C8a" +
 		"S51x2UiOwTJ1NqDv0PFVgRbC7ncFZG6M87x9BGTwB0XvraXYU7Zimewp4plzdIMnjIXXp8kuviYl7feA", Method: jwt.SigningMethodRS256,
 		Header: map[string]interface{}{"alg": "RS256", "typ": "JWT", "kid": "2011-04-29=="},
-		Claims: jwt.MapClaims{"iat": 1.516239022e+09, "sub": "1234567890", "admin": true, "name": "Rohan Doe"},
+		Claims: jwt.MapClaims{"iat": 1.516239022e+09, "sub": "1234567890", "admin": true, "name": "John Doe"},
 		Signature: "B5C9tz71T-PjyoMH-gv198iNFguDZ5SpVcwrgdLxU83A92o1tsJWh8_7Zm6ulMUupNEAzGD69DB077j01nXz6ut5XtnXWE50HNTxl" +
 			"S_19zndpPxqFcKnWyoArip5A1MCgQjKQ3exwZc7aFQwgBXvJMNk-5N4od_bUMGvOb0q3ApbfzbwIt94daToPjhfLy4xf8UoNhh_Lq14CNHCZXNg" +
 			"Geter5TvnHnDBN4oDfw6nziKdJnslNkUJ2hHsqp8VObUK57C8aS51x2UiOwTJ1NqDv0PFVgRbC7ncFZG6M87x9BGTwB0XvraXYU7Zimewp" +
@@ -144,7 +144,7 @@ func TestValidateSuccess(t *testing.T) {
 	}
 
 	if !reflect.DeepEqual(resp, expectedToken) {
-		t.Errorf("Failed. Got %v\tExpected %v\n", resp, expectedToken)
+		t.Errorf("Failed. Got : %v\n Expected : %v\n", resp, expectedToken)
 	}
 }
 
@@ -160,9 +160,9 @@ func getTestServerURL() string {
 }
 
 func TestValidate_RawStdEncoding_Header(t *testing.T) {
-	req := httptest.NewRequest("GET", "/dummy", nil)
+	req := httptest.NewRequest(http.MethodGet, "/dummy", nil)
 	// nolint:lll // token value is long
-	req.Header.Set("Authorization", "bearer eyJhbGciOiJSUzI1NiIsImprdSI6Imh0dHBzOi8vYXBpLXNiLmtyb2dlci5jb20vdjEvLndlbGwta25vd24vandrcy5qc29uIiwia2lkIjoiQm1peEozenlFTmxUMWIwek5taW1rUT09IiwidHlwIjoiSldUIn0.eyJhdWQiOiJ6b3BzbWFydC10ZXN0LTBlM2NjMjc5NzY2M2Y2ZjI5MmY1NjhkZDU0YjhkOWQ5IiwiZXhwIjoxNTg5NDgxMTA3LCJpYXQiOjE1ODk0NzkzMDIsImlzcyI6ImFwaS1zYi5rcm9nZXIuY29tIiwic3ViIjoiOTE0N2UxYjktYzc4MS01OWZlLTgyZGUtZjIwNTYyZjE2ZjFjIiwic2NvcGUiOiIiLCJhdXRoQXQiOjE1ODk0NzkzMDcwOTQwOTY5OTIsImF6cCI6InpvcHNtYXJ0LXRlc3QtMGUzY2MyNzk3NjYzZjZmMjkyZjU2OGRkNTRiOGQ5ZDkifQ.RNRIfh8lGXtLoX0OAR7MGg0YqeIOuekyfQG3qbgXCnPz3Wl6Eg69xMo-oJ17UIH5I6v6hPNidDLQQ1C2zT4h6ZtSshRqw9iln1d3TFuV56aW7HL8smTAK_H2teWtkYB82eJBcYJS7hlI8FgpEkEWLsTr2zK5yV2pJ_WjVFzFe5A4msKOBMaKG7QUz8BEPptey0B3BW10c2E_ZikQG3fg5RAidKLs4mjNCL7b_tIddva10E3noqs5L9FjgSXet0R8sHf5XTnZUcj6vEWoLf-qrf-4L3-UO7GmryCTCMQZb5Y719th7_s2VOtt_QwjMPuMDyXQhE18oPiuJlSOpzJPYQ ")
+	req.Header.Set("Authorization", "bearer eyJhbGciOiJSUzI1NiIsImprdSI6Imh0dHBzOi8vYXBpLnpvcHNtYXJ0LmNvbS92MS8ud2VsbC1rbm93bi9qd2tzLmpzb24iLCJraWQiOiJCbWl4SjN6eUVObFQxYjB6Tm1pbWtRPT0iLCJ0eXAiOiJKV1QifQ.eyJhdWQiOiJ6b3BzbWFydC10ZXN0LTBlM2NjMjc5NzY2M2Y2ZjI5MmY1NjhkZDU0YjhkOWQ5IiwiZXhwIjoxNTg5NDgxMTA3LCJpYXQiOjE1ODk0NzkzMDIsImlzcyI6ImFwaS1zYi5rcm9nZXIuY29tIiwic3ViIjoiOTE0N2UxYjktYzc4MS01OWZlLTgyZGUtZjIwNTYyZjE2ZjFjIiwic2NvcGUiOiIiLCJhdXRoQXQiOjE1ODk0NzkzMDcwOTQwOTY5OTIsImF6cCI6InpvcHNtYXJ0LXRlc3QtMGUzY2MyNzk3NjYzZjZmMjkyZjU2OGRkNTRiOGQ5ZDkifQ.RNRIfh8lGXtLoX0OAR7MGg0YqeIOuekyfQG3qbgXCnPz3Wl6Eg69xMo-oJ17UIH5I6v6hPNidDLQQ1C2zT4h6ZtSshRqw9iln1d3TFuV56aW7HL8smTAK_H2teWtkYB82eJBcYJS7hlI8FgpEkEWLsTr2zK5yV2pJ_WjVFzFe5A4msKOBMaKG7QUz8BEPptey0B3BW10c2E_ZikQG3fg5RAidKLs4mjNCL7b_tIddva10E3noqs5L9FjgSXet0R8sHf5XTnZUcj6vEWoLf-qrf-4L3-UO7GmryCTCMQZb5Y719th7_s2VOtt_QwjMPuMDyXQhE18oPiuJlSOpzJPYQ ")
 
 	resp, err := getJWT(log.NewLogger(), req)
 	if err != nil {
@@ -179,10 +179,10 @@ func TestValidate_RawStdEncoding_Header(t *testing.T) {
 			KeyID:     "BmixJ3zyENlT1b0zNmimkQ==",
 		},
 		signature: "RNRIfh8lGXtLoX0OAR7MGg0YqeIOuekyfQG3qbgXCnPz3Wl6Eg69xMo-oJ17UIH5I6v6hPNidDLQQ1C2zT4h6ZtSshRqw9iln1d3TFuV56aW7HL8smTAK_H2teWtkYB82eJBcYJS7hlI8FgpEkEWLsTr2zK5yV2pJ_WjVFzFe5A4msKOBMaKG7QUz8BEPptey0B3BW10c2E_ZikQG3fg5RAidKLs4mjNCL7b_tIddva10E3noqs5L9FjgSXet0R8sHf5XTnZUcj6vEWoLf-qrf-4L3-UO7GmryCTCMQZb5Y719th7_s2VOtt_QwjMPuMDyXQhE18oPiuJlSOpzJPYQ",
-		token:     "eyJhbGciOiJSUzI1NiIsImprdSI6Imh0dHBzOi8vYXBpLXNiLmtyb2dlci5jb20vdjEvLndlbGwta25vd24vandrcy5qc29uIiwia2lkIjoiQm1peEozenlFTmxUMWIwek5taW1rUT09IiwidHlwIjoiSldUIn0.eyJhdWQiOiJ6b3BzbWFydC10ZXN0LTBlM2NjMjc5NzY2M2Y2ZjI5MmY1NjhkZDU0YjhkOWQ5IiwiZXhwIjoxNTg5NDgxMTA3LCJpYXQiOjE1ODk0NzkzMDIsImlzcyI6ImFwaS1zYi5rcm9nZXIuY29tIiwic3ViIjoiOTE0N2UxYjktYzc4MS01OWZlLTgyZGUtZjIwNTYyZjE2ZjFjIiwic2NvcGUiOiIiLCJhdXRoQXQiOjE1ODk0NzkzMDcwOTQwOTY5OTIsImF6cCI6InpvcHNtYXJ0LXRlc3QtMGUzY2MyNzk3NjYzZjZmMjkyZjU2OGRkNTRiOGQ5ZDkifQ.RNRIfh8lGXtLoX0OAR7MGg0YqeIOuekyfQG3qbgXCnPz3Wl6Eg69xMo-oJ17UIH5I6v6hPNidDLQQ1C2zT4h6ZtSshRqw9iln1d3TFuV56aW7HL8smTAK_H2teWtkYB82eJBcYJS7hlI8FgpEkEWLsTr2zK5yV2pJ_WjVFzFe5A4msKOBMaKG7QUz8BEPptey0B3BW10c2E_ZikQG3fg5RAidKLs4mjNCL7b_tIddva10E3noqs5L9FjgSXet0R8sHf5XTnZUcj6vEWoLf-qrf-4L3-UO7GmryCTCMQZb5Y719th7_s2VOtt_QwjMPuMDyXQhE18oPiuJlSOpzJPYQ",
+		token:     "eyJhbGciOiJSUzI1NiIsImprdSI6Imh0dHBzOi8vYXBpLnpvcHNtYXJ0LmNvbS92MS8ud2VsbC1rbm93bi9qd2tzLmpzb24iLCJraWQiOiJCbWl4SjN6eUVObFQxYjB6Tm1pbWtRPT0iLCJ0eXAiOiJKV1QifQ.eyJhdWQiOiJ6b3BzbWFydC10ZXN0LTBlM2NjMjc5NzY2M2Y2ZjI5MmY1NjhkZDU0YjhkOWQ5IiwiZXhwIjoxNTg5NDgxMTA3LCJpYXQiOjE1ODk0NzkzMDIsImlzcyI6ImFwaS1zYi5rcm9nZXIuY29tIiwic3ViIjoiOTE0N2UxYjktYzc4MS01OWZlLTgyZGUtZjIwNTYyZjE2ZjFjIiwic2NvcGUiOiIiLCJhdXRoQXQiOjE1ODk0NzkzMDcwOTQwOTY5OTIsImF6cCI6InpvcHNtYXJ0LXRlc3QtMGUzY2MyNzk3NjYzZjZmMjkyZjU2OGRkNTRiOGQ5ZDkifQ.RNRIfh8lGXtLoX0OAR7MGg0YqeIOuekyfQG3qbgXCnPz3Wl6Eg69xMo-oJ17UIH5I6v6hPNidDLQQ1C2zT4h6ZtSshRqw9iln1d3TFuV56aW7HL8smTAK_H2teWtkYB82eJBcYJS7hlI8FgpEkEWLsTr2zK5yV2pJ_WjVFzFe5A4msKOBMaKG7QUz8BEPptey0B3BW10c2E_ZikQG3fg5RAidKLs4mjNCL7b_tIddva10E3noqs5L9FjgSXet0R8sHf5XTnZUcj6vEWoLf-qrf-4L3-UO7GmryCTCMQZb5Y719th7_s2VOtt_QwjMPuMDyXQhE18oPiuJlSOpzJPYQ",
 	}
 	if !reflect.DeepEqual(resp, expectedToken) {
-		t.Errorf("Failed. Got %v\tExpected %v\n", resp, expectedToken)
+		t.Errorf("FAILED Got : %v\n Expected : %v\n", resp, expectedToken)
 	}
 }
 
@@ -229,7 +229,7 @@ func TestGetJWT(t *testing.T) {
 	for i, testCase := range testcases {
 		b := new(bytes.Buffer)
 		logger := log.NewMockLogger(b)
-		request := httptest.NewRequest("GET", "/", nil)
+		request := httptest.NewRequest(http.MethodGet, "/", nil)
 		request.Header.Set("Authorization", testCase.jwtToken)
 		got, err := getJWT(logger, request)
 

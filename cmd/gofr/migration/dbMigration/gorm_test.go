@@ -80,6 +80,8 @@ func TestGORM(t *testing.T) {
 }
 
 func TestGORM_DOWN(t *testing.T) {
+	config.NewGoDotEnvProvider(log.NewMockLogger(io.Discard), "../../../../configs")
+
 	database, _ := datastore.NewORMFromEnv()
 	txn := database.Begin()
 

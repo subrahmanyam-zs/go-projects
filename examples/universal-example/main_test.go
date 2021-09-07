@@ -1,3 +1,5 @@
+// +build !integration
+
 package main
 
 import (
@@ -58,6 +60,7 @@ func TestMain(m *testing.M) {
 		os.Setenv("KAFKA_TOPIC", topic)
 	}()
 
+	//nolint:gocritic //os.Exit will exit, and `defer func(){...}(...)`
 	os.Exit(m.Run())
 }
 
@@ -68,9 +71,7 @@ func TestUniversalIntegration(t *testing.T) {
 	time.Sleep(5 * time.Second)
 
 	testDataStores(t)
-
 	testKafkaDataStore(t)
-
 	testEventhub(t)
 }
 
@@ -83,16 +84,16 @@ func testDataStores(t *testing.T) {
 		body               []byte
 	}{
 		// Cassandra
-		{1, "GET", "/cassandra/employee?name=Aman", 200, nil},
-		{2, "POST", "/cassandra/employee", 201,
+		{1, http.MethodGet, "/cassandra/employee?name=Aman", 200, nil},
+		{2, http.MethodPost, "/cassandra/employee", 201,
 			[]byte(`{"id": 5, "name": "Sukanya", "phone": "01477", "email":"sukanya@zopsmart.com", "city":"Guwahati"}`)},
-		{3, "GET", "/cassandra/unknown", 404, nil},
+		{3, http.MethodGet, "/cassandra/unknown", 404, nil},
 		// Redis
-		{4, "GET", "/redis/config/key123", 500, nil},
-		{5, "POST", "/redis/config", 201, []byte(`{}`)},
+		{4, http.MethodGet, "/redis/config/key123", 500, nil},
+		{5, http.MethodPost, "/redis/config", 201, []byte(`{}`)},
 		// Postgres
-		{6, "GET", "/pgsql/employee", 200, nil},
-		{7, "POST", "/pgsql/employee", 201,
+		{6, http.MethodGet, "/pgsql/employee", 200, nil},
+		{7, http.MethodPost, "/pgsql/employee", 201,
 			[]byte(`{"id": 5, "name": "Sukanya", "phone": "01477", "email":"sukanya@zopsmart.com", "city":"Guwahati"}`)},
 	}
 	for _, tc := range testcases {
@@ -172,6 +173,10 @@ func testKafkaDataStore(t *testing.T) {
 
 //nolint:gocognit // braking down the function will reduce the readability
 func testEventhub(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping testing in short mode")
+	}
+
 	testcase := []struct {
 		testID             int
 		method             string

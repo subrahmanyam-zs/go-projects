@@ -38,13 +38,13 @@ func TestIntegrationPersons(t *testing.T) {
 		expectedStatusCode int
 		body               []byte
 	}{
-		{"GET", "persons?name=Vikash", 200, nil},
-		{"POST", "persons", 201, []byte(`{"id":    7, "name":  "Kali", "age":   40, "State": "karnataka"}`)},
-		{"POST", "persons", 201, []byte(`{"id":    8, "name":  "Kali"}`)},
-		{"DELETE", "persons/7", 204, nil},
-		{"GET", "unknown", 404, nil},
-		{"GET", "persons/id", 404, nil},
-		{"PUT", "persons", 404, nil},
+		{http.MethodGet, "persons?name=Vikash", 200, nil},
+		{http.MethodPost, "persons", 201, []byte(`{"id":    7, "name":  "Kali", "age":   40, "State": "karnataka"}`)},
+		{http.MethodPost, "persons", 201, []byte(`{"id":    8, "name":  "Kali"}`)},
+		{http.MethodDelete, "persons/7", 204, nil},
+		{http.MethodGet, "unknown", 404, nil},
+		{http.MethodGet, "persons/id", 404, nil},
+		{http.MethodPut, "persons", 404, nil},
 	}
 	for i, tc := range testcases {
 		req, _ := request.NewMock(tc.method, "http://localhost:9094/"+tc.endpoint, bytes.NewBuffer(tc.body))

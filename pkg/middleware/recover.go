@@ -36,6 +36,7 @@ func Recover(logger logger) func(inner http.Handler) http.Handler {
 	}
 }
 
+//nolint:interfacer // we have to use custom `logger`
 func panicRecovery(logger logger, w http.ResponseWriter, r *http.Request) {
 	re := recover()
 

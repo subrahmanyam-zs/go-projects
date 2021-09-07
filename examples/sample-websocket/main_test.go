@@ -20,9 +20,9 @@ func TestServerRun(t *testing.T) {
 		expectedStatusCode int
 		body               []byte
 	}{
-		{1, "GET", "http://localhost:9101", 101, nil},
-		{2, "POST", "http://localhost:9101/ws", 405, nil},
-		{3, "GET", "http://localhost:9101/ws", 101, nil},
+		{1, http.MethodGet, "http://localhost:9101", 101, nil},
+		{2, http.MethodPost, "http://localhost:9101/ws", 405, nil},
+		{3, http.MethodGet, "http://localhost:9101/ws", 101, nil},
 	}
 
 	for _, tc := range tcs {
@@ -34,7 +34,11 @@ func TestServerRun(t *testing.T) {
 
 		c := http.Client{}
 
-		resp, _ := c.Do(req)
+		resp, err := c.Do(req)
+		if err != nil {
+			t.Errorf("error while making request, %v", err)
+		}
+
 		if resp == nil {
 			t.Errorf("Test %v: Failed \t got nil response", tc.id)
 		}
@@ -42,5 +46,7 @@ func TestServerRun(t *testing.T) {
 		if resp != nil && resp.StatusCode != tc.expectedStatusCode {
 			t.Errorf("Test %v: Failed.\tExpected %v\tGot %v\n", tc.id, tc.expectedStatusCode, resp.StatusCode)
 		}
+
+		_ = resp.Body.Close()
 	}
 }

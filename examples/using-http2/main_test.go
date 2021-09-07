@@ -14,7 +14,7 @@ func TestServerRun(t *testing.T) {
 	go main()
 	time.Sleep(3 * time.Second)
 
-	//nolint: gosec, TLS InsecureSkipVerify set true.
+	// nolint:gosec // TLS InsecureSkipVerify set true.
 	tr := &http.Transport{
 		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
 	}

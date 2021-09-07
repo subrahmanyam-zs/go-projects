@@ -21,6 +21,7 @@ func Test_populateEntityFile(t *testing.T) {
 	mainFile, _ := os.OpenFile("main.go", os.O_RDONLY, 0666)
 
 	ctrl := gomock.NewController(t)
+
 	defer func() {
 		ctrl.Finish()
 
@@ -82,6 +83,7 @@ func Test_createModel(t *testing.T) {
 	testFile, _ := os.OpenFile("testRead.go", os.O_CREATE|os.O_RDONLY, 0666)
 
 	ctrl := gomock.NewController(t)
+
 	defer func() {
 		ctrl.Finish()
 
@@ -126,6 +128,7 @@ func Test_createModel(t *testing.T) {
 
 func Test_populateInterfaceFiles(t *testing.T) {
 	currDir, _ := os.Getwd()
+
 	defer func() {
 		_ = os.Chdir(currDir)
 	}()

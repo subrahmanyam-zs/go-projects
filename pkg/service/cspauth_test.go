@@ -21,7 +21,7 @@ func Test_getAuthContext(t *testing.T) {
 	logger := log.NewMockLogger(io.Discard)
 	csp, _ := NewCSP(logger, opts)
 	body := bytes.NewReader([]byte(`{"foo":"bar"}`))
-	req, _ := http.NewRequest("POST", "/dummy", body)
+	req, _ := http.NewRequest(http.MethodPost, "/dummy", body)
 	ac := csp.getAuthContext(req)
 
 	if ac == "" {

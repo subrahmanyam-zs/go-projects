@@ -10,6 +10,7 @@ import (
 
 func Test_addEntity(t *testing.T) {
 	currDir, _ := os.Getwd()
+
 	defer func() {
 		_ = os.Chdir(currDir)
 	}()
@@ -55,6 +56,7 @@ func TestErrors_addCore(t *testing.T) {
 	currDir, _ := os.Getwd()
 
 	ctrl := gomock.NewController(t)
+
 	defer func() {
 		ctrl.Finish()
 
@@ -142,6 +144,7 @@ func Test_addConsumer(t *testing.T) {
 	_ = os.Mkdir(projectDirectory, os.ModePerm)
 
 	ctrl := gomock.NewController(t)
+
 	defer func() {
 		ctrl.Finish()
 
@@ -198,6 +201,7 @@ func Test_addComposite(t *testing.T) {
 	compositePath := projectDirectory + "/composite"
 
 	ctrl := gomock.NewController(t)
+
 	defer func() {
 		ctrl.Finish()
 

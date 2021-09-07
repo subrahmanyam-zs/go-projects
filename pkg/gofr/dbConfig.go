@@ -141,18 +141,29 @@ func kafkaConfigFromEnv(c Config) *kafka.Config {
 	return config
 }
 
-// getElasticSearchConfigFromEnv returns configuration from environment variables to client so it can connect to elasticsearch
-func getElasticSearchConfigFromEnv(c Config) datastore.ElasticSearchCfg {
-	elasticSearchCfg := datastore.ElasticSearchCfg{
-		Host: c.Get("ELASTIC_SEARCH_HOST"),
-		User: c.Get("ELASTIC_SEARCH_USER"),
-		Pass: c.Get("ELASTIC_SEARCH_PASS"),
+// elasticSearchConfigFromEnv returns configuration from environment variables to client so it can connect to elasticsearch
+func elasticSearchConfigFromEnv(c Config) datastore.ElasticSearchCfg {
+	ports := make([]int, 0)
+
+	portList := strings.Split(c.Get("ELASTIC_SEARCH_PORT"), ",")
+
+	for _, port := range portList {
+		p, err := strconv.Atoi(strings.TrimSpace(port))
+		if err != nil {
+			continue
+		}
+
+		ports = append(ports, p)
 	}
 
-	elasticSearchCfg.Port, _ = strconv.Atoi(c.Get("ELASTIC_SEARCH_PORT"))
-	elasticSearchCfg.ConnectionRetryDuration = getRetryDuration(c.Get("ELASTIC_SEARCH_CONN_RETRY"))
-
-	return elasticSearchCfg
+	return datastore.ElasticSearchCfg{
+		Host:                    c.Get("ELASTIC_SEARCH_HOST"),
+		Ports:                   ports,
+		Username:                c.Get("ELASTIC_SEARCH_USER"),
+		Password:                c.Get("ELASTIC_SEARCH_PASS"),
+		CloudID:                 c.Get("ELASTIC_CLOUD_ID"),
+		ConnectionRetryDuration: getRetryDuration(c.Get("ELASTIC_SEARCH_CONN_RETRY")),
+	}
 }
 
 func avroConfigFromEnv(c Config) *avro.Config {
@@ -180,8 +191,8 @@ func eventhubConfigFromEnv(c Config) eventhub.Config {
 		ConnRetryDuration: getRetryDuration(c.Get("EVENTHUB_CONN_RETRY")),
 	}
 }
-func awsSNSConfigFromEnv(c Config) awssns.Config {
 
+func awsSNSConfigFromEnv(c Config) awssns.Config {
 	return awssns.Config{
 		AccessKeyID:     c.Get("SNS_ACCESS_KEY"),
 		SecretAccessKey: c.Get("SNS_SECRET_ACCESS_KEY"),
@@ -189,5 +200,15 @@ func awsSNSConfigFromEnv(c Config) awssns.Config {
 		TopicArn:        c.Get("SNS_TOPIC_ARN"),
 		Protocol:        c.Get("SNS_PROTOCOL"),
 		Endpoint:        c.Get("SNS_ENDPOINT"),
+	}
+}
+
+func dynamoDBConfigFromEnv(c Config) datastore.DynamoDBConfig {
+	return datastore.DynamoDBConfig{
+		Region:            c.Get("DYNAMODB_REGION"),
+		Endpoint:          c.Get("DYNAMODB_ENDPOINT_URL"),
+		AccessKeyID:       c.Get("DYNAMODB_ACCESS_KEY_ID"),
+		SecretAccessKey:   c.Get("DYNAMODB_SECRET_ACCESS_KEY"),
+		ConnRetryDuration: getRetryDuration(c.Get("DYNAMODB_CONN_RETRY")),
 	}
 }

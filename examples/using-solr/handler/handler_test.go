@@ -3,6 +3,7 @@ package handler
 import (
 	"bytes"
 	"errors"
+	"net/http"
 	"net/http/httptest"
 	"reflect"
 	"testing"
@@ -28,7 +29,7 @@ func TestCustomer_List(t *testing.T) {
 	k := gofr.New()
 
 	for i, tc := range testcases {
-		req := httptest.NewRequest("GET", "/dummy?"+tc.query, nil)
+		req := httptest.NewRequest(http.MethodGet, "/dummy?"+tc.query, nil)
 		r := request.NewHTTPRequest(req)
 		context := gofr.NewContext(nil, r, k)
 		_, err := c.List(context)
@@ -40,7 +41,7 @@ func TestCustomer_List(t *testing.T) {
 }
 
 func TestCustomer_Create(t *testing.T) {
-	//nolint: govet, table tests
+	//nolint:govet // table tests
 	testcases := []struct {
 		body []byte
 		err  error
@@ -57,7 +58,7 @@ func TestCustomer_Create(t *testing.T) {
 	k := gofr.New()
 
 	for i, tc := range testcases {
-		req := httptest.NewRequest("POST", "/dummy", bytes.NewBuffer(tc.body))
+		req := httptest.NewRequest(http.MethodPost, "/dummy", bytes.NewBuffer(tc.body))
 		r := request.NewHTTPRequest(req)
 		context := gofr.NewContext(nil, r, k)
 		_, err := c.Create(context)
@@ -69,7 +70,7 @@ func TestCustomer_Create(t *testing.T) {
 }
 
 func TestCustomer_Update(t *testing.T) {
-	//nolint: govet, table tests
+	//nolint:govet // table tests
 	testcases := []struct {
 		body []byte
 		err  error
@@ -85,7 +86,7 @@ func TestCustomer_Update(t *testing.T) {
 	k := gofr.New()
 
 	for i, tc := range testcases {
-		req := httptest.NewRequest("PUT", "/dummy", bytes.NewBuffer(tc.body))
+		req := httptest.NewRequest(http.MethodPut, "/dummy", bytes.NewBuffer(tc.body))
 		r := request.NewHTTPRequest(req)
 		context := gofr.NewContext(nil, r, k)
 		_, err := c.Update(context)
@@ -111,7 +112,7 @@ func TestCustomer_Delete(t *testing.T) {
 	k := gofr.New()
 
 	for i, tc := range testcases {
-		req := httptest.NewRequest("DELETE", "/dummy", bytes.NewBuffer(tc.body))
+		req := httptest.NewRequest(http.MethodDelete, "/dummy", bytes.NewBuffer(tc.body))
 		r := request.NewHTTPRequest(req)
 		context := gofr.NewContext(nil, r, k)
 		_, err := c.Delete(context)
@@ -125,7 +126,7 @@ func TestCustomer_Delete(t *testing.T) {
 func TestCustomer_Create2(t *testing.T) {
 	c := New(&mockStore{})
 	k := gofr.New()
-	req := httptest.NewRequest("POST", "/dummy", errReader(0))
+	req := httptest.NewRequest(http.MethodPost, "/dummy", errReader(0))
 	r := request.NewHTTPRequest(req)
 	context := gofr.NewContext(nil, r, k)
 

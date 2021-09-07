@@ -24,31 +24,42 @@ func TestRoutes(t *testing.T) {
 		expectedStatusCode int
 		body               []byte
 	}{
-		{"GET", "unknown", 404, nil},
-		{"GET", "/customer/id", 404, nil},
-		{"GET", "customer?id=2", 500, nil},
+		{http.MethodGet, "unknown", http.StatusNotFound, nil},
+		{http.MethodGet, "/customer/id", http.StatusNotFound, nil},
+		{http.MethodGet, "customer?id=2", http.StatusOK, nil},
 	}
 
 	for _, tc := range testcases {
 		req, _ := request.NewMock(tc.method, "http://localhost:9099/"+tc.endpoint, bytes.NewBuffer(tc.body))
 		c := http.Client{}
 
-		resp, _ := c.Do(req)
+		resp, err := c.Do(req)
+		if resp == nil || err != nil {
+			t.Error(err)
+			continue
+		}
 
-		if resp != nil && resp.StatusCode != tc.expectedStatusCode {
+		if resp.StatusCode != tc.expectedStatusCode {
 			t.Errorf("Failed.\tExpected %v\tGot %v\n", tc.expectedStatusCode, resp.StatusCode)
 		}
-		resp.Body.Close()
+
+		_ = resp.Body.Close()
 	}
 }
 
 func TestMain(m *testing.M) {
-	gofr.New()
+	k := gofr.New()
 
 	host := os.Getenv("SOLR_HOST")
 	port := os.Getenv("SOLR_PORT")
-	//nolint:bodyclose //response body must be closed
-	_, _ = http.Get("http://localhost:2020/solr/admin/collections?action=CREATE&name=customer&numShards=1&replicationFactor=1")
+
+	resp, err := http.Get("http://localhost:" + port + "/solr/admin/collections?action=CREATE&name=customer&numShards=1&replicationFactor=1")
+	if err != nil {
+		k.Logger.Errorf("error in sending request")
+		os.Exit(1)
+	}
+
+	_ = resp.Body.Close()
 
 	client := datastore.NewSolrClient(host, port)
 	body := []byte(`{
@@ -59,7 +70,7 @@ func TestMain(m *testing.M) {
 	}}`)
 
 	document := bytes.NewBuffer(body)
-	_, _ = client.AddField(context.TODO(), "customers", document)
+	_, _ = client.AddField(context.TODO(), "customer", document)
 
 	body = []byte(`{
 		"add-field": {
@@ -70,7 +81,7 @@ func TestMain(m *testing.M) {
 	}`)
 
 	document = bytes.NewBuffer(body)
-	_, _ = client.AddField(context.TODO(), "customers", document)
+	_, _ = client.AddField(context.TODO(), "customer", document)
 
 	body = []byte(`{
 		"add-field":{
@@ -79,7 +90,7 @@ func TestMain(m *testing.M) {
 		"stored":true }}`)
 
 	document = bytes.NewBuffer(body)
-	_, _ = client.UpdateField(context.TODO(), "customers", document)
+	_, _ = client.UpdateField(context.TODO(), "customer", document)
 
 	body = []byte(`{
 		     "add-field":{
@@ -88,7 +99,7 @@ func TestMain(m *testing.M) {
 		    "stored":true }
 			}`)
 	document = bytes.NewBuffer(body)
-	_, _ = client.AddField(context.TODO(), "customers", document)
+	_, _ = client.AddField(context.TODO(), "customer", document)
 
 	os.Exit(m.Run())
 }

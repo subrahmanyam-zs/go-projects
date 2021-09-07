@@ -16,11 +16,16 @@ func New() *Brand {
 func (b *Brand) Get(ctx *gofr.Context) ([]store.Model, error) {
 	id := ctx.Param("id")
 
+	const (
+		id1 = 1
+		id2 = 2
+	)
+
 	switch id {
 	case "1":
-		return []store.Model{{ID: 1, Name: "brand 1"}}, nil
+		return []store.Model{{ID: id1, Name: "brand 1"}}, nil
 	case "2":
-		return []store.Model{{ID: 1, Name: "brand 1"}, {ID: 2, Name: "brand 2"}}, nil
+		return []store.Model{{ID: id1, Name: "brand 1"}, {ID: id2, Name: "brand 2"}}, nil
 	}
 
 	return nil, errors.New("core error")

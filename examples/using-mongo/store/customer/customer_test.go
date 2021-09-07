@@ -12,7 +12,7 @@ import (
 func initializeTest(t *testing.T) *gofr.Gofr {
 	k := gofr.New()
 
-	//initializing the seeder
+	// initializing the seeder
 	seeder := datastore.NewSeeder(&k.DataStore, "../../db")
 	seeder.RefreshMongoCollections(t, "customers")
 
@@ -20,14 +20,12 @@ func initializeTest(t *testing.T) *gofr.Gofr {
 }
 
 func TestCustomer_Get(t *testing.T) {
-	//nolint: govet, table tests
 	testCases := []struct {
 		name         string
 		expectedResp []*entity.Customer
 	}{
-		//{"Alex", nil},
-		{"Messi", []*entity.Customer{{"Messi", 32, "Barcelona"}}},
-		{"Tim", []*entity.Customer{{"Tim", 53, "London"}, {"Tim", 35, "Munich"}}},
+		{"Messi", []*entity.Customer{{Name: "Messi", Age: 32, City: "Barcelona"}}},
+		{"Tim", []*entity.Customer{{Name: "Tim", Age: 53, City: "London"}, {Name: "Tim", Age: 35, City: "Munich"}}},
 	}
 
 	customer := Customer{}

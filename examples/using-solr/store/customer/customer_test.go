@@ -55,6 +55,7 @@ func TestCustomer_Create(t *testing.T) {
 		{"error", true},
 		{"customer", false},
 	}
+
 	c := New(mockSolrClient{})
 	k := gofr.New()
 	ctx := gofr.NewContext(nil, nil, k)
@@ -73,6 +74,7 @@ func TestCustomer_Update(t *testing.T) {
 		{"error", true},
 		{"customer", false},
 	}
+
 	c := New(mockSolrClient{})
 	k := gofr.New()
 	ctx := gofr.NewContext(nil, nil, k)
@@ -90,6 +92,7 @@ func TestCustomer_Delete(t *testing.T) {
 		{"error", true},
 		{"customer", false},
 	}
+
 	c := New(mockSolrClient{})
 	k := gofr.New()
 	ctx := gofr.NewContext(nil, nil, k)

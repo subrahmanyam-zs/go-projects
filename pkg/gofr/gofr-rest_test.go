@@ -2,6 +2,7 @@ package gofr
 
 import (
 	"fmt"
+	"net/http"
 	"net/http/httptest"
 	"testing"
 
@@ -43,12 +44,12 @@ func TestGofr_REST(t *testing.T) {
 		// Expectations
 		response string
 	}{
-		{"GET", "/person", "Index OK!"},
-		{"GET", "/person/12", "Read id: 12"},
-		{"PUT", "/person/12", "Put id: 12"},
-		{"POST", "/person", "Post OK!"},
-		{"DELETE", "/person/12", "Delete id: 12"},
-		{"PATCH", "/person/12", "Patch id: 12"},
+		{http.MethodGet, "/person", "Index OK!"},
+		{http.MethodGet, "/person/12", "Read id: 12"},
+		{http.MethodPut, "/person/12", "Put id: 12"},
+		{http.MethodPost, "/person", "Post OK!"},
+		{http.MethodDelete, "/person/12", "Delete id: 12"},
+		{http.MethodPatch, "/person/12", "Patch id: 12"},
 	}
 
 	k := New()

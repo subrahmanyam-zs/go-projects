@@ -2,6 +2,7 @@ package types
 
 import (
 	"github.com/google/uuid"
+
 	"developer.zopsmart.com/go/gofr/pkg/errors"
 )
 

@@ -19,21 +19,25 @@ func TestIntegration(t *testing.T) {
 		expectedStatusCode int
 		body               []byte
 	}{
-		{"GET", "config/key123", 500, nil},
-		{"POST", "config", 201, []byte(`{}`)},
-		{"DELETE", "config/key123", 204, nil},
+		{http.MethodGet, "config/key123", 500, nil},
+		{http.MethodPost, "config", 201, []byte(`{}`)},
+		{http.MethodDelete, "config/key123", 204, nil},
 	}
 
 	for _, tc := range tcs {
 		req, _ := request.NewMock(tc.method, "http://localhost:9091/"+tc.endpoint, bytes.NewBuffer(tc.body))
 		c := http.Client{}
 
-		resp, _ := c.Do(req)
+		resp, err := c.Do(req)
+		if resp == nil || err != nil {
+			t.Error(err)
+			continue
+		}
 
-		if resp != nil && resp.StatusCode != tc.expectedStatusCode {
+		if resp.StatusCode != tc.expectedStatusCode {
 			t.Errorf("Failed.\tExpected %v\tGot %v\n", tc.expectedStatusCode, resp.StatusCode)
 		}
 
-		resp.Body.Close()
+		_ = resp.Body.Close()
 	}
 }

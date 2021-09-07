@@ -12,6 +12,6 @@ func main() {
 	h := handler.New(customer.Customer{})
 
 	k.REST("customer", h)
-	k.Server.HTTP.Port = 8001
+
 	k.Start()
 }

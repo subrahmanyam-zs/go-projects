@@ -1,6 +1,7 @@
 package store
 
 import (
+	"context"
 	"reflect"
 	"testing"
 
@@ -17,14 +18,24 @@ func TestCoreLayer(t *testing.T) {
 	seeder := datastore.NewSeeder(&k.DataStore, "../db")
 	seeder.ResetCounter = true
 
-	testAddCustomer(t, k, seeder)
-	testGetCustomerByID(t, k, seeder)
-	testUpdateCustomer(t, k, seeder)
-	testGetCustomers(t, k, seeder)
-	testDeleteCustomer(t, k, seeder)
+	createTable(k)
+	seeder.RefreshTables(t, "customers")
+	testGetCustomerByID(t, k)
+	testAddCustomer(t, k)
+	testAddCustomerWithError(t, k)
+	testUpdateCustomer(t, k)
+	testGetCustomers(t, k)
+	testDeleteCustomer(t, k)
 }
 
-func testAddCustomer(t *testing.T, k *gofr.Gofr, seeder *datastore.Seeder) {
+func createTable(k *gofr.Gofr) {
+	_, err := k.DB().Exec("CREATE TABLE customers (id serial primary key,name varchar (50));")
+	if err != nil {
+		return
+	}
+}
+
+func testAddCustomer(t *testing.T, k *gofr.Gofr) {
 	tests := []struct {
 		customer    model.Customer
 		expectedErr error
@@ -41,34 +52,37 @@ func testAddCustomer(t *testing.T, k *gofr.Gofr, seeder *datastore.Seeder) {
 			},
 			expectedErr: nil,
 		},
-		{
-			customer: model.Customer{
-				Name: "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
-			},
-			expectedErr: errors.DB{},
-		},
 	}
 
-	seeder.RefreshTables(t, "customers")
 	for i, test := range tests {
 		c := gofr.NewContext(nil, nil, k)
+		c.Context = context.Background()
 
-		_, err := Model{}.Create(c, test.customer)
+		resp, err := Model{}.Create(c, test.customer)
 
-		d, _ := Model{}.Get(c)
-		k.Logger.Log(d)
+		k.Logger.Log(resp)
 
-		if _, ok := err.(errors.DB); err != nil && ok == false {
-			t.Errorf("Testcase %v FAILED", i)
-		}
 		if err != test.expectedErr && test.expectedErr == nil {
 			t.Errorf("Testcase %v FAILED, got err: %v expected: %v", i, err, test.expectedErr)
 		}
 	}
 }
 
-func testGetCustomerByID(t *testing.T, k *gofr.Gofr, seeder *datastore.Seeder) {
-	seeder.RefreshTables(t, "customers")
+func testAddCustomerWithError(t *testing.T, k *gofr.Gofr) {
+	customer := model.Customer{
+		Name: "very-long-mock-name-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+	}
+
+	c := gofr.NewContext(nil, nil, k)
+	c.Context = context.Background()
+	_, err := Model{}.Create(c, customer)
+
+	if _, ok := err.(errors.DB); err != nil && ok == false {
+		t.Errorf("Error Testcase FAILED")
+	}
+}
+
+func testGetCustomerByID(t *testing.T, k *gofr.Gofr) {
 	tests := []struct {
 		id  int
 		err error
@@ -88,6 +102,7 @@ func testGetCustomerByID(t *testing.T, k *gofr.Gofr, seeder *datastore.Seeder) {
 
 	for _, test := range tests {
 		c := gofr.NewContext(nil, nil, k)
+		c.Context = context.Background()
 
 		_, err := Model{}.GetByID(c, test.id)
 		if !reflect.DeepEqual(err, test.err) {
@@ -96,8 +111,7 @@ func testGetCustomerByID(t *testing.T, k *gofr.Gofr, seeder *datastore.Seeder) {
 	}
 }
 
-func testUpdateCustomer(t *testing.T, k *gofr.Gofr, seeder *datastore.Seeder) {
-	seeder.RefreshTables(t, "customers")
+func testUpdateCustomer(t *testing.T, k *gofr.Gofr) {
 	tests := []struct {
 		customer    model.Customer
 		expectedErr error
@@ -112,7 +126,7 @@ func testUpdateCustomer(t *testing.T, k *gofr.Gofr, seeder *datastore.Seeder) {
 		{
 			customer: model.Customer{
 				ID:   1,
-				Name: "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+				Name: "very-long-mock-name-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
 			},
 			expectedErr: errors.DB{},
 		},
@@ -120,6 +134,7 @@ func testUpdateCustomer(t *testing.T, k *gofr.Gofr, seeder *datastore.Seeder) {
 
 	for i, test := range tests {
 		c := gofr.NewContext(nil, nil, k)
+		c.Context = context.Background()
 
 		_, err := Model{}.Update(c, test.customer)
 		if test.expectedErr == nil {
@@ -134,9 +149,9 @@ func testUpdateCustomer(t *testing.T, k *gofr.Gofr, seeder *datastore.Seeder) {
 	}
 }
 
-func testGetCustomers(t *testing.T, k *gofr.Gofr, seeder *datastore.Seeder) {
-	seeder.RefreshTables(t, "customers")
+func testGetCustomers(t *testing.T, k *gofr.Gofr) {
 	c := gofr.NewContext(nil, nil, k)
+	c.Context = context.Background()
 
 	_, err := Model{}.Get(c)
 	if err != nil {
@@ -144,9 +159,9 @@ func testGetCustomers(t *testing.T, k *gofr.Gofr, seeder *datastore.Seeder) {
 	}
 }
 
-func testDeleteCustomer(t *testing.T, k *gofr.Gofr, seeder *datastore.Seeder) {
-	seeder.RefreshTables(t, "customers")
+func testDeleteCustomer(t *testing.T, k *gofr.Gofr) {
 	c := gofr.NewContext(nil, nil, k)
+	c.Context = context.Background()
 
 	err := Model{}.Delete(c, 12)
 	if err != nil {

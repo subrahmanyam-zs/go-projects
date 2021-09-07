@@ -12,6 +12,7 @@ import (
 	"testing"
 
 	"github.com/go-redis/redis/v8"
+
 	"developer.zopsmart.com/go/gofr/pkg"
 	"developer.zopsmart.com/go/gofr/pkg/gofr/config"
 	"developer.zopsmart.com/go/gofr/pkg/gofr/types"

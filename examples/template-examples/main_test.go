@@ -29,15 +29,20 @@ func TestServerIntegration(t *testing.T) {
 		req, _ := request.NewMock(tc.method, "http://localhost:8000/"+tc.endpoint, bytes.NewBuffer(tc.body))
 		c := http.Client{}
 
-		resp, _ := c.Do(req)
-		if resp != nil && resp.StatusCode != tc.expectedStatusCode {
+		resp, err := c.Do(req)
+		if resp == nil || err != nil {
+			t.Error(err)
+			continue
+		}
+
+		if resp.StatusCode != tc.expectedStatusCode {
 			t.Errorf("Testcase[%v] Failed.\tExpected %v\tGot %v\n", index, tc.expectedStatusCode, resp.StatusCode)
 		}
 
-		if resp != nil && resp.Header.Get("Content-type") != tc.expectedContentType {
+		if resp.Header.Get("Content-type") != tc.expectedContentType {
 			t.Errorf("Testcase[%v] Failed.\tExpected %v\tGot %v\n", index, tc.expectedContentType, resp.Header.Get("Content-type"))
 		}
 
-		resp.Body.Close()
+		_ = resp.Body.Close()
 	}
 }

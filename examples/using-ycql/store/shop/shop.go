@@ -20,7 +20,6 @@ func (s Shop) Get(ctx *gofr.Context, filter entity.Shop) []entity.Shop {
 	)
 
 	whereCL, values := getWhereClause(filter)
-	//nolint:gosec // for sql string concatenation
 	query := ` select id, name, location ,state FROM shop ` + whereCL
 	iter := ctx.YCQL.Session.Query(query, values...).Iter()
 

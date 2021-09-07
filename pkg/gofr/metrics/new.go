@@ -15,7 +15,7 @@ func NewMetric() Metric {
 }
 
 // NewCounter adds new custom counter metric
-func NewCounter(m Metric, name string, help string, labels ...string) error {
+func NewCounter(m Metric, name, help string, labels ...string) error {
 	if m == nil {
 		return errInvalidMetric
 	}
@@ -28,7 +28,7 @@ func NewCounter(m Metric, name string, help string, labels ...string) error {
 }
 
 // NewHistogram adds new custom Histogram metric
-func NewHistogram(m Metric, name string, help string, buckets []float64, labels ...string) error {
+func NewHistogram(m Metric, name, help string, buckets []float64, labels ...string) error {
 	if m == nil {
 		return errInvalidMetric
 	}
@@ -41,7 +41,7 @@ func NewHistogram(m Metric, name string, help string, buckets []float64, labels 
 }
 
 // NewGauge adds new custom Gauge metric
-func NewGauge(m Metric, name string, help string, labels ...string) error {
+func NewGauge(m Metric, name, help string, labels ...string) error {
 	if m == nil {
 		return errInvalidMetric
 	}
@@ -54,7 +54,7 @@ func NewGauge(m Metric, name string, help string, labels ...string) error {
 }
 
 // NewSummary add new custom Summary metric
-func NewSummary(m Metric, name string, help string, labels ...string) error {
+func NewSummary(m Metric, name, help string, labels ...string) error {
 	if m == nil {
 		return errInvalidMetric
 	}

@@ -14,6 +14,7 @@ import (
 
 func TestCLI(t *testing.T) {
 	currDir, _ := os.Getwd()
+
 	defer func() {
 		_ = os.Chdir(currDir)
 	}()
@@ -90,6 +91,7 @@ func Test_Migrate(t *testing.T) {
 
 func Test_CreateMigration(t *testing.T) {
 	currDir, _ := os.Getwd()
+
 	defer func() {
 		_ = os.Chdir(currDir)
 	}()
@@ -226,6 +228,7 @@ paths:
           description: Sample API Hello with name`
 
 	currDir, _ := os.Getwd()
+
 	defer func() {
 		_ = os.Chdir(currDir)
 	}()
@@ -303,6 +306,7 @@ paths:
           description: Sample API Hello`
 
 	currDir, _ := os.Getwd()
+
 	defer func() {
 		_ = os.Chdir(currDir)
 	}()

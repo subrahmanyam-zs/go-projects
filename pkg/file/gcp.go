@@ -34,6 +34,7 @@ func newGCPFile(cfg *GCPConfig, object string, mode Mode) (*gcp, error) {
 	return gcpFile, nil
 }
 
+//nolint:interfacer //`fd` can be `io.Writer`
 func (g *gcp) fetch(fd *os.File) error {
 	// download the gcp object from a bucket
 	r, err := g.client.Bucket(g.bucketName).Object(g.object).NewReader(context.Background())
@@ -52,6 +53,7 @@ func (g *gcp) fetch(fd *os.File) error {
 	return err
 }
 
+//nolint:interfacer //`fd` can be `io.Reader`
 func (g *gcp) push(fd *os.File) error {
 	w := g.client.Bucket(g.bucketName).Object(g.object).NewWriter(context.Background())
 	if _, err := io.Copy(w, fd); err != nil {

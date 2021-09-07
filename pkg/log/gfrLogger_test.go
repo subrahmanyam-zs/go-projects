@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"net/http"
 	"os"
 	"strconv"
 	"strings"
@@ -219,7 +220,7 @@ func TestPerformanceLogMessage(t *testing.T) {
 		Method   string `json:"method"`
 		URI      string `json:"uri"`
 		Duration int64  `json:"duration"`
-	}{"GET", "/dummy", 1}
+	}{http.MethodGet, "/dummy", 1}
 
 	b := new(bytes.Buffer)
 	logger := NewMockLogger(b)

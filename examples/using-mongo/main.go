@@ -10,6 +10,7 @@ func main() {
 	// create the application object
 	k := gofr.New()
 	k.EnableSwaggerUI()
+
 	h := handlers.New(customer.Customer{})
 
 	// specifying the different routes supported by this service

@@ -2,11 +2,13 @@ package handler
 
 import (
 	"bytes"
+	"net/http"
 	"net/http/httptest"
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/assert"
+
 	"developer.zopsmart.com/go/gofr/pkg/errors"
 	"developer.zopsmart.com/go/gofr/pkg/gofr"
 	"developer.zopsmart.com/go/gofr/pkg/gofr/request"
@@ -79,7 +81,7 @@ func TestRedisModel_SetKey(t *testing.T) {
 	}
 
 	for _, tc := range tests {
-		r := httptest.NewRequest("POST", "http://dummy", bytes.NewReader(tc.body))
+		r := httptest.NewRequest(http.MethodPost, "http://dummy", bytes.NewReader(tc.body))
 		req := request.NewHTTPRequest(r)
 		c := gofr.NewContext(nil, req, k)
 

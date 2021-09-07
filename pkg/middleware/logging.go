@@ -138,6 +138,7 @@ func GetIPAddress(r *http.Request) string {
 	return strings.TrimSpace(ipAddress)
 }
 
+//nolint:gocognit //breaking the functions breaks the readability of the code
 func fetchHeaders(omitHeaders map[string]bool, reqHeaders http.Header) map[string]string {
 	headers := make(map[string]string)
 
