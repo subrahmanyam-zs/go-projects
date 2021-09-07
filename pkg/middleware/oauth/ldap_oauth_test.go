@@ -9,9 +9,8 @@ import (
 
 	"github.com/bmizerany/assert"
 
-	"developer.zopsmart.com/go/gofr/pkg/middleware"
-
 	"developer.zopsmart.com/go/gofr/pkg/log"
+	"developer.zopsmart.com/go/gofr/pkg/middleware"
 )
 
 func TestLDAPOAuth(t *testing.T) {

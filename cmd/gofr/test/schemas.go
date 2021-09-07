@@ -51,7 +51,7 @@ type IntegrationTestSchema struct {
 }
 
 type Swagger struct {
-	openapiSwagger *openapi3.Swagger
+	openapiSwagger *openapi3.T
 }
 
 func (s *Swagger) convertIntoIntegrationTestSchema() IntegrationTestSchema {

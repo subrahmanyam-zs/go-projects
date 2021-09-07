@@ -27,10 +27,10 @@ func TestGetNewMongoDB_ContextErr(t *testing.T) {
 }
 
 func TestGetNewMongoDB_ConnectionError(t *testing.T) {
-	config := MongoConfig{"", "", "", "", "test", false, false, 30}
+	mongoConfig := MongoConfig{"", "", "", "", "test", false, false, 30}
 	expErr := errors.New("error validating uri: username required if URI contains user info")
 
-	_, err := GetNewMongoDB(log.NewLogger(), &config)
+	_, err := GetNewMongoDB(log.NewLogger(), &mongoConfig)
 	if err != nil && !strings.Contains(err.Error(), expErr.Error()) {
 		t.Errorf("Error in testcase. Expected: %v, Got: %v", expErr, err)
 	}

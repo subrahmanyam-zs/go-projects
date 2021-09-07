@@ -7,9 +7,10 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/getkin/kin-openapi/openapi3"
 	"developer.zopsmart.com/go/gofr/cmd/gofr/helper"
 	"developer.zopsmart.com/go/gofr/pkg/gofr"
+
+	"github.com/getkin/kin-openapi/openapi3"
 )
 
 func testHelp() string {
@@ -43,10 +44,10 @@ func GenerateIntegrationTest(c *gofr.Context) (interface{}, error) {
 		host = "http://" + host
 	}
 
-	swaggerLoader := openapi3.NewSwaggerLoader()
+	swaggerLoader := openapi3.NewLoader()
 	swaggerLoader.IsExternalRefsAllowed = true
 
-	v, err := swaggerLoader.LoadSwaggerFromFile(sourceFile)
+	v, err := swaggerLoader.LoadFromFile(sourceFile)
 
 	if err != nil {
 		return nil, err
