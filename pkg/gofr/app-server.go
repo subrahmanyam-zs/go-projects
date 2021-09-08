@@ -228,7 +228,7 @@ func (s *server) contextInjector(inner http.Handler) http.Handler {
 		c.reset(responder.NewContextualResponder(w, r), request.NewHTTPRequest(r))
 		*r = *r.WithContext(ctx.WithValue(r.Context(), appData, &sync.Map{}))
 		c.Context = r.Context()
-		*r = *r.WithContext(ctx.WithValue(c, gofrContextkey, c))
+		*r = *r.WithContext(ctx.WithValue(c.Context, gofrContextkey, c))
 
 		correlationID := r.Header.Get("X-Correlation-Id")
 		if correlationID == "" {
