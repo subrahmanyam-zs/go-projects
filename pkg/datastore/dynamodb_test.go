@@ -222,7 +222,7 @@ func Test_genPutItemQuery(t *testing.T) {
 			":id": {S: aws.String("1")},
 		},
 		Item: map[string]*dynamodb.AttributeValue{
-			"id":   {S: aws.String("1")},
+			"id": {S: aws.String("1")},
 		},
 		TableName: aws.String("test"),
 	}
@@ -293,7 +293,7 @@ func Test_genUpdateItemQuery(t *testing.T) {
 	}{
 		{
 			map[string]*dynamodb.AttributeValueUpdate{
-				"name":  {Value: &dynamodb.AttributeValue{S: aws.String("test name")}, Action: aws.String("PUT")},
+				"name": {Value: &dynamodb.AttributeValue{S: aws.String("test name")}, Action: aws.String("PUT")},
 			},
 			nil,
 			nil,
@@ -302,7 +302,7 @@ func Test_genUpdateItemQuery(t *testing.T) {
 		},
 		{
 			map[string]*dynamodb.AttributeValueUpdate{
-				"name":  {Value: &dynamodb.AttributeValue{S: aws.String("test name")}, Action: aws.String("PUT")},
+				"name": {Value: &dynamodb.AttributeValue{S: aws.String("test name")}, Action: aws.String("PUT")},
 			},
 			aws.String("id != :id"),
 			map[string]*dynamodb.AttributeValue{":id": {S: aws.String("1")}},

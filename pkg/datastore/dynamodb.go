@@ -332,9 +332,7 @@ func genGetItemQuery(input *dynamodb.GetItemInput) []string {
 		query = append(query, fmt.Sprintf("AttributesToGet {%v}", sub))
 	}
 
-	query = append(query, fmt.Sprintf("Key %v", getAttributeNames(input.Key)))
-
-	query = append(query, getTableNameString(input.TableName))
+	query = append(query, fmt.Sprintf("Key %v", getAttributeNames(input.Key)), getTableNameString(input.TableName))
 
 	return query
 }
@@ -346,9 +344,7 @@ func genDeleteItemQuery(input *dynamodb.DeleteItemInput) []string {
 		query = append(query, fmt.Sprintf("ConditionExpression %v", *input.ConditionExpression))
 	}
 
-	query = append(query, fmt.Sprintf("Key %v", getAttributeNames(input.Key)))
-
-	query = append(query, getTableNameString(input.TableName))
+	query = append(query, fmt.Sprintf("Key %v", getAttributeNames(input.Key)), getTableNameString(input.TableName))
 
 	return query
 }
@@ -376,9 +372,7 @@ func genUpdateItemQuery(input *dynamodb.UpdateItemInput) []string {
 		query = append(query, fmt.Sprintf("ConditionExpression %v", *input.ConditionExpression))
 	}
 
-	query = append(query, fmt.Sprintf("Key %v", getAttributeNames(input.Key)))
-
-	query = append(query, getTableNameString(input.TableName))
+	query = append(query, fmt.Sprintf("Key %v", getAttributeNames(input.Key)), getTableNameString(input.TableName))
 
 	return query
 }

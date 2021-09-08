@@ -140,8 +140,40 @@ func (r redisClient) HealthCheck() types.Health {
 	}
 
 	resp.Status = pkg.StatusUp
+	resp.Details = r.getInfoInMap()
 
 	return resp
+}
+
+// getInfoInMap runs the INFO command on redis and returns a structured map divided by sections of redis response.
+func (r redisClient) getInfoInMap() map[string]map[string]string {
+	info, _ := r.Client.Info(context.Background(), "all").Result()
+
+	result := make(map[string]map[string]string)
+	parts := strings.Split(info, "\r\n")
+
+	var currentSection string
+
+	for _, p := range parts {
+		// Take care of empty lines
+		if p == "" {
+			continue
+		}
+
+		// Take care of section headers
+		if strings.HasPrefix(p, "#") {
+			currentSection = strings.ToLower(strings.TrimPrefix(p, "# "))
+			result[currentSection] = make(map[string]string)
+
+			continue
+		}
+
+		// Normal lines
+		splits := strings.Split(p, ":")
+		result[currentSection][splits[0]] = splits[1]
+	}
+
+	return result
 }
 
 func (r redisClusterClient) HealthCheck() types.Health {
