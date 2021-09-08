@@ -32,7 +32,6 @@ require (
 	github.com/golang-jwt/jwt/v4 v4.0.0
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da // indirect
 	github.com/golang/mock v1.6.0
-	github.com/golang/protobuf v1.5.2
 	github.com/google/uuid v1.3.0
 	github.com/googleapis/gax-go/v2 v2.1.0 // indirect
 	github.com/gookit/color v1.4.2
@@ -71,4 +70,5 @@ require (
 	google.golang.org/api v0.54.0
 	google.golang.org/genproto v0.0.0-20210825212027-de86158e7fda // indirect
 	google.golang.org/grpc v1.40.0
+	google.golang.org/protobuf v1.27.1
 )

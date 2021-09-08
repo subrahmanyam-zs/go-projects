@@ -6,7 +6,9 @@ import (
 	"developer.zopsmart.com/go/gofr/pkg/errors"
 )
 
-type Handler struct{}
+type Handler struct {
+	UnimplementedExampleServiceServer
+}
 
 func (h Handler) Get(ctx context.Context, id *ID) (*Response, error) {
 	if id.Id == "1" {
