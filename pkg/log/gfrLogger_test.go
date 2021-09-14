@@ -10,12 +10,9 @@ import (
 	"strconv"
 	"strings"
 	"testing"
-
-	"developer.zopsmart.com/go/gofr/pkg/gofr/config"
 )
 
 func TestLogLevel(t *testing.T) {
-	c := config.MockConfig{}
 	testcases := []struct {
 		level  string
 		output string
@@ -24,12 +21,8 @@ func TestLogLevel(t *testing.T) {
 		{"fatal", "WARN"}, // when log level is set to FATAL, WARN or DEBUG log must not be logged
 	}
 
-	level := c.Get("LOG_LEVEL")
-
-	defer os.Setenv("LOG_LEVEL", level)
-
 	for i, v := range testcases {
-		_ = os.Setenv("LOG_LEVEL", v.level)
+		t.Setenv("LOG_LEVEL", v.level)
 
 		b := new(bytes.Buffer)
 		l := NewMockLogger(b)

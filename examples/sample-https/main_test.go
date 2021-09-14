@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"crypto/tls"
 	"net/http"
-	"os"
 	"testing"
 	"time"
 
@@ -12,8 +11,7 @@ import (
 )
 
 func TestServerRun(t *testing.T) {
-	os.Setenv("VALIDATE_HEADERS", "Custom-Header")
-	defer os.Unsetenv("VALIDATE_HEADERS")
+	t.Setenv("VALIDATE_HEADERS", "Custom-Header")
 
 	go main()
 	time.Sleep(3 * time.Second)

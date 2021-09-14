@@ -6,7 +6,6 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
-	"os"
 	"reflect"
 	"strings"
 	"testing"
@@ -83,7 +82,7 @@ func TestRemoteLevelLogging(t *testing.T) {
 
 	defer ts.Close()
 
-	os.Setenv("LOG_SERVICE_URL", ts.URL)
+	t.Setenv("LOG_SERVICE_URL", ts.URL)
 
 	b := new(bytes.Buffer)
 	l := NewMockLogger(b)

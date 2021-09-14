@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"io"
 	"net/http"
-	"os"
 	"strings"
 	"testing"
 	"time"
@@ -16,10 +15,7 @@ import (
 
 //nolint:gocognit,gocyclo // need to wait for topic to be created so retry logic is to be added
 func TestServerRun(t *testing.T) {
-	topic := os.Getenv("KAFKA_TOPIC")
-	os.Setenv("KAFKA_TOPIC", "kafka-pubsub")
-
-	defer os.Setenv("KAFKA_TOPIC", topic)
+	t.Setenv("KAFKA_TOPIC", "kafka-pubsub")
 
 	go main()
 	time.Sleep(3 * time.Second)

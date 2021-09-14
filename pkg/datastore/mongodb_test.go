@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"io"
-	"os"
 	"reflect"
 	"strconv"
 	"strings"
@@ -68,20 +67,15 @@ func TestGetMongoDBFromEnv_Error(t *testing.T) {
 	for i := range testcases {
 		oldEnvVal := c.Get(testcases[i].envKey)
 
-		err := os.Setenv(testcases[i].envKey, testcases[i].newEnvVal)
-		if err != nil {
-			t.Error(err)
-		}
+		t.Setenv(testcases[i].envKey, testcases[i].newEnvVal)
+
 		// Checking for connection with default env vars
-		_, err = GetMongoDBFromEnv(logger)
+		_, err := GetMongoDBFromEnv(logger)
 		if err != nil && !strings.Contains(err.Error(), testcases[i].expErr.Error()) {
 			t.Errorf("Expected %v but got %v", testcases[i].expErr, err)
 		}
 
-		err = os.Setenv(testcases[i].envKey, oldEnvVal)
-		if err != nil {
-			t.Error(err)
-		}
+		t.Setenv(testcases[i].envKey, oldEnvVal)
 	}
 }
 
@@ -108,31 +102,19 @@ func TestGetMongoConfigFromEnv_SSL_RetryWrites(t *testing.T) {
 	}
 
 	for i := range testcases {
-		err := os.Setenv("MONGO_DB_ENABLE_SSL", testcases[i].enableSSL)
-		if err != nil {
-			t.Error(err)
-		}
+		t.Setenv("MONGO_DB_ENABLE_SSL", testcases[i].enableSSL)
 
-		err = os.Setenv("MONGO_DB_RETRY_WRITES", testcases[i].retryWrites)
-		if err != nil {
-			t.Error(err)
-		}
+		t.Setenv("MONGO_DB_RETRY_WRITES", testcases[i].retryWrites)
 
-		_, err = getMongoConfigFromEnv()
+		_, err := getMongoConfigFromEnv()
 		if !reflect.DeepEqual(err, testcases[i].expErr) {
 			t.Errorf("Expected: %v, Got:%v", testcases[i].expErr, err)
 		}
 	}
 
-	err := os.Setenv("MONGO_DB_ENABLE_SSL", oldEnableSSL)
-	if err != nil {
-		t.Error(err)
-	}
+	t.Setenv("MONGO_DB_ENABLE_SSL", oldEnableSSL)
 
-	err = os.Setenv("MONGO_DB_RETRY_WRITES", oldretryWrites)
-	if err != nil {
-		t.Error(err)
-	}
+	t.Setenv("MONGO_DB_RETRY_WRITES", oldretryWrites)
 }
 
 func Test_getMongoConnectionString(t *testing.T) {

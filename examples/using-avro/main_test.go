@@ -5,7 +5,6 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
-	"os"
 	"strings"
 	"testing"
 	"time"
@@ -34,16 +33,9 @@ func TestServerRun(t *testing.T) {
 		_, _ = w.Write(reBytes)
 	}))
 
-	schemaURL := os.Getenv("AVRO_SCHEMA_URL")
-	os.Setenv("AVRO_SCHEMA_URL", ts.URL)
+	t.Setenv("AVRO_SCHEMA_URL", ts.URL)
 
-	topic := os.Getenv("KAFKA_TOPIC")
-	os.Setenv("KAFKA_TOPIC", "avro-pubsub")
-
-	defer func() {
-		os.Setenv("AVRO_SCHEMA_URL", schemaURL)
-		os.Setenv("KAFKA_TOPIC", topic)
-	}()
+	t.Setenv("KAFKA_TOPIC", "avro-pubsub")
 
 	go main()
 	time.Sleep(3 * time.Second)

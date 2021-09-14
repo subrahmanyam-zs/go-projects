@@ -11,7 +11,7 @@ import (
 // This Test is to check if environment variables are loaded from configs/.env on
 // initialization of new gofr object
 func TestReadConfig(t *testing.T) {
-	os.Setenv("GOFR_ENV", "test")
+	t.Setenv("GOFR_ENV", "test")
 
 	testCases := []struct {
 		envKey   string
@@ -62,7 +62,7 @@ func TestGoDotEnvProvider_GetOrDefault(t *testing.T) {
 		g     = new(GoDotEnvProvider)
 	)
 
-	os.Setenv(key, value)
+	t.Setenv(key, value)
 
 	if got := g.GetOrDefault(key, "default"); got != value {
 		t.Errorf("FAILED, Expected: %v, Got: %v", value, got)

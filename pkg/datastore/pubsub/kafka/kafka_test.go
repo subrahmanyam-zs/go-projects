@@ -95,12 +95,15 @@ func TestNewKafkaFromEnv(t *testing.T) {
 		{
 			// error case due to invalid kafka host
 			kafkaHosts := os.Getenv("KAFKA_HOSTS")
-			os.Setenv("KAFKA_HOSTS", "localhost:9999")
+
+			t.Setenv("KAFKA_HOSTS", "localhost:9999")
+
 			_, err := NewKafkaFromEnv()
 			if err == nil {
 				t.Errorf("Failed, expected: %v, got: %v ", brokersErr{}, nil)
 			}
-			os.Setenv("KAFKA_HOSTS", kafkaHosts)
+
+			t.Setenv("KAFKA_HOSTS", kafkaHosts)
 		}
 	}
 }

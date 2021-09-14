@@ -112,7 +112,7 @@ func Test_Middleware_Errors(t *testing.T) {
 	}
 
 	for i := range testcases {
-		_ = os.Setenv("JWKS_ENDPOINT", testcases[i].jwtEndpoint)
+		t.Setenv("JWKS_ENDPOINT", testcases[i].jwtEndpoint)
 
 		request := httptest.NewRequest(http.MethodGet, "/auth", nil)
 		request.Header.Set("Authorization", testcases[i].jwtToken)
@@ -141,8 +141,6 @@ func Test_Middleware_Errors(t *testing.T) {
 		if errResp.Errors != nil && testcases[i].expectedError != "" && errResp.Errors[0].Code != testcases[i].expectedError {
 			t.Errorf("Failed testcase %d , Expected  : %v, Got : %v", i+1, testcases[i].expectedError, errResp.Errors[0].Code)
 		}
-
-		_ = os.Unsetenv("JWKS_ENDPOINT")
 	}
 }
 
