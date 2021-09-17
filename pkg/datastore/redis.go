@@ -2,6 +2,7 @@ package datastore
 
 import (
 	"context"
+	"crypto/tls"
 	"fmt"
 	"os"
 	"strings"
@@ -52,7 +53,9 @@ var (
 // configuration as defined in go-redis/redis. User defined config can be provided by populating the Options field.
 type RedisConfig struct {
 	HostName                string
+	Password                string
 	Port                    string
+	SSL                     bool
 	ConnectionRetryDuration int
 	Options                 *redis.Options
 }
@@ -67,6 +70,13 @@ func NewRedis(logger log.Logger, config RedisConfig) (Redis, error) {
 	} else {
 		config.Options = new(redis.Options)
 		config.Options.Addr = config.HostName + ":" + config.Port
+	}
+
+	config.Options.Password = config.Password
+
+	// If SSL is enabled add TLS Config
+	if config.SSL {
+		config.Options.TLSConfig = &tls.Config{}
 	}
 
 	_, span := trace.StartSpan(context.Background(), "Redis")
@@ -99,9 +109,16 @@ func NewRedisFromEnv(options *redis.Options) (Redis, error) {
 	// pushing deprecated feature count to prometheus
 	middleware.PushDeprecatedFeature("NewRedisFromEnv")
 
+	ssl := false
+	if strings.EqualFold(os.Getenv("REDIS_SSL"), "true") {
+		ssl = true
+	}
+
 	config := RedisConfig{
 		HostName: os.Getenv("REDIS_HOST"),
 		Port:     os.Getenv("REDIS_PORT"),
+		Password: os.Getenv("REDIS_PASSWORD"),
+		SSL:      ssl,
 	}
 
 	if options != nil {

@@ -309,10 +309,17 @@ func initializeDynamoDB(c Config, k *Gofr) {
 // in the environment, in case of an error, it logs the error
 //nolint:interfacer //`c` can be `github.com/go-redis/redis/v8.ConsistentHash`
 func initializeRedis(c Config, k *Gofr) {
+	ssl := false
+	if strings.EqualFold(c.Get("REDIS_SSL"), "true") {
+		ssl = true
+	}
+
 	rc := datastore.RedisConfig{
 		HostName:                c.Get("REDIS_HOST"),
+		Password:                c.Get("REDIS_PASSWORD"),
 		Port:                    c.Get("REDIS_PORT"),
 		ConnectionRetryDuration: getRetryDuration(c.Get("REDIS_CONN_RETRY")),
+		SSL:                     ssl,
 	}
 
 	if rc.HostName != "" || rc.Port != "" {
