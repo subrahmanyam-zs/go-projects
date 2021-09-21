@@ -10,7 +10,7 @@ import (
 
 type employee struct{}
 
-//nolint:golint //employee should not get exposed
+//nolint:revive //employee should not get exposed
 func New() employee {
 	return employee{}
 }

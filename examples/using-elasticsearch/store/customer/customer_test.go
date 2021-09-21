@@ -161,9 +161,9 @@ func TestCustomer_Update(t *testing.T) {
 }
 
 func TestCustomer_Delete(t *testing.T) {
-		store, context := initializeElasticsearchClient()
+	store, context := initializeElasticsearchClient()
 
-		err := store.Delete(context, "1")
+	err := store.Delete(context, "1")
 
-		assert.Equal(t, nil, err)
-}]
+	assert.Equal(t, nil, err)
+}

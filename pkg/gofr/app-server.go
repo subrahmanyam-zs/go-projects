@@ -53,7 +53,7 @@ const (
 	defaultMetricsRoute = "/metrics"
 )
 
-//nolint:golint // We do not want anyone using the struct without initialization steps.
+//nolint:revive // We do not want anyone using the struct without initialization steps.
 func NewServer(c Config, gofr *Gofr) *server {
 	s := &server{
 		Router:       NewRouter(),
@@ -271,7 +271,6 @@ func (s *server) redirectHandler(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, path, http.StatusMovedPermanently)
 }
 
-//nolint:interfacer //cannot replace (c Config)
 func getMWVars(c Config) (result map[string]string) {
 	result = make(map[string]string)
 
@@ -292,7 +291,6 @@ func getMWVars(c Config) (result map[string]string) {
 	return
 }
 
-//nolint:interfacer //cannot replace c Config
 func getOAuthOptions(c Config) (options oauth.Options, ok bool) {
 	options = oauth.Options{}
 	if JWKPath := c.Get("JWKS_ENDPOINT"); JWKPath != "" {

@@ -287,7 +287,7 @@ func Test_ValidAppLogDataInConcurrentRequest(t *testing.T) {
 	checkLogs(t, b)
 }
 
-// nolint:gocognit,interfacer  // splitting the code will reduce readability
+// nolint:gocognit // splitting the code will reduce readability
 func checkLogs(t *testing.T, b *Buffer) {
 	if bufLen := len(b.String()); bufLen <= 0 {
 		t.Error("Nothing is logged")

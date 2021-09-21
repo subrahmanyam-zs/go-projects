@@ -13,8 +13,9 @@ type customer struct {
 	store store.Customer
 }
 
-func New(c store.Customer) customer {
-	return customer{store: c}
+// nolint:gocritic //exporting return value is not necessary here
+func New(store store.Customer) customer {
+	return customer{store: store}
 }
 
 func (c customer) Index(context *gofr.Context) (interface{}, error) {

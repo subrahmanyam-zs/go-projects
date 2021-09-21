@@ -36,7 +36,6 @@ func createYCQLKeyspace(ycql *YCQL) error {
 	return err
 }
 
-//nolint:interfacer //`c` can be `github.com/go-redis/redis/v8.ConsistentHash`
 func initializeDB(t *testing.T, c *config.MockConfig) *Seeder {
 	dc := DBConfig{
 		HostName: c.Get("DB_HOST"),

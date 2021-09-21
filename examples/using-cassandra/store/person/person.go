@@ -16,13 +16,12 @@ type Person struct{}
 
 func (p Person) Get(ctx *gofr.Context, filter entity.Person) []*entity.Person {
 	var (
-		id    int
-		name  string
-		age   int
-		state string
+		id      int
+		name    string
+		age     int
+		state   string
+		persons []*entity.Person
 	)
-
-	var persons []*entity.Person = nil
 
 	cassDB := ctx.Cassandra.Session
 	whereCL, values := getWhereClause(filter)

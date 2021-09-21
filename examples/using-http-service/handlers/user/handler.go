@@ -12,6 +12,7 @@ type handler struct {
 	service services.User
 }
 
+//nolint:revive //exporting return value not necessary as we will be using New() outside the pkg.
 func New(service services.User) handler {
 	return handler{service: service}
 }

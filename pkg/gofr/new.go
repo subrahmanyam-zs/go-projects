@@ -307,7 +307,6 @@ func initializeDynamoDB(c Config, k *Gofr) {
 
 // initializeRedis initializes the Redis client in the Gofr struct if the Redis configuration is set
 // in the environment, in case of an error, it logs the error
-//nolint:interfacer //`c` can be `github.com/go-redis/redis/v8.ConsistentHash`
 func initializeRedis(c Config, k *Gofr) {
 	ssl := false
 	if strings.EqualFold(c.Get("REDIS_SSL"), "true") {
@@ -341,9 +340,9 @@ func initializeRedis(c Config, k *Gofr) {
 	}
 }
 
+// nolint:gocognit //breaks code readability
 // initializeDB initializes the ORM object in the Gofr struct if the DB configuration is set
 // in the environment, in case of an error, it logs the error
-//nolint:interfacer,gocognit //breaking down function will reduce readability
 func initializeDB(c Config, k *Gofr) {
 	dc := datastore.DBConfig{
 		HostName:          c.Get("DB_HOST"),
@@ -596,7 +595,6 @@ func initializeElasticsearch(c Config, k *Gofr) {
 	k.Logger.Infof("connected to elasticsearch, HOST: %s, PORT: %v\n", elasticSearchCfg.Host, elasticSearchCfg.Ports)
 }
 
-//nolint:interfacer //`c` can be `github.com/go-redis/redis/v8.ConsistentHash`
 func initializeSolr(c Config, k *Gofr) {
 	host := c.Get("SOLR_HOST")
 	port := c.Get("SOLR_PORT")

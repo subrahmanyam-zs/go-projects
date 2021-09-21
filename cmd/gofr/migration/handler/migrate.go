@@ -9,6 +9,7 @@ import (
 	"text/template"
 
 	"developer.zopsmart.com/go/gofr/cmd/gofr/helper"
+	mg "developer.zopsmart.com/go/gofr/cmd/gofr/migration"
 	"developer.zopsmart.com/go/gofr/pkg/errors"
 	"developer.zopsmart.com/go/gofr/pkg/gofr"
 )
@@ -195,7 +196,7 @@ func main() {
 
 	os.RemoveAll("main.go")
 
-	mainFile, err := f.OpenFile("main.go", os.O_CREATE|os.O_WRONLY, 0666)
+	mainFile, err := f.OpenFile("main.go", os.O_CREATE|os.O_WRONLY, mg.RWMode)
 	if err != nil {
 		return err
 	}

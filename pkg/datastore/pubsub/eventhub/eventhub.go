@@ -277,7 +277,6 @@ func (e *Eventhub) IsSet() bool {
 }
 
 // NewEventHubWithAvro initialize EventHub with Avro when EventHubConfig and AvroConfig are right
-//nolint:interfacer //`logger` can be `github.com/stretchr/testify/assert.TestingT`
 func NewEventHubWithAvro(config *AvroWithEventhubConfig, logger log.Logger) (pubsub.PublisherSubscriber, error) {
 	eventHub, err := New(&config.EventhubConfig)
 	if err != nil {

@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"developer.zopsmart.com/go/gofr/cmd/gofr/helper"
+	"developer.zopsmart.com/go/gofr/cmd/gofr/migration"
 	"developer.zopsmart.com/go/gofr/pkg/errors"
 	"developer.zopsmart.com/go/gofr/pkg/gofr"
 )
@@ -152,7 +153,7 @@ func All() map[string]dbmigration.Migrator{
 // createMigrationFile creates a .go file which contains the template for writing up and down migration
 func createMigrationFile(f FSCreate, migrationName string) error {
 	if _, err := f.Stat("migrations"); f.IsNotExist(err) {
-		if er := f.Mkdir("migrations", 0777); er != nil {
+		if er := f.Mkdir("migrations", migration.RWXMode); er != nil {
 			return er
 		}
 	}
@@ -184,7 +185,7 @@ func (k K{{.Timestamp}}) Down(d *datastore.DataStore, logger log.Logger) error {
 }
 `))
 
-	file, err := f.OpenFile(migrationName+".go", os.O_CREATE|os.O_WRONLY, 0666)
+	file, err := f.OpenFile(migrationName+".go", os.O_CREATE|os.O_WRONLY, migration.RWMode)
 	if err != nil {
 		return err
 	}

@@ -5,7 +5,6 @@ import (
 	"context"
 	"encoding/json"
 	"encoding/xml"
-	"fmt"
 	"net/http"
 )
 
@@ -75,7 +74,7 @@ func (h *httpService) Bind(resp []byte, i interface{}) error {
 	case TEXT:
 		v, ok := i.(*string)
 		if ok {
-			*v = fmt.Sprintf("%s", resp)
+			*v = string(resp)
 		}
 	case HTML, JSON:
 		err = json.NewDecoder(bytes.NewBuffer(resp)).Decode(&i)
@@ -97,7 +96,7 @@ func (h *httpService) BindStrict(resp []byte, i interface{}) error {
 	case TEXT:
 		v, ok := i.(*string)
 		if ok {
-			*v = fmt.Sprintf("%s", resp)
+			*v = string(resp)
 		}
 	case HTML, JSON:
 		dec := json.NewDecoder(bytes.NewBuffer(resp))

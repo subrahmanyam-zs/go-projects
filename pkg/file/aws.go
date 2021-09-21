@@ -42,7 +42,6 @@ func newAWSS3File(c *AWSConfig, filename string, mode Mode) *aws {
 	return awsFile
 }
 
-//nolint:interfacer //`fd` can be `io.Writer`
 func (s *aws) fetch(fd *os.File) error {
 	resp, err := s.client.GetObject(context.Background(), &s3.GetObjectInput{
 		Bucket: &s.bucketName,
@@ -63,7 +62,6 @@ func (s *aws) fetch(fd *os.File) error {
 	return err
 }
 
-//nolint:interfacer //`fd` can be `io.Reader`
 func (s *aws) push(fd *os.File) error {
 	_, err := s.client.PutObject(context.Background(), &s3.PutObjectInput{
 		Body:   fd,

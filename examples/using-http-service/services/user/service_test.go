@@ -18,8 +18,10 @@ func Test_Get(t *testing.T) {
 		response    models.User
 		err         error
 	}{
-		{"call to service.Get throws error", models.User{}, errors.MultipleErrors{StatusCode: http.StatusInternalServerError, Errors: []error{errors.Error("core error")}}},
-		{"call to Bind method throws error", models.User{}, &errors.Response{StatusCode: http.StatusInternalServerError, Code: "BIND_ERROR", Reason: "failed to bind response from sample service"}},
+		{"call to service.Get throws error", models.User{}, errors.MultipleErrors{
+			StatusCode: http.StatusInternalServerError, Errors: []error{errors.Error("core error")}}},
+		{"call to Bind method throws error", models.User{}, &errors.Response{StatusCode: http.StatusInternalServerError,
+			Code: "BIND_ERROR", Reason: "failed to bind response from sample service"}},
 		{"success case", models.User{Name: "Vikash", Company: "ZopSmart"}, nil},
 	}
 

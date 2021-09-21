@@ -27,8 +27,8 @@ func (c *cache) get(appKey, sharedKey string) EncryptionKey {
 }
 
 func (c *cache) set(appKey, sharedKey string) EncryptionKey {
-	encryptionKey := CreateKey([]byte(appKey), []byte(appKey[:12]), 32)
-	iv := CreateKey([]byte(sharedKey), []byte(appKey[:12]), 16)
+	encryptionKey := CreateKey([]byte(appKey), []byte(appKey[:12]), EncryptionKeyLen)
+	iv := CreateKey([]byte(sharedKey), []byte(appKey[:12]), IVLength)
 
 	c.mu.Lock()
 

@@ -6,16 +6,17 @@ import (
 	"developer.zopsmart.com/go/gofr/pkg/gofr"
 )
 
-type person struct {
+type handler struct {
 	store store.Person
 }
 
+// nolint:gocritic //exporting return value is not necessary here
 // New factory function for person handler
-func New(store store.Person) person {
-	return person{store: store}
+func New(store store.Person) handler {
+	return handler{store: store}
 }
 
-func (p person) Create(c *gofr.Context) (interface{}, error) {
+func (h handler) Create(c *gofr.Context) (interface{}, error) {
 	var person model.Person
 
 	err := c.Bind(&person)
@@ -23,7 +24,7 @@ func (p person) Create(c *gofr.Context) (interface{}, error) {
 		return nil, err
 	}
 
-	err = p.store.Create(c, person)
+	err = h.store.Create(c, person)
 	if err != nil {
 		return nil, err
 	}
@@ -31,10 +32,10 @@ func (p person) Create(c *gofr.Context) (interface{}, error) {
 	return "Successful", nil
 }
 
-func (p person) GetByID(c *gofr.Context) (interface{}, error) {
+func (h handler) GetByID(c *gofr.Context) (interface{}, error) {
 	id := c.PathParam("id")
 
-	person, err := p.store.Get(c, id)
+	person, err := h.store.Get(c, id)
 	if err != nil {
 		return nil, err
 	}
@@ -42,7 +43,7 @@ func (p person) GetByID(c *gofr.Context) (interface{}, error) {
 	return person, nil
 }
 
-func (p person) Update(c *gofr.Context) (interface{}, error) {
+func (h handler) Update(c *gofr.Context) (interface{}, error) {
 	id := c.PathParam("id")
 
 	var person model.Person
@@ -54,7 +55,7 @@ func (p person) Update(c *gofr.Context) (interface{}, error) {
 
 	person.ID = id
 
-	err = p.store.Update(c, person)
+	err = h.store.Update(c, person)
 	if err != nil {
 		return nil, err
 	}
@@ -62,8 +63,8 @@ func (p person) Update(c *gofr.Context) (interface{}, error) {
 	return "Successful", nil
 }
 
-func (p person) Delete(c *gofr.Context) (interface{}, error) {
+func (h handler) Delete(c *gofr.Context) (interface{}, error) {
 	id := c.PathParam("id")
 
-	return nil, p.store.Delete(c, id)
+	return nil, h.store.Delete(c, id)
 }

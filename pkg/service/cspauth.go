@@ -36,8 +36,8 @@ type csp struct {
 	iv            []byte // initial vector(iv) to be used for aes encryption/decryption
 }
 
-//nolint:golint //Returning unexported value
-//NewCSP validates the options and creates new instance of csp
+// nolint:revive //Returning unexported value as pointer is used
+// NewCSP validates the options and creates new instance of csp
 func NewCSP(logger log.Logger, opts *CSPOption) (*csp, error) {
 	if err := opts.validate(); err != nil {
 		logger.Warnf("Invalid Options, %v", err)
@@ -46,8 +46,8 @@ func NewCSP(logger log.Logger, opts *CSPOption) (*csp, error) {
 
 	return &csp{
 		options:       opts,
-		encryptionKey: cspauth.CreateKey([]byte(opts.AppKey), []byte(opts.AppKey[:12]), 32),
-		iv:            cspauth.CreateKey([]byte(opts.SharedKey), []byte(opts.AppKey[:12]), 16),
+		encryptionKey: cspauth.CreateKey([]byte(opts.AppKey), []byte(opts.AppKey[:12]), cspauth.EncryptionKeyLen),
+		iv:            cspauth.CreateKey([]byte(opts.SharedKey), []byte(opts.AppKey[:12]), cspauth.IVLength),
 	}, nil
 }
 

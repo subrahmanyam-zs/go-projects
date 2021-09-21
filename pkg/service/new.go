@@ -61,7 +61,7 @@ var (
 	}, []string{"host"})
 )
 
-//nolint:golint,gocognit,gocyclo // don't want users to access methods of this type without initialization
+// nolint:gocognit,gocyclo // don't want users to access methods of this type without initialization
 // hence we dont want to export the type
 func NewHTTPServiceWithOptions(resourceAddr string, logger log.Logger, options *Options) *httpService {
 	// Register the prometheus metric

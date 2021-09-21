@@ -16,7 +16,7 @@ import (
 	"developer.zopsmart.com/go/gofr/pkg/gofr/request"
 )
 
-func initializeTest(t *testing.T, method, url string, body []byte) (*store.MockPerson, person, *gofr.Context) {
+func initializeTest(t *testing.T, method, url string, body []byte) (*store.MockPerson, handler, *gofr.Context) {
 	mockStore := store.NewMockPerson(gomock.NewController(t))
 	handler := New(mockStore)
 
@@ -116,6 +116,7 @@ func Test_BindError(t *testing.T) {
 	ctx.SetPathParams(map[string]string{
 		"id": "1",
 	})
+
 	var handlers []gofr.Handler
 
 	handlers = append(handlers, handler.Update, handler.Create)

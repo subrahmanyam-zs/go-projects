@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"developer.zopsmart.com/go/gofr/cmd/gofr/helper"
+	"developer.zopsmart.com/go/gofr/cmd/gofr/migration"
 	"developer.zopsmart.com/go/gofr/pkg/gofr"
 )
 
@@ -109,7 +110,7 @@ func addCore(f fileSystem, projectDirectory, entity string) error {
 		return err
 	}
 	// create the interfaceFile , interface.go,  for core layer
-	interfaceFile, err := f.OpenFile("interface.go", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0666)
+	interfaceFile, err := f.OpenFile("interface.go", os.O_APPEND|os.O_CREATE|os.O_WRONLY, migration.RWMode)
 	if err != nil {
 		return err
 	}
@@ -149,7 +150,7 @@ func addComposite(f fileSystem, projectDirectory, entity string) error {
 		return err
 	}
 
-	interfaceFile, err := f.OpenFile("interface.go", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0666)
+	interfaceFile, err := f.OpenFile("interface.go", os.O_APPEND|os.O_CREATE|os.O_WRONLY, migration.RWMode)
 	if err != nil {
 		return err
 	}
@@ -187,7 +188,7 @@ func addConsumer(f fileSystem, projectDirectory, entity string) error {
 		return err
 	}
 
-	filePtr, err := f.OpenFile(entity+".go", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0666)
+	filePtr, err := f.OpenFile(entity+".go", os.O_APPEND|os.O_CREATE|os.O_WRONLY, migration.RWMode)
 	if err != nil {
 		return err
 	}

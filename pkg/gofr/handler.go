@@ -63,7 +63,7 @@ func (h Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-//nolint:gocyclo // cannot be simplified further without hurting readability
+// nolint:gocognit,gocyclo // cannot be simplified further without hurting readability
 func processErrors(err error, path, method string, isPartialError bool) errors.MultipleErrors {
 	var errResp errors.Response
 

@@ -88,7 +88,6 @@ func TestCustomer_Index(t *testing.T) {
 	}
 }
 
-// nolint:dupl // some statement are similar to statement in other function
 func TestCustomer_Read(t *testing.T) {
 	testcases := []struct {
 		id       string
@@ -194,7 +193,6 @@ func TestCustomer_Update(t *testing.T) {
 	}
 }
 
-// nolint:dupl // some statement are similar to statement in other function
 func TestCustomer_Delete(t *testing.T) {
 	testcases := []struct {
 		id       string

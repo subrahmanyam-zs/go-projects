@@ -8,6 +8,8 @@ import (
 	"strings"
 	"testing"
 
+	"developer.zopsmart.com/go/gofr/cmd/gofr/migration"
+
 	"github.com/golang/mock/gomock"
 )
 
@@ -150,7 +152,7 @@ func Test_populateMain(t *testing.T) {
 
 	c := NewMockfileSystem(ctrl)
 	_ = os.Chdir(dir)
-	testFile, _ := os.OpenFile("testing.go", os.O_CREATE|os.O_RDONLY, 0666)
+	testFile, _ := os.OpenFile("testing.go", os.O_CREATE|os.O_RDONLY, migration.RWMode)
 
 	type args struct {
 		mainString string
@@ -204,7 +206,7 @@ func Test_populateHandler(t *testing.T) {
 
 	c := NewMockfileSystem(ctrl)
 	_ = os.Chdir(dir)
-	testFile, _ := os.OpenFile("testing.go", os.O_CREATE|os.O_RDONLY, 0666)
+	testFile, _ := os.OpenFile("testing.go", os.O_CREATE|os.O_RDONLY, migration.RWMode)
 
 	type args struct {
 		path          string

@@ -16,7 +16,7 @@ type Store interface {
 type employee struct{}
 
 // New returns Employee core
-// nolint:golint // employee should not be exposed
+// nolint:revive // employee should not be exposed
 func New() employee {
 	return employee{}
 }

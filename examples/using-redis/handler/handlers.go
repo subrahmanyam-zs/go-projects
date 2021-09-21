@@ -20,9 +20,11 @@ func New(c store.Store) *Config {
 
 //nolint:gocognit // SetKey is a handler function of type gofr.Handler, it sets keys
 func (m Config) SetKey(c *gofr.Context) (interface{}, error) {
+	const size = 64
+
 	input := make(map[string]string)
 
-	length, err := strconv.ParseFloat(c.Header("Content-Length"), 64)
+	length, err := strconv.ParseFloat(c.Header("Content-Length"), size)
 	if err != nil {
 		length = 0
 	}

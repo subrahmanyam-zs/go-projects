@@ -15,7 +15,7 @@ type soapService struct {
 	httpService
 }
 
-//nolint:golint // this type cannot be exported since we don't want the user to have access to the members
+//nolint:revive // this type cannot be exported since we don't want the user to have access to the members
 func NewSOAPClient(resourceURL string, logger log.Logger, user, pass string) *soapService {
 	auth := ""
 	if user != "" {

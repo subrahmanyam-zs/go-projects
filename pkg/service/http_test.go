@@ -374,7 +374,7 @@ func TestHttpService_PropagateHeaders(t *testing.T) {
 
 	httpSvc.PropagateHeaders("X-Custom-Header")
 
-	// nolint:staticcheck,golint // cannot make the key a constant
+	// nolint:revive,staticcheck // cannot make the key a constant
 	ctx := context.WithValue(context.TODO(), "X-Custom-Header", "ab")
 
 	req, _ := httpSvc.createReq(ctx, http.MethodGet, "", nil, nil, nil)

@@ -5,6 +5,7 @@ import (
 	"strconv"
 
 	"developer.zopsmart.com/go/gofr/cmd/gofr/helper"
+	"developer.zopsmart.com/go/gofr/cmd/gofr/migration"
 	"developer.zopsmart.com/go/gofr/pkg/gofr"
 )
 
@@ -73,7 +74,7 @@ func createProject(f fileSystem, projectName string) error {
 	}
 
 	for _, name := range standardDirectories {
-		if er := f.Mkdir(name, 0777); er != nil {
+		if er := f.Mkdir(name, migration.RWXMode); er != nil {
 			return er
 		}
 	}

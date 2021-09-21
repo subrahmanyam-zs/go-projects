@@ -4,9 +4,10 @@ import (
 	"os"
 	"testing"
 
-	"github.com/golang/mock/gomock"
-
+	"developer.zopsmart.com/go/gofr/cmd/gofr/migration"
 	"developer.zopsmart.com/go/gofr/pkg/errors"
+
+	"github.com/golang/mock/gomock"
 )
 
 func Test_create(t *testing.T) {
@@ -23,8 +24,8 @@ func Test_create(t *testing.T) {
 	dir := t.TempDir()
 	_ = os.Chdir(dir)
 	allFiles, _ := os.ReadDir(dir)
-	file, _ := os.OpenFile("test.txt", os.O_CREATE|os.O_WRONLY, 0666)
-	file1, _ := os.OpenFile("test1.txt", os.O_CREATE|os.O_WRONLY, 0666)
+	file, _ := os.OpenFile("test.txt", os.O_CREATE|os.O_WRONLY, migration.RWMode)
+	file1, _ := os.OpenFile("test1.txt", os.O_CREATE|os.O_WRONLY, migration.RWMode)
 
 	mockFS := NewMockFSCreate(ctrl)
 

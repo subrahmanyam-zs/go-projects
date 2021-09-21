@@ -118,7 +118,6 @@ func (d *Seeder) populateTable(t tester, tableName string, records [][]string) {
 }
 
 // resets identity in case of mssql and sequence in case of postgres
-//nolint:interfacer //using t as custom type tester
 func (d *Seeder) resetIdentitySequence(t tester, tableName string, beforeTransaction bool) {
 	if !d.ResetCounter {
 		return

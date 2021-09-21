@@ -59,7 +59,7 @@ func TestIntegration(t *testing.T) {
 		cl := http.Client{}
 
 		resp, err := cl.Do(req)
-		if resp == nil || err != nil {
+		if err != nil {
 			t.Error(err)
 			continue
 		}
@@ -67,5 +67,7 @@ func TestIntegration(t *testing.T) {
 		if resp.StatusCode != tc.expStatusCode {
 			t.Errorf("Testcase[%v] Failed.\tExpected %v\tGot %v\n", i, tc.expStatusCode, resp.StatusCode)
 		}
+
+		_ = resp.Body.Close()
 	}
 }

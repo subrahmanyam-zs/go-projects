@@ -1,6 +1,8 @@
 package cspauth
 
 const (
+	IVLength                = 16
+	EncryptionKeyLen        = 32
 	cspEncryptionIterations = 1000
 	lenRandomChars          = 6
 	minLenAppKey            = 12

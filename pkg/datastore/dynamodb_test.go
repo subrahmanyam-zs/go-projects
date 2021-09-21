@@ -134,6 +134,7 @@ func TestDynamoDB_PutItem(t *testing.T) {
 	}
 }
 
+// nolint:dupl //read and delete performed on the same entity
 func TestDynamoDB_GetItem(t *testing.T) {
 	db := newDynamoDB(t)
 
@@ -160,6 +161,7 @@ func TestDynamoDB_GetItem(t *testing.T) {
 	}
 }
 
+// nolint:dupl //read and delete performed on the same entity
 func TestDynamoDB_DeleteItem(t *testing.T) {
 	db := newDynamoDB(t)
 
