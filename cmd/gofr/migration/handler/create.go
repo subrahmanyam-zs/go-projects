@@ -131,7 +131,7 @@ func createAllFile(f FSCreate, prefixes []string) error {
 package migrations
 
 import (
-	dbmigration "developer.zopsmart.com/go/gofr/cmd/gofr/migration/dbMigration"
+	"developer.zopsmart.com/go/gofr/cmd/gofr/migration/dbMigration"
 )
 
 func All() map[string]dbmigration.Migrator{
