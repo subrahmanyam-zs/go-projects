@@ -7,6 +7,8 @@ import (
 
 	"github.com/aws/aws-sdk-go-v2/credentials"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
+
+	"developer.zopsmart.com/go/gofr/pkg/errors"
 )
 
 type aws struct {
@@ -49,7 +51,10 @@ func (s *aws) fetch(fd *os.File) error {
 	})
 
 	if err != nil {
-		return err
+		return &errors.Response{
+			Code:   "S3_ERROR",
+			Reason: err.Error(),
+		}
 	}
 
 	body, err := ioutil.ReadAll(resp.Body)
@@ -68,6 +73,12 @@ func (s *aws) push(fd *os.File) error {
 		Bucket: &s.bucketName,
 		Key:    &s.fileName,
 	})
+	if err != nil {
+		return &errors.Response{
+			Code:   "S3_ERROR",
+			Reason: err.Error(),
+		}
+	}
 
-	return err
+	return nil
 }
