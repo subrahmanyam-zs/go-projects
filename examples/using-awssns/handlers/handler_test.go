@@ -21,11 +21,11 @@ func initializeTests(t *testing.T, method string, body io.Reader) (*MockNotifier
 	defer mockCtrl.Finish()
 
 	mockService := NewMockNotifier(mockCtrl)
-	k := gofr.New()
-	k.Notifier = mockService
+	app := gofr.New()
+	app.Notifier = mockService
 	req := httptest.NewRequest(method, "/dummy", body)
 	r := request.NewHTTPRequest(req)
-	c := gofr.NewContext(nil, r, k)
+	c := gofr.NewContext(nil, r, app)
 
 	return mockService, c
 }

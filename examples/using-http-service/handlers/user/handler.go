@@ -12,19 +12,20 @@ type handler struct {
 	service services.User
 }
 
-//nolint:revive //exporting return value not necessary as we will be using New() outside the pkg.
+// New is factory function for handler layer
+//nolint:revive // handler should not be used without proper initilization with required dependency
 func New(service services.User) handler {
 	return handler{service: service}
 }
 
 // Get is a handler function of type gofr.Handler that uses HTTP Service to make downstream calls
-func (h handler) Get(c *gofr.Context) (interface{}, error) {
-	name := c.PathParam("name")
+func (h handler) Get(ctx *gofr.Context) (interface{}, error) {
+	name := ctx.PathParam("name")
 	if strings.TrimSpace(name) == "" {
 		return nil, errors.MissingParam{Param: []string{"name"}}
 	}
 
-	resp, err := h.service.Get(c, name)
+	resp, err := h.service.Get(ctx, name)
 	if err != nil {
 		return nil, err // avoiding partial content response
 	}

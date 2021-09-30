@@ -3,41 +3,41 @@ package handlers
 import (
 	"fmt"
 
-	"developer.zopsmart.com/go/gofr/examples/using-mongo/entity"
-	"developer.zopsmart.com/go/gofr/examples/using-mongo/store"
+	"developer.zopsmart.com/go/gofr/examples/using-mongo/models"
+	"developer.zopsmart.com/go/gofr/examples/using-mongo/stores"
 	"developer.zopsmart.com/go/gofr/pkg/gofr"
 )
 
-type Customer struct {
-	model store.Customer
+type handler struct {
+	store stores.Customer
 }
 
-func New(c store.Customer) Customer {
-	return Customer{
-		model: c,
-	}
+// New is factory function for handler layer
+//nolint:revive // handler should not be used without proper initilization with required dependency
+func New(c stores.Customer) handler {
+	return handler{store: c}
 }
 
-func (cm Customer) Get(c *gofr.Context) (interface{}, error) {
-	name := c.Param("name")
+func (h handler) Get(ctx *gofr.Context) (interface{}, error) {
+	name := ctx.Param("name")
 
-	results, err := cm.model.Get(c, name)
+	resp, err := h.store.Get(ctx, name)
 	if err != nil {
 		return nil, err
 	}
 
-	return results, nil
+	return resp, nil
 }
 
-func (cm Customer) Create(c *gofr.Context) (interface{}, error) {
-	var model entity.Customer
+func (h handler) Create(ctx *gofr.Context) (interface{}, error) {
+	var c models.Customer
 
-	err := c.Bind(&model)
+	err := ctx.Bind(&c)
 	if err != nil {
 		return nil, err
 	}
 
-	err = cm.model.Create(c, &model)
+	err = h.store.Create(ctx, c)
 	if err != nil {
 		return nil, err
 	}
@@ -45,10 +45,10 @@ func (cm Customer) Create(c *gofr.Context) (interface{}, error) {
 	return "New Customer Added!", nil
 }
 
-func (cm Customer) Delete(c *gofr.Context) (interface{}, error) {
-	name := c.Param("name")
+func (h handler) Delete(ctx *gofr.Context) (interface{}, error) {
+	name := ctx.Param("name")
 
-	deleteCount, err := cm.model.Delete(c, name)
+	deleteCount, err := h.store.Delete(ctx, name)
 	if err != nil {
 		return nil, err
 	}

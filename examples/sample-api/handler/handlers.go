@@ -10,17 +10,17 @@ import (
 )
 
 // HelloWorld is a handler function of type gofr.Handler, it responds with a message
-func HelloWorld(c *gofr.Context) (interface{}, error) {
+func HelloWorld(ctx *gofr.Context) (interface{}, error) {
 	return "Hello World!", nil
 }
 
 // HelloName is a handler function of type gofr.Handler, it responds with a message and uses query params
-func HelloName(c *gofr.Context) (interface{}, error) {
-	return fmt.Sprintf("Hello %s", c.Param("name")), nil
+func HelloName(ctx *gofr.Context) (interface{}, error) {
+	return fmt.Sprintf("Hello %s", ctx.Param("name")), nil
 }
 
 // ErrorHandler always returns an error
-func ErrorHandler(c *gofr.Context) (interface{}, error) {
+func ErrorHandler(ctx *gofr.Context) (interface{}, error) {
 	return nil, &errors.Response{
 		StatusCode: http.StatusInternalServerError,
 		Code:       "UNKNOWN_ERROR",
@@ -34,7 +34,7 @@ type resp struct {
 }
 
 // JSONHandler is a handler function of type gofr.Handler, it responds with a JSON message
-func JSONHandler(c *gofr.Context) (interface{}, error) {
+func JSONHandler(ctx *gofr.Context) (interface{}, error) {
 	r := resp{
 		Name:    "Vikash",
 		Company: "ZopSmart",
@@ -44,8 +44,8 @@ func JSONHandler(c *gofr.Context) (interface{}, error) {
 }
 
 // UserHandler is a handler function of type gofr.Handler, it responds with a JSON message
-func UserHandler(c *gofr.Context) (interface{}, error) {
-	name := c.PathParam("name")
+func UserHandler(ctx *gofr.Context) (interface{}, error) {
+	name := ctx.PathParam("name")
 
 	switch strings.ToLower(name) {
 	case "vikash":
@@ -55,11 +55,11 @@ func UserHandler(c *gofr.Context) (interface{}, error) {
 	}
 }
 
-func HelloLogHandler(c *gofr.Context) (interface{}, error) {
-	c.Log("key", "value")          // This is how we can add more data to framework log.
-	c.Logger.Log("Hello Logging!") // This is how we can add a log from handlers.
-	c.Log("key2", "value2")
-	c.Logger.Warn("Warning 1", "Warning 2", struct {
+func HelloLogHandler(ctx *gofr.Context) (interface{}, error) {
+	ctx.Log("key", "value")          // This is how we can add more data to framework log.
+	ctx.Logger.Log("Hello Logging!") // This is how we can add a log from handlers.
+	ctx.Log("key2", "value2")
+	ctx.Logger.Warn("Warning 1", "Warning 2", struct {
 		key1 string
 		key2 int
 	}{"Struct Test", 1}) // This is how you can give multiple messages

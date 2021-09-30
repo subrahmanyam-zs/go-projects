@@ -7,11 +7,12 @@ import (
 )
 
 func main() {
-	k := gofr.New()
+	app := gofr.New()
 
-	h := handler.New(customer.Customer{})
+	store := customer.New()
+	h := handler.New(store)
 
-	k.REST("customer", h)
+	app.REST("customer", h)
 
-	k.Start()
+	app.Start()
 }

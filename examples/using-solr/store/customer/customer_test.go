@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"net/http"
 	"reflect"
 	"testing"
 
@@ -23,8 +24,8 @@ type test struct {
 func TestCustomer_ListError(t *testing.T) {
 	collections := []string{"error", "json error"}
 	c := New(mockSolrClient{})
-	k := gofr.New()
-	ctx := gofr.NewContext(nil, nil, k)
+	app := gofr.New()
+	ctx := gofr.NewContext(nil, nil, app)
 
 	for _, collection := range collections {
 		_, err := c.List(ctx, collection, store.Filter{})
@@ -36,8 +37,8 @@ func TestCustomer_ListError(t *testing.T) {
 
 func TestCustomer_ListResponse(t *testing.T) {
 	c := New(mockSolrClient{})
-	k := gofr.New()
-	ctx := gofr.NewContext(nil, nil, k)
+	app := gofr.New()
+	ctx := gofr.NewContext(nil, nil, app)
 	expectedResp := []store.Model{{ID: 553573403, Name: "book", DateOfBirth: "01-01-1987"}}
 
 	resp, err := c.List(ctx, "customer", store.Filter{})
@@ -57,8 +58,8 @@ func TestCustomer_Create(t *testing.T) {
 	}
 
 	c := New(mockSolrClient{})
-	k := gofr.New()
-	ctx := gofr.NewContext(nil, nil, k)
+	app := gofr.New()
+	ctx := gofr.NewContext(nil, nil, app)
 
 	for _, tc := range testcases {
 		err := c.Create(ctx, tc.collection, store.Model{})
@@ -76,8 +77,8 @@ func TestCustomer_Update(t *testing.T) {
 	}
 
 	c := New(mockSolrClient{})
-	k := gofr.New()
-	ctx := gofr.NewContext(nil, nil, k)
+	app := gofr.New()
+	ctx := gofr.NewContext(nil, nil, app)
 
 	for _, tc := range testcases {
 		err := c.Update(ctx, tc.collection, store.Model{})
@@ -94,8 +95,8 @@ func TestCustomer_Delete(t *testing.T) {
 	}
 
 	c := New(mockSolrClient{})
-	k := gofr.New()
-	ctx := gofr.NewContext(nil, nil, k)
+	app := gofr.New()
+	ctx := gofr.NewContext(nil, nil, app)
 
 	for _, tc := range testcases {
 		err := c.Delete(ctx, tc.collection, store.Model{})
@@ -122,7 +123,7 @@ func (m mockSolrClient) Search(ctx context.Context, collection string, params ma
 
 		_ = json.Unmarshal(b, &resp)
 
-		return datastore.Response{Code: 200, Data: resp}, nil
+		return datastore.Response{Code: http.StatusOK, Data: resp}, nil
 	}
 
 	b := []byte(`{"response": {
@@ -136,7 +137,7 @@ func (m mockSolrClient) Search(ctx context.Context, collection string, params ma
 	var resp interface{}
 	_ = json.Unmarshal(b, &resp)
 
-	return datastore.Response{Code: 200, Data: resp}, nil
+	return datastore.Response{Code: http.StatusOK, Data: resp}, nil
 }
 
 func (m mockSolrClient) Create(c context.Context, collection string, d *bytes.Buffer, p map[string]interface{}) (interface{}, error) {
@@ -152,7 +153,7 @@ func (m mockSolrClient) Create(c context.Context, collection string, d *bytes.Bu
 
 	_ = json.Unmarshal(b, &resp)
 
-	return datastore.Response{Code: 200, Data: resp}, nil
+	return datastore.Response{Code: http.StatusOK, Data: resp}, nil
 }
 
 func (m mockSolrClient) Update(c context.Context, collection string, d *bytes.Buffer, p map[string]interface{}) (interface{}, error) {
@@ -167,7 +168,7 @@ func (m mockSolrClient) Update(c context.Context, collection string, d *bytes.Bu
 	var resp interface{}
 	_ = json.Unmarshal(b, &resp)
 
-	return datastore.Response{Code: 200, Data: resp}, nil
+	return datastore.Response{Code: http.StatusOK, Data: resp}, nil
 }
 
 func (m mockSolrClient) Delete(c context.Context, collection string, doc *bytes.Buffer, p map[string]interface{}) (interface{}, error) {
@@ -182,5 +183,5 @@ func (m mockSolrClient) Delete(c context.Context, collection string, doc *bytes.
 	var resp interface{}
 	_ = json.Unmarshal(b, &resp)
 
-	return datastore.Response{Code: 200, Data: resp}, nil
+	return datastore.Response{Code: http.StatusOK, Data: resp}, nil
 }

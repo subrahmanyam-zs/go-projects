@@ -1,8 +1,8 @@
 package handlers
 
 import (
+	"net/http"
 	"net/http/httptest"
-	"reflect"
 	"testing"
 
 	"developer.zopsmart.com/go/gofr/pkg/datastore/pubsub"
@@ -10,6 +10,8 @@ import (
 	"developer.zopsmart.com/go/gofr/pkg/gofr"
 	"developer.zopsmart.com/go/gofr/pkg/gofr/request"
 	"developer.zopsmart.com/go/gofr/pkg/gofr/types"
+
+	"github.com/stretchr/testify/assert"
 )
 
 type mockPubSub struct {
@@ -60,55 +62,47 @@ func (m *mockPubSub) CommitOffset(offsets pubsub.TopicPartition) {
 }
 
 func TestProducerHandler(t *testing.T) {
-	k := gofr.New()
+	app := gofr.New()
 	m := mockPubSub{}
-	k.PubSub = &m
+	app.PubSub = &m
 
 	tests := []struct {
-		name    string
-		id      string
-		want    interface{}
-		wantErr bool
+		desc string
+		id   string
+		resp interface{}
+		err  error
 	}{
-		{"error from publisher", "1", nil, true},
-		{"success", "123", nil, false},
+		{"error from publisher", "1", nil, errors.EntityNotFound{ID: "1"}},
+		{"success", "123", nil, nil},
 	}
 
-	req := httptest.NewRequest("GET", "http://dummy", nil)
-	context := gofr.NewContext(nil, request.NewHTTPRequest(req), k)
+	req := httptest.NewRequest(http.MethodGet, "http://dummy", nil)
+	context := gofr.NewContext(nil, request.NewHTTPRequest(req), app)
 
-	for _, tt := range tests {
-		tt := tt
-		t.Run(tt.name, func(t *testing.T) {
-			context.SetPathParams(map[string]string{
-				"id": tt.id,
-			})
-
-			m.id = tt.id
-
-			got, err := Producer(context)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("Producer() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
-
-			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("Producer() got = %v, want %v", got, tt.want)
-			}
+	for i, tc := range tests {
+		context.SetPathParams(map[string]string{
+			"id": tc.id,
 		})
+
+		m.id = tc.id
+
+		resp, err := Producer(context)
+
+		assert.Equal(t, tc.err, err, "TEST[%d], failed.\n%s", i, tc.desc)
+
+		assert.Equal(t, tc.resp, resp, "TEST[%d], failed.\n%s", i, tc.desc)
 	}
 }
 
 func TestConsumerHandler(t *testing.T) {
-	k := gofr.New()
+	app := gofr.New()
 
-	k.PubSub = &mockPubSub{}
+	app.PubSub = &mockPubSub{}
 
-	ctx := gofr.NewContext(nil, nil, k)
+	ctx := gofr.NewContext(nil, nil, app)
 
 	_, err := Consumer(ctx)
 	if err != nil {
-		t.Errorf("Consumer() error = %v, wantErr %v", err, nil)
-		return
+		t.Errorf("TEST, Failed.\tExpected %v\tGot %v\n", nil, err)
 	}
 }

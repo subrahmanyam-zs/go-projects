@@ -15,40 +15,42 @@ func TestServerRun(t *testing.T) {
 	go main()
 	time.Sleep(3 * time.Second)
 
-	tcs := []struct {
-		id                 int
-		method             string
-		endpoint           string
-		expectedStatusCode int
+	tests := []struct {
+		desc       string
+		id         int
+		method     string
+		endpoint   string
+		statusCode int
 	}{
-		{1, "GET", "http://localhost:9113/pub?id=1", 200},
-		{2, "GET", "http://localhost:9113/sub", 200},
+		{"publish", 1, http.MethodGet, "http://localhost:9113/pub?id=1", http.StatusOK},
+		{"subscribe", 2, http.MethodGet, "http://localhost:9113/sub", http.StatusOK},
 	}
 
-	for _, tc := range tcs {
+	for i, tc := range tests {
 		req, _ := request.NewMock(tc.method, tc.endpoint, nil)
 		c := http.Client{}
 
-		resp, _ := c.Do(req)
+		resp, err := c.Do(req)
+		if err != nil {
+			t.Errorf("TEST[%v] Failed.\tHTTP request encountered Err: %v\n%s", i, err, tc.desc)
+			continue
+		}
 
-		if resp != nil && resp.StatusCode != 200 {
+		if resp.StatusCode != tc.statusCode {
 			// required because eventhub is shared and there can be messages with avro or without avro
 			// messages without avro would return 200 as we do json.Marshal to a map
 			// messages with avro would return 206 as it would have to go through avro.Marshal
 			// we can't use any avro schema as any schema can be used
-			if resp.StatusCode != 206 {
-				t.Errorf("Test %v: Failed.\tExpected %v\tGot %v\n", tc.id, tc.expectedStatusCode, resp.StatusCode)
+			if resp.StatusCode != http.StatusPartialContent {
+				t.Errorf("TEST[%v] FAILED.\tExpected %v\tGot %v\n%s", tc.id, tc.statusCode, resp.StatusCode, tc.desc)
 			}
 		}
 
-		if resp != nil && resp.StatusCode != tc.expectedStatusCode {
-			t.Errorf("Test %v: Failed.\tExpected %v\tGot %v\n", tc.id, tc.expectedStatusCode, resp.StatusCode)
+		if resp.StatusCode != tc.statusCode {
+			t.Errorf("TEST[%v] FAILED.\tExpected %v\tGot %v\n%s", tc.id, tc.statusCode, resp.StatusCode, tc.desc)
 		}
 
-		if resp != nil {
-			resp.Body.Close()
-		}
+		_ = resp.Body.Close()
 
-		break
 	}
 }

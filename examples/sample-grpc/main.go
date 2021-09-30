@@ -8,9 +8,13 @@ import (
 
 func main() {
 	// this example shows an applicationZ that uses both, HTTP and GRPC
-	k := gofr.New()
-	k.GET("/example", http.Get)
-	grpc.RegisterExampleServiceServer(k.Server.GRPC.Server(), grpc.Handler{})
+	app := gofr.New()
 
-	k.Start()
+	app.GET("/example", http.Get)
+
+	grpcHandler := grpc.New()
+
+	grpc.RegisterExampleServiceServer(app.Server.GRPC.Server(), grpcHandler)
+
+	app.Start()
 }

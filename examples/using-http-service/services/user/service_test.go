@@ -13,26 +13,26 @@ import (
 )
 
 func Test_Get(t *testing.T) {
-	testcases := []struct {
-		description string
-		response    models.User
-		err         error
+	tests := []struct {
+		desc string
+		resp models.User
+		err  error
 	}{
-		{"call to service.Get throws error", models.User{}, errors.MultipleErrors{
-			StatusCode: http.StatusInternalServerError, Errors: []error{errors.Error("core error")}}},
-		{"call to Bind method throws error", models.User{}, &errors.Response{StatusCode: http.StatusInternalServerError,
-			Code: "BIND_ERROR", Reason: "failed to bind response from sample service"}},
+		{"call to service.Get throws error", models.User{},
+			errors.MultipleErrors{StatusCode: http.StatusInternalServerError, Errors: []error{errors.Error("core error")}}},
+		{"call to Bind method throws error", models.User{},
+			&errors.Response{StatusCode: http.StatusInternalServerError, Code: "BIND_ERROR", Reason: "failed to bind response from sample service"}},
 		{"success case", models.User{Name: "Vikash", Company: "ZopSmart"}, nil},
 	}
 
-	for i := range testcases {
+	for i, tc := range tests {
 		h := New(services.New(i))
 
 		ctx := gofr.NewContext(nil, nil, gofr.New())
 		resp, err := h.Get(ctx, "Vikash")
 
-		assert.Equal(t, testcases[i].err, err)
+		assert.Equal(t, tc.err, err, "TEST[%d], failed.\n%s", i, tc.desc)
 
-		assert.Equal(t, testcases[i].response, resp)
+		assert.Equal(t, tc.resp, resp, "TEST[%d], failed.\n%s", i, tc.desc)
 	}
 }

@@ -1,28 +1,29 @@
 package main
 
 import (
-	"developer.zopsmart.com/go/gofr/examples/using-ycql/handlers"
-	"developer.zopsmart.com/go/gofr/examples/using-ycql/store/shop"
+	handler "developer.zopsmart.com/go/gofr/examples/using-ycql/handlers/shop"
+	store "developer.zopsmart.com/go/gofr/examples/using-ycql/stores/shop"
 	"developer.zopsmart.com/go/gofr/pkg/gofr"
 )
 
 func main() {
 	// Create the application object
-	k := gofr.New()
-
+	app := gofr.New()
+	// initialize store dependency
+	s := store.New()
 	// initialize the handler
-	h := handlers.New(shop.Shop{})
+	h := handler.New(s)
 	// added get handler
-	k.GET("/shop", h.Get)
+	app.GET("/shop", h.Get)
 	// added create handler
-	k.POST("/shop", h.Create)
+	app.POST("/shop", h.Create)
 	// added update handler
-	k.PUT("/shop/{id}", h.Update)
+	app.PUT("/shop/{id}", h.Update)
 	// added delete handler
-	k.DELETE("/shop/{id}", h.Delete)
+	app.DELETE("/shop/{id}", h.Delete)
 	// server  can  start at custom port
-	k.Server.HTTP.Port = 9005
+	app.Server.HTTP.Port = 9005
 
 	// server start
-	k.Start()
+	app.Start()
 }

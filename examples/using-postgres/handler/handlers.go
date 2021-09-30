@@ -9,22 +9,24 @@ import (
 	"developer.zopsmart.com/go/gofr/pkg/gofr"
 )
 
-type Customer struct {
+type handler struct {
 	store store.Store
 }
 
-func New(s store.Store) *Customer {
-	return &Customer{
+// New is factory functoin for Handler layer
+//nolint:revive // handler should not be used without proper initilization with required dependency
+func New(s store.Store) handler {
+	return handler{
 		store: s,
 	}
 }
 
 type response struct {
-	Customers *[]model.Customer
+	Customers []model.Customer
 }
 
-func (m Customer) Get(c *gofr.Context) (interface{}, error) {
-	resp, err := m.store.Get(c)
+func (h handler) Get(ctx *gofr.Context) (interface{}, error) {
+	resp, err := h.store.Get(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -34,8 +36,8 @@ func (m Customer) Get(c *gofr.Context) (interface{}, error) {
 	return r, nil
 }
 
-func (m Customer) GetByID(c *gofr.Context) (interface{}, error) {
-	i := c.PathParam("id")
+func (h handler) GetByID(ctx *gofr.Context) (interface{}, error) {
+	i := ctx.PathParam("id")
 	if i == "" {
 		return nil, errors.MissingParam{Param: []string{"id"}}
 	}
@@ -45,7 +47,7 @@ func (m Customer) GetByID(c *gofr.Context) (interface{}, error) {
 		return nil, errors.InvalidParam{Param: []string{"id"}}
 	}
 
-	resp, err := m.store.GetByID(c, id)
+	resp, err := h.store.GetByID(ctx, id)
 	if err != nil {
 		return nil, errors.EntityNotFound{
 			Entity: "customer",
@@ -56,10 +58,10 @@ func (m Customer) GetByID(c *gofr.Context) (interface{}, error) {
 	return resp, nil
 }
 
-func (m Customer) Create(c *gofr.Context) (interface{}, error) {
+func (h handler) Create(ctx *gofr.Context) (interface{}, error) {
 	var cust model.Customer
-	if err := c.Bind(&cust); err != nil {
-		c.Logger.Errorf("error in binding: %v", err)
+	if err := ctx.Bind(&cust); err != nil {
+		ctx.Logger.Errorf("error in binding: %v", err)
 		return nil, errors.InvalidParam{Param: []string{"body"}}
 	}
 
@@ -67,7 +69,7 @@ func (m Customer) Create(c *gofr.Context) (interface{}, error) {
 		return nil, errors.InvalidParam{Param: []string{"id"}}
 	}
 
-	resp, err := m.store.Create(c, cust)
+	resp, err := h.store.Create(ctx, cust)
 	if err != nil {
 		return nil, err
 	}
@@ -75,8 +77,8 @@ func (m Customer) Create(c *gofr.Context) (interface{}, error) {
 	return resp, nil
 }
 
-func (m Customer) Update(c *gofr.Context) (interface{}, error) {
-	i := c.PathParam("id")
+func (h handler) Update(ctx *gofr.Context) (interface{}, error) {
+	i := ctx.PathParam("id")
 	if i == "" {
 		return nil, errors.MissingParam{Param: []string{"id"}}
 	}
@@ -87,14 +89,14 @@ func (m Customer) Update(c *gofr.Context) (interface{}, error) {
 	}
 
 	var cust model.Customer
-	if err = c.Bind(&cust); err != nil {
-		c.Logger.Errorf("error in binding: %v", err)
+	if err = ctx.Bind(&cust); err != nil {
+		ctx.Logger.Errorf("error in binding: %v", err)
 		return nil, errors.InvalidParam{Param: []string{"body"}}
 	}
 
 	cust.ID = id
 
-	resp, err := m.store.Update(c, cust)
+	resp, err := h.store.Update(ctx, cust)
 	if err != nil {
 		return nil, err
 	}
@@ -102,8 +104,8 @@ func (m Customer) Update(c *gofr.Context) (interface{}, error) {
 	return resp, nil
 }
 
-func (m Customer) Delete(c *gofr.Context) (interface{}, error) {
-	i := c.PathParam("id")
+func (h handler) Delete(ctx *gofr.Context) (interface{}, error) {
+	i := ctx.PathParam("id")
 	if i == "" {
 		return nil, errors.MissingParam{Param: []string{"id"}}
 	}
@@ -113,7 +115,7 @@ func (m Customer) Delete(c *gofr.Context) (interface{}, error) {
 		return nil, errors.InvalidParam{Param: []string{"id"}}
 	}
 
-	if err := m.store.Delete(c, id); err != nil {
+	if err := h.store.Delete(ctx, id); err != nil {
 		return nil, err
 	}
 

@@ -18,7 +18,7 @@ const index = "customers"
 
 // creating the index 'customers' and populating data to use it in tests
 func TestMain(m *testing.M) {
-	k := gofr.New()
+	app := gofr.New()
 
 	const mapping = `{"settings": {
 		"number_of_shards": 1},
@@ -30,37 +30,37 @@ func TestMain(m *testing.M) {
 				"city": {"type": "text"}
 			}}}}`
 
-	client := k.Elasticsearch
+	es := app.Elasticsearch
 
-	_, err := client.Indices.Delete([]string{index}, client.Indices.Delete.WithIgnoreUnavailable(true))
+	_, err := es.Indices.Delete([]string{index}, es.Indices.Delete.WithIgnoreUnavailable(true))
 	if err != nil {
-		k.Logger.Errorf("error deleting index: %s", err.Error())
+		app.Logger.Errorf("error deleting index: %s", err.Error())
 	}
 
-	_, err = client.Indices.Create(index,
-		client.Indices.Create.WithBody(bytes.NewReader([]byte(mapping))),
-		client.Indices.Create.WithPretty(),
+	_, err = es.Indices.Create(index,
+		es.Indices.Create.WithBody(bytes.NewReader([]byte(mapping))),
+		es.Indices.Create.WithPretty(),
 	)
 	if err != nil {
-		k.Logger.Errorf("error creating index: %s", err.Error())
+		app.Logger.Errorf("error creating index: %s", err.Error())
 	}
 
-	insert(k.Logger, model.Customer{ID: "1", Name: "Henry", City: "Bangalore"}, client)
-	insert(k.Logger, model.Customer{ID: "2", Name: "Bitsy", City: "Mysore"}, client)
-	insert(k.Logger, model.Customer{ID: "3", Name: "Magic", City: "Bangalore"}, client)
+	insert(app.Logger, model.Customer{ID: "1", Name: "Henry", City: "Bangalore"}, es)
+	insert(app.Logger, model.Customer{ID: "2", Name: "Bitsy", City: "Mysore"}, es)
+	insert(app.Logger, model.Customer{ID: "3", Name: "Magic", City: "Bangalore"}, es)
 
 	os.Exit(m.Run())
 }
 
-func insert(logger log.Logger, customer model.Customer, client datastore.Elasticsearch) {
+func insert(logger log.Logger, customer model.Customer, es datastore.Elasticsearch) {
 	body, _ := json.Marshal(customer)
 
-	_, err := client.Index(
+	_, err := es.Index(
 		index,
 		bytes.NewReader(body),
-		client.Index.WithRefresh("true"),
-		client.Index.WithPretty(),
-		client.Index.WithDocumentID(customer.ID),
+		es.Index.WithRefresh("true"),
+		es.Index.WithPretty(),
+		es.Index.WithDocumentID(customer.ID),
 	)
 	if err != nil {
 		logger.Errorf("error inserting documents: %s", err.Error())
@@ -71,30 +71,32 @@ func TestRoutes(t *testing.T) {
 	go main()
 	time.Sleep(time.Second * 2)
 
-	testcases := []struct {
-		method             string
-		endpoint           string
-		expectedStatusCode int
-		body               []byte
+	tests := []struct {
+		desc       string
+		method     string
+		endpoint   string
+		statusCode int
+		body       []byte
 	}{
-		{http.MethodGet, "customer", http.StatusOK, nil},
-		{http.MethodGet, "customer/7", http.StatusInternalServerError, nil},
-		{http.MethodPost, "customer", http.StatusCreated, []byte(`{"id":"1","name":"test","city":"xyz"}`)},
-		{http.MethodPut, "customer/1", http.StatusOK, []byte(`{"id":"1","name":"test1","city":"xyz2"}`)},
-		{http.MethodDelete, "customer/1", http.StatusNoContent, nil},
+		{"get all customer success case", http.MethodGet, "customer", http.StatusOK, nil},
+		{"get non existent customer", http.MethodGet, "customer/7", http.StatusInternalServerError, nil},
+		{"create success", http.MethodPost, "customer", http.StatusCreated, []byte(`{"id":"1","name":"test","city":"xyz"}`)},
+		{"update success", http.MethodPut, "customer/1", http.StatusOK, []byte(`{"id":"1","name":"test1","city":"xyz2"}`)},
+		{"delete success", http.MethodDelete, "customer/1", http.StatusNoContent, nil},
 	}
 
-	for _, tc := range testcases {
+	for i, tc := range tests {
 		req, _ := http.NewRequest(tc.method, "http://localhost:8001/"+tc.endpoint, bytes.NewBuffer(tc.body))
 		c := http.Client{}
 
 		resp, err := c.Do(req)
 		if err != nil {
-			t.Errorf("error while making request: %v", err)
+			t.Errorf("TEST[%v] Failed.\tHTTP request encountered Err: %v\n%s", i, err, tc.desc)
+			continue
 		}
 
-		if resp != nil && resp.StatusCode != tc.expectedStatusCode {
-			t.Errorf("Failed.\tExpected %v\tGot %v\n", tc.expectedStatusCode, resp.StatusCode)
+		if resp.StatusCode != tc.statusCode {
+			t.Errorf("TEST[%v] Failed.\tExpected %v\tGot %v\n%s", i, tc.statusCode, resp.StatusCode, tc.desc)
 		}
 
 		_ = resp.Body.Close()

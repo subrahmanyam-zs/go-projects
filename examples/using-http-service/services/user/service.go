@@ -13,6 +13,7 @@ type service struct {
 	svc services.HTTPService
 }
 
+// New is factory function for service layer
 func New(svc services.HTTPService) services.User {
 	return service{svc: svc}
 }

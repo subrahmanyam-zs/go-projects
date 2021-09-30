@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"net/http"
 	"net/http/httptest"
 	"testing"
 
@@ -18,9 +19,9 @@ type mockPubSub struct {
 }
 
 func TestAVROProducerHandler(t *testing.T) {
-	k := gofr.New()
+	app := gofr.New()
 	m := mockPubSub{}
-	k.PubSub = &m
+	app.PubSub = &m
 
 	tests := []struct {
 		name         string
@@ -32,8 +33,8 @@ func TestAVROProducerHandler(t *testing.T) {
 		{"success", "123", nil, nil},
 	}
 
-	req := httptest.NewRequest("GET", "http://dummy", nil)
-	context := gofr.NewContext(nil, request.NewHTTPRequest(req), k)
+	req := httptest.NewRequest(http.MethodGet, "http://dummy", nil)
+	context := gofr.NewContext(nil, request.NewHTTPRequest(req), app)
 
 	for _, tt := range tests {
 		context.SetPathParams(map[string]string{
@@ -49,11 +50,11 @@ func TestAVROProducerHandler(t *testing.T) {
 }
 
 func TestAVROConsumerHandler(t *testing.T) {
-	k := gofr.New()
+	app := gofr.New()
 
-	k.PubSub = &mockPubSub{}
+	app.PubSub = &mockPubSub{}
 
-	ctx := gofr.NewContext(nil, nil, k)
+	ctx := gofr.NewContext(nil, nil, app)
 
 	_, err := Consumer(ctx)
 	assert.Equal(t, nil, err)

@@ -12,15 +12,15 @@ import (
 )
 
 func TestMain(m *testing.M) {
-	k := gofr.New()
+	app := gofr.New()
 	// Create a table person if the table does not exists
-	queryStr := "CREATE TABLE IF NOT EXISTS persons (id int PRIMARY KEY, name text, age int, state text )"
-	err := k.Cassandra.Session.Query(queryStr).Exec()
+	q := "CREATE TABLE IF NOT EXISTS persons (id int PRIMARY KEY, name text, age int, state text )"
+	err := app.Cassandra.Session.Query(q).Exec()
 	// if table creation is unsuccessful log the error
 	if err != nil {
-		k.Logger.Errorf("Failed creation of table persons :%v", err)
+		app.Logger.Errorf("Failed creation of table persons :%v", err)
 	} else {
-		k.Logger.Info("Table persons created Successfully")
+		app.Logger.Info("Table persons created Successfully")
 	}
 
 	os.Exit(m.Run())
@@ -30,32 +30,38 @@ func TestIntegrationPersons(t *testing.T) {
 	// call  the main function
 	go main()
 
-	time.Sleep(time.Second * 5)
+	time.Sleep(5 * time.Second)
 
-	testcases := []struct {
-		method             string
-		endpoint           string
-		expectedStatusCode int
-		body               []byte
+	tests := []struct {
+		desc       string
+		method     string
+		endpoint   string
+		statusCode int
+		body       []byte
 	}{
-		{http.MethodGet, "persons?name=Vikash", 200, nil},
-		{http.MethodPost, "persons", 201, []byte(`{"id":    7, "name":  "Kali", "age":   40, "State": "karnataka"}`)},
-		{http.MethodPost, "persons", 201, []byte(`{"id":    8, "name":  "Kali"}`)},
-		{http.MethodDelete, "persons/7", 204, nil},
-		{http.MethodGet, "unknown", 404, nil},
-		{http.MethodGet, "persons/id", 404, nil},
-		{http.MethodPut, "persons", 404, nil},
+		{"get by name", http.MethodGet, "persons?name=Vikash", http.StatusOK, nil},
+		{"create all fields ", http.MethodPost, "persons", http.StatusCreated, []byte(`{"id": 7, "name": "Kali", "age": 40, "State": "Goa"}`)},
+		{"create few fields", http.MethodPost, "persons", http.StatusCreated, []byte(`{"id": 8, "name": "Kali"}`)},
+		{"delete by id", http.MethodDelete, "persons/7", http.StatusNoContent, nil},
+		{"get unknown route", http.MethodGet, "unknown", http.StatusNotFound, nil},
+		{"get invalid route", http.MethodGet, "persons/id", http.StatusNotFound, nil},
+		{"update without id", http.MethodPut, "persons", http.StatusNotFound, nil},
 	}
-	for i, tc := range testcases {
+	for i, tc := range tests {
 		req, _ := request.NewMock(tc.method, "http://localhost:9094/"+tc.endpoint, bytes.NewBuffer(tc.body))
 
-		cl := http.Client{}
-		resp, _ := cl.Do(req)
+		c := http.Client{}
 
-		if resp != nil && resp.StatusCode != tc.expectedStatusCode {
-			t.Errorf("Testcase[%v] Failed.\tExpected %v\tGot %v\n", i, tc.expectedStatusCode, resp.StatusCode)
+		resp, err := c.Do(req)
+		if err != nil {
+			t.Errorf("TEST[%v] Failed.\tHTTP request encountered Err: %v\n%s", i, err, tc.desc)
+			continue
 		}
 
-		resp.Body.Close()
+		if resp.StatusCode != tc.statusCode {
+			t.Errorf("TEST[%v] Failed.\tExpected %v\tGot %v\n%s", i, tc.statusCode, resp.StatusCode, tc.desc)
+		}
+
+		_ = resp.Body.Close()
 	}
 }

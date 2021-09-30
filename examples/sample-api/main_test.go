@@ -13,29 +13,36 @@ func TestIntegration(t *testing.T) {
 	go main()
 	time.Sleep(3 * time.Second)
 
-	tcs := []struct {
-		method             string
-		endpoint           string
-		expectedStatusCode int
-		body               []byte
+	tests := []struct {
+		desc       string
+		method     string
+		endpoint   string
+		statusCode int
+		body       []byte
 	}{
-		{"GET", "hello-world", 200, nil},
-		{"GET", "hello?name=random", 200, nil},
-		{"GET", "json", 200, nil},
-		{"GET", "error", 500, nil},
-		{"GET", "swagger", 200, nil},
+		{"get hello-world", http.MethodGet, "hello-world", http.StatusOK, nil},
+		{"get hello", http.MethodGet, "hello?name=random", http.StatusOK, nil},
+		{"get json", http.MethodGet, "json", http.StatusOK, nil},
+		{"get error", http.MethodGet, "error", http.StatusInternalServerError, nil},
+		{"get swagger", http.MethodGet, "swagger", http.StatusOK, nil},
+		{"unregistered update route", http.MethodPut, "swagger", http.StatusNotFound, []byte(`{}`)},
 	}
 
-	for _, tc := range tcs {
+	for i, tc := range tests {
 		req, _ := request.NewMock(tc.method, "http://localhost:9000/"+tc.endpoint, bytes.NewBuffer(tc.body))
 
 		c := http.Client{}
-		resp, _ := c.Do(req)
 
-		if resp != nil && resp.StatusCode != tc.expectedStatusCode {
-			t.Errorf("Failed.\tExpected %v\tGot %v\n", tc.expectedStatusCode, resp.StatusCode)
+		resp, err := c.Do(req)
+		if err != nil {
+			t.Errorf("TEST[%v] Failed.\tHTTP request encountered Err: %v\n%s", i, err, tc.desc)
+			continue
 		}
 
-		resp.Body.Close()
+		if resp.StatusCode != tc.statusCode {
+			t.Errorf("TEST[%v] Failed.\tExpected %v\tGot %v\n%s", i, tc.statusCode, resp.StatusCode, tc.desc)
+		}
+
+		_ = resp.Body.Close()
 	}
 }

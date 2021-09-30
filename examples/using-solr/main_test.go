@@ -19,28 +19,29 @@ func TestRoutes(t *testing.T) {
 	time.Sleep(time.Second * 5)
 
 	testcases := []struct {
-		method             string
-		endpoint           string
-		expectedStatusCode int
-		body               []byte
+		desc       string
+		method     string
+		endpoint   string
+		statusCode int
+		body       []byte
 	}{
-		{http.MethodGet, "unknown", http.StatusNotFound, nil},
-		{http.MethodGet, "/customer/id", http.StatusNotFound, nil},
-		{http.MethodGet, "customer?id=2", http.StatusOK, nil},
+		{"call get at unknown endpoint", http.MethodGet, "unknown", http.StatusNotFound, nil},
+		{"call get at invalid endpoint", http.MethodGet, "/customer/id", http.StatusNotFound, nil},
+		{"call get successfully", http.MethodGet, "customer?id=2", http.StatusOK, nil},
 	}
 
-	for _, tc := range testcases {
+	for i, tc := range testcases {
 		req, _ := request.NewMock(tc.method, "http://localhost:9099/"+tc.endpoint, bytes.NewBuffer(tc.body))
 		c := http.Client{}
 
 		resp, err := c.Do(req)
-		if resp == nil || err != nil {
-			t.Error(err)
+		if err != nil {
+			t.Errorf("TEST[%v] Failed.\tHTTP request encountered Err: %v\n%s", i, err, tc.desc)
 			continue
 		}
 
-		if resp.StatusCode != tc.expectedStatusCode {
-			t.Errorf("Failed.\tExpected %v\tGot %v\n", tc.expectedStatusCode, resp.StatusCode)
+		if resp.StatusCode != tc.statusCode {
+			t.Errorf("TEST[%v] Failed.\tExpected %v\tGot %v\n%s", i, tc.statusCode, resp.StatusCode, tc.desc)
 		}
 
 		_ = resp.Body.Close()
@@ -48,14 +49,14 @@ func TestRoutes(t *testing.T) {
 }
 
 func TestMain(m *testing.M) {
-	k := gofr.New()
+	app := gofr.New()
 
 	host := os.Getenv("SOLR_HOST")
 	port := os.Getenv("SOLR_PORT")
 
 	resp, err := http.Get("http://localhost:" + port + "/solr/admin/collections?action=CREATE&name=customer&numShards=1&replicationFactor=1")
 	if err != nil {
-		k.Logger.Errorf("error in sending request")
+		app.Logger.Errorf("error in sending request")
 		os.Exit(1)
 	}
 

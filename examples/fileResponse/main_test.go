@@ -13,26 +13,31 @@ func TestServerIntegration(t *testing.T) {
 	go main()
 	time.Sleep(3 * time.Second)
 
-	tcs := []struct {
-		method             string
-		endpoint           string
-		expectedStatusCode int
-		body               []byte
+	tests := []struct {
+		desc       string
+		method     string
+		endpoint   string
+		statusCode int
+		body       []byte
 	}{
-		{"GET", "file", 200, nil},
-		{"GET", "test2", 404, nil},
+		{"get success", http.MethodGet, "file", http.StatusOK, nil},
+		{"get fail with invalid route", http.MethodGet, "test2", http.StatusNotFound, nil},
 	}
 
-	for index, tc := range tcs {
+	for i, tc := range tests {
 		req, _ := request.NewMock(tc.method, "http://localhost:8080/"+tc.endpoint, bytes.NewBuffer(tc.body))
 		c := http.Client{}
 
-		resp, _ := c.Do(req)
-
-		if resp != nil && resp.StatusCode != tc.expectedStatusCode {
-			t.Errorf("Testcase[%v] Failed.\tExpected %v\tGot %v\n", index, tc.expectedStatusCode, resp.StatusCode)
+		resp, err := c.Do(req)
+		if err != nil {
+			t.Errorf("TEST[%v] Failed.\tHTTP request encountered Err: %v\n%s", i, err, tc.desc)
+			continue
 		}
 
-		resp.Body.Close()
+		if resp.StatusCode != tc.statusCode {
+			t.Errorf("TEST[%v] Failed.\tExpected %v\tGot %v\n%s", i, tc.statusCode, resp.StatusCode, tc.desc)
+		}
+
+		_ = resp.Body.Close()
 	}
 }

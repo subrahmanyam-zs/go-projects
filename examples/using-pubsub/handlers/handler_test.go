@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"net/http"
 	"net/http/httptest"
 	"reflect"
 	"testing"
@@ -84,14 +85,14 @@ func (m *mockPubSub) CommitOffset(offsets pubsub.TopicPartition) {
 }
 
 func TestProducerHandler(t *testing.T) {
-	k := gofr.New()
+	app := gofr.New()
 	mockMetric := metrics.NewMockMetric(gomock.NewController(t))
-	k.Metric = mockMetric
+	app.Metric = mockMetric
 
 	mockMetric.EXPECT().ObserveHistogram(gomock.Any(), gomock.Any()).Return(nil)
 
 	m := mockPubSub{}
-	k.PubSub = &m
+	app.PubSub = &m
 
 	tests := []struct {
 		name    string
@@ -103,8 +104,8 @@ func TestProducerHandler(t *testing.T) {
 		{"success", "123", nil, false},
 	}
 
-	req := httptest.NewRequest("GET", "http://dummy", nil)
-	context := gofr.NewContext(nil, request.NewHTTPRequest(req), k)
+	req := httptest.NewRequest(http.MethodGet, "http://dummy", nil)
+	context := gofr.NewContext(nil, request.NewHTTPRequest(req), app)
 
 	for _, tt := range tests {
 		tt := tt
@@ -129,15 +130,15 @@ func TestProducerHandler(t *testing.T) {
 }
 
 func TestConsumerHandler(t *testing.T) {
-	k := gofr.New()
+	app := gofr.New()
 	mockMetric := metrics.NewMockMetric(gomock.NewController(t))
-	k.Metric = mockMetric
+	app.Metric = mockMetric
 
 	mockMetric.EXPECT().ObserveSummary(gomock.Any(), gomock.Any()).Return(nil)
 
-	k.PubSub = &mockPubSub{}
+	app.PubSub = &mockPubSub{}
 
-	ctx := gofr.NewContext(nil, nil, k)
+	ctx := gofr.NewContext(nil, nil, app)
 
 	_, err := Consumer(ctx)
 	if err != nil {
@@ -147,23 +148,23 @@ func TestConsumerHandler(t *testing.T) {
 }
 
 func TestConsumerWithCommitHandler(t *testing.T) {
-	k := gofr.New()
+	app := gofr.New()
 
-	testCases := []struct {
-		name        string
-		pubSub      pubsub.PublisherSubscriber
-		expectedErr error
+	tests := []struct {
+		desc   string
+		pubSub pubsub.PublisherSubscriber
+		err    error
 	}{
 		{"success consuming messages", &mockPubSub{}, nil},
 		{"error from pubsub subscribe", &mockPubSub{"error"}, &errors.Response{Reason: "test-error"}},
 	}
 
-	for _, tc := range testCases {
-		k.PubSub = tc.pubSub
-		ctx := gofr.NewContext(nil, nil, k)
+	for i, tc := range tests {
+		app.PubSub = tc.pubSub
+		ctx := gofr.NewContext(nil, nil, app)
 
 		_, err := ConsumerWithCommit(ctx)
 
-		assert.Equal(t, tc.expectedErr, err, tc.name)
+		assert.Equal(t, tc.err, err, "TEST[%d], failed.\n%s", i, tc.desc)
 	}
 }

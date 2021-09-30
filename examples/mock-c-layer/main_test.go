@@ -13,35 +13,40 @@ func TestIntegration(t *testing.T) {
 	go main()
 	time.Sleep(time.Second * 5)
 
-	testcases := []struct {
-		method             string
-		endpoint           string
-		expectedStatusCode int
-		body               []byte
+	tests := []struct {
+		desc       string
+		method     string
+		endpoint   string
+		statusCode int
+		body       []byte
 	}{
-		{http.MethodGet, "brand?id=1", 200, nil},
-		{http.MethodPost, "brand", 201, []byte(`{"name":"brand 1"}`)},
+		{"get success", http.MethodGet, "brand?id=1", http.StatusOK, nil},
+		{"create success", http.MethodPost, "brand", http.StatusCreated, []byte(`{"name":"brand 1"}`)},
 
-		{http.MethodGet, "brand", 500, nil},
-		{http.MethodPost, "brand", 500, []byte(`{"name":"brand 3"}`)},
+		{"get fail", http.MethodGet, "brand", http.StatusInternalServerError, nil},
+		{"create fail", http.MethodPost, "brand", http.StatusInternalServerError, []byte(`{"name":"brand 3"}`)},
 
-		{http.MethodGet, "unknown", 404, nil},
-		{http.MethodGet, "brand/id", 404, nil},
+		{"get invalid route", http.MethodGet, "unknown", http.StatusNotFound, nil},
+		{"get invalid endpoint", http.MethodGet, "brand/id", http.StatusNotFound, nil},
 
-		{http.MethodPut, "brand", 404, nil},
-		{http.MethodDelete, "brand", 404, nil},
+		{"unregistered update route", http.MethodPut, "brand", http.StatusNotFound, nil},
+		{"unregistered delete route", http.MethodDelete, "brand", http.StatusNotFound, nil},
 	}
 
-	for _, tc := range testcases {
+	for i, tc := range tests {
 		req, _ := request.NewMock(tc.method, "http://localhost:9090/"+tc.endpoint, bytes.NewBuffer(tc.body))
 		c := http.Client{}
 
-		resp, _ := c.Do(req)
-
-		if resp != nil && resp.StatusCode != tc.expectedStatusCode {
-			t.Errorf("Failed.\tExpected %v\tGot %v\n", tc.expectedStatusCode, resp.StatusCode)
+		resp, err := c.Do(req)
+		if err != nil {
+			t.Errorf("TEST[%v] Failed.\tHTTP request encountered Err: %v\n%s", i, err, tc.desc)
+			continue
 		}
 
-		resp.Body.Close()
+		if resp.StatusCode != tc.statusCode {
+			t.Errorf("TEST[%v] Failed.\tExpected %v\tGot %v\n%s", i, tc.statusCode, resp.StatusCode, tc.desc)
+		}
+
+		_ = resp.Body.Close()
 	}
 }

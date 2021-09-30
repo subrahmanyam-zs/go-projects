@@ -7,18 +7,19 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/url"
-	"reflect"
 	"testing"
 
 	"developer.zopsmart.com/go/gofr/pkg/gofr"
 	"developer.zopsmart.com/go/gofr/pkg/gofr/request"
 	"developer.zopsmart.com/go/gofr/pkg/gofr/types"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestHelloWorldHandler(t *testing.T) {
-	c := gofr.NewContext(nil, nil, nil)
+	ctx := gofr.NewContext(nil, nil, nil)
 
-	resp, err := HelloWorld(c)
+	resp, err := HelloWorld(ctx)
 	if err != nil {
 		t.Errorf("FAILED, got error: %v", err)
 	}
@@ -33,34 +34,28 @@ func TestHelloWorldHandler(t *testing.T) {
 
 func TestHelloNameHandler(t *testing.T) {
 	tests := []struct {
-		name     string
-		expected types.Response
+		desc string
+		name string
+		resp types.Response
 	}{
-		{
-			name:     "SomeName",
-			expected: types.Response{Data: "Hello SomeName", Meta: map[string]interface{}{"page": 1, "offset": 0}},
-		},
-		{
-			name:     "Firstname Lastname",
-			expected: types.Response{Data: "Hello Firstname Lastname", Meta: map[string]interface{}{"page": 1, "offset": 0}},
-		},
+		{"short name", "SomeName", types.Response{Data: "Hello SomeName", Meta: map[string]interface{}{"page": 1, "offset": 0}}},
+		{"full name", "Firstname Lastname", types.Response{Data: "Hello Firstname Lastname",
+			Meta: map[string]interface{}{"page": 1, "offset": 0}}},
 	}
 
-	for _, test := range tests {
-		r := httptest.NewRequest("GET", "http://dummy/hello?name="+url.QueryEscape(test.name), nil)
+	for i, tc := range tests {
+		r := httptest.NewRequest(http.MethodGet, "http://dummy/hello?name="+url.QueryEscape(tc.name), nil)
 		req := request.NewHTTPRequest(r)
-		c := gofr.NewContext(nil, req, nil)
+		ctx := gofr.NewContext(nil, req, nil)
 
-		resp, err := HelloName(c)
+		resp, err := HelloName(ctx)
 		if err != nil {
 			t.Errorf("FAILED, got error: %v", err)
 		}
 
 		result, _ := resp.(types.Response)
 
-		if result.Data != test.expected.Data {
-			t.Errorf("FAILED, Expected: %v, Got: %v", test.expected, resp)
-		}
+		assert.Equal(t, tc.resp, result, "TEST[%d], failed.\n%s", i, tc.desc)
 	}
 }
 
@@ -71,23 +66,22 @@ func TestPostNameHandler(t *testing.T) {
 
 	r.Header.Set("Content-Type", "application/json")
 
-	k := gofr.New()
-	c := gofr.NewContext(nil, req, k)
+	app := gofr.New()
+	ctx := gofr.NewContext(nil, req, app)
 
-	resp, err := PostName(c)
+	resp, err := PostName(ctx)
 	if err != nil {
 		t.Errorf("FAILED, got error: %v", err)
 	}
 
-	var got Person
+	var got person
 
 	respBytes, _ := json.Marshal(resp)
 	_ = json.Unmarshal(respBytes, &got)
 
-	expected := Person{Username: "username"}
-	if !reflect.DeepEqual(expected, got) {
-		t.Errorf("FAILED, Expected: %v, Got: %v", expected, got)
-	}
+	expected := person{Username: "username"}
+
+	assert.Equal(t, expected, got)
 }
 
 func TestPostNameHandlerfail(t *testing.T) {
@@ -97,9 +91,9 @@ func TestPostNameHandlerfail(t *testing.T) {
 	r := httptest.NewRequest(http.MethodPost, "/post", bytes.NewBuffer(jsonStr))
 	r.Header.Set("Content-Type", "application/json")
 	req := request.NewHTTPRequest(r)
-	c := gofr.NewContext(nil, req, gofr.New())
+	ctx := gofr.NewContext(nil, req, gofr.New())
 
-	resp, err := PostName(c)
+	resp, err := PostName(ctx)
 	if err == nil {
 		t.Errorf("FAILED, got error: %v", err)
 	}
@@ -110,11 +104,11 @@ func TestPostNameHandlerfail(t *testing.T) {
 }
 
 func TestMultipleErrorHandler(t *testing.T) {
-	r := httptest.NewRequest("GET", "http://dummy/multiple-errors", nil)
+	r := httptest.NewRequest(http.MethodGet, "http://dummy/multiple-errors", nil)
 	req := request.NewHTTPRequest(r)
-	c := gofr.NewContext(nil, req, nil)
+	ctx := gofr.NewContext(nil, req, nil)
 
-	_, err := MultipleErrorHandler(c)
+	_, err := MultipleErrorHandler(ctx)
 	if err == nil {
 		t.Errorf("FAILED, got nil expectedErr")
 		return

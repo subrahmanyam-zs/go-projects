@@ -14,20 +14,20 @@ import (
 
 func initializeTest(t *testing.T) *gofr.Gofr {
 	c := config.NewGoDotEnvProvider(log.NewLogger(), "../../../configs")
-	k := gofr.NewWithConfig(c)
+	app := gofr.NewWithConfig(c)
 
 	query := "CREATE TABLE IF NOT exists employees (id int, name text, phone text, email text, city text, PRIMARY KEY (id) )"
 
-	err := k.Cassandra.Session.Query(query).Exec()
+	err := app.Cassandra.Session.Query(query).Exec()
 	if err != nil {
-		k.Logger.Error("Employee table does not exist: ", err)
+		app.Logger.Error("Employee table does not exist: ", err)
 	}
 
 	// initializing the seeder
-	seeder := datastore.NewSeeder(&k.DataStore, "../../db")
+	seeder := datastore.NewSeeder(&app.DataStore, "../../db")
 	seeder.RefreshCassandra(t, "employees")
 
-	return k
+	return app
 }
 
 func TestCassandraEmployee_Get(t *testing.T) {
@@ -43,8 +43,8 @@ func TestCassandraEmployee_Get(t *testing.T) {
 		{entity.Employee{ID: 7, Name: "Sunita"}, nil},
 	}
 
-	k := initializeTest(t)
-	ctx := gofr.NewContext(nil, nil, k)
+	app := initializeTest(t)
+	ctx := gofr.NewContext(nil, nil, app)
 
 	for i, tc := range tests {
 		output := New().Get(ctx, tc.input)
@@ -64,8 +64,8 @@ func TestCassandraEmployee_Create(t *testing.T) {
 			[]entity.Employee{{ID: 4, Name: "Anna", Phone: "01333", Email: "anna@zopsmart.com", City: "Delhi"}}, nil},
 	}
 
-	k := initializeTest(t)
-	ctx := gofr.NewContext(nil, nil, k)
+	app := initializeTest(t)
+	ctx := gofr.NewContext(nil, nil, app)
 
 	for i, tc := range tests {
 		output, err := New().Create(ctx, tc.input)

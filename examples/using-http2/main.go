@@ -6,18 +6,18 @@ import (
 )
 
 func main() {
-	k := gofr.New()
+	app := gofr.New()
 
 	// add a handler
-	k.GET("/static/{name}", handler.ServeStatic)
-	k.GET("/home", handler.HomeHandler)
+	app.GET("/static/{name}", handler.ServeStatic)
+	app.GET("/home", handler.HomeHandler)
 
 	// set https port and redirect
-	k.Server.HTTPS.Port = 1449
-	k.Server.HTTP.RedirectToHTTPS = false
+	app.Server.HTTPS.Port = 1449
+	app.Server.HTTP.RedirectToHTTPS = false
 
 	// http port
-	k.Server.HTTP.Port = 9017
+	app.Server.HTTP.Port = 9017
 
-	k.Start()
+	app.Start()
 }

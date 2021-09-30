@@ -21,8 +21,8 @@ func TestIntegration(t *testing.T) {
 		expectedStatusCode int
 		body               []byte
 	}{
-		{method: http.MethodPost, endpoint: "publish", expectedStatusCode: 201, body: []byte(`{"name": "GOFR", "message":  "hi"}`)},
-		{method: http.MethodGet, endpoint: "subscribe", expectedStatusCode: 200, body: nil},
+		{http.MethodPost, "publish", http.StatusCreated, []byte(`{"name": "GOFR", "message":  "hi"}`)},
+		{http.MethodGet, "subscribe", http.StatusOK, nil},
 	}
 
 	for i, tc := range tests {
@@ -38,7 +38,7 @@ func TestIntegration(t *testing.T) {
 			}
 
 			if resp != nil {
-				assert.Equal(t, tc.expectedStatusCode, resp.StatusCode)
+				assert.Equal(t, tc.expectedStatusCode, resp.StatusCode, "Test %v: Failed.\n", i+1)
 				resp.Body.Close()
 			}
 		})

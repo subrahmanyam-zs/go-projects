@@ -9,19 +9,20 @@ import (
 	"developer.zopsmart.com/go/gofr/pkg/gofr"
 )
 
-type customer struct {
+type handler struct {
 	store store.Customer
 }
 
-// nolint:gocritic //exporting return value is not necessary here
-func New(store store.Customer) customer {
-	return customer{store: store}
+// New is factory function for customer handler
+//nolint:revive // handler should not be used without proper initilization with required dependency
+func New(c store.Customer) handler {
+	return handler{store: c}
 }
 
-func (c customer) Index(context *gofr.Context) (interface{}, error) {
-	name := context.Param("name")
+func (h handler) Index(ctx *gofr.Context) (interface{}, error) {
+	name := ctx.Param("name")
 
-	resp, err := c.store.Get(context, name)
+	resp, err := h.store.Get(ctx, name)
 	if err != nil {
 		return nil, &errors.Response{StatusCode: http.StatusInternalServerError, Reason: "something unexpected happened"}
 	}
@@ -29,14 +30,14 @@ func (c customer) Index(context *gofr.Context) (interface{}, error) {
 	return resp, nil
 }
 
-func (c customer) Read(context *gofr.Context) (interface{}, error) {
-	id := context.PathParam("id")
+func (h handler) Read(ctx *gofr.Context) (interface{}, error) {
+	id := ctx.PathParam("id")
 
 	if id == "" {
 		return nil, errors.MissingParam{Param: []string{"id"}}
 	}
 
-	resp, err := c.store.GetByID(context, id)
+	resp, err := h.store.GetByID(ctx, id)
 	if err != nil {
 		return nil, &errors.Response{StatusCode: http.StatusInternalServerError, Reason: "something unexpected happened"}
 	}
@@ -44,19 +45,19 @@ func (c customer) Read(context *gofr.Context) (interface{}, error) {
 	return resp, nil
 }
 
-func (c customer) Update(context *gofr.Context) (interface{}, error) {
-	id := context.PathParam("id")
+func (h handler) Update(ctx *gofr.Context) (interface{}, error) {
+	id := ctx.PathParam("id")
 	if id == "" {
 		return nil, errors.MissingParam{Param: []string{"id"}}
 	}
 
-	var cust model.Customer
+	var c model.Customer
 
-	if err := context.Bind(&cust); err != nil {
+	if err := ctx.Bind(&c); err != nil {
 		return nil, errors.InvalidParam{Param: []string{"body"}}
 	}
 
-	resp, err := c.store.Update(context, cust, id)
+	resp, err := h.store.Update(ctx, c, id)
 	if err != nil {
 		return nil, &errors.Response{StatusCode: http.StatusInternalServerError, Reason: "something unexpected happened"}
 	}
@@ -64,26 +65,26 @@ func (c customer) Update(context *gofr.Context) (interface{}, error) {
 	return resp, nil
 }
 
-func (c customer) Create(context *gofr.Context) (interface{}, error) {
-	var cust model.Customer
-	if err := context.Bind(&cust); err != nil {
+func (h handler) Create(ctx *gofr.Context) (interface{}, error) {
+	var c model.Customer
+	if err := ctx.Bind(&c); err != nil {
 		return nil, errors.InvalidParam{Param: []string{"body"}}
 	}
 
-	resp, err := c.store.Create(context, cust)
+	resp, err := h.store.Create(ctx, c)
 	if err != nil {
 		return nil, &errors.Response{StatusCode: http.StatusInternalServerError, Reason: "something unexpected happened"}
 	}
 
 	return resp, nil
 }
-func (c customer) Delete(context *gofr.Context) (interface{}, error) {
-	i := context.PathParam("id")
-	if i == "" {
+func (h handler) Delete(ctx *gofr.Context) (interface{}, error) {
+	id := ctx.PathParam("id")
+	if id == "" {
 		return nil, errors.MissingParam{Param: []string{"id"}}
 	}
 
-	if err := c.store.Delete(context, i); err != nil {
+	if err := h.store.Delete(ctx, id); err != nil {
 		return nil, &errors.Response{StatusCode: http.StatusInternalServerError, Reason: "something unexpected happened"}
 	}
 

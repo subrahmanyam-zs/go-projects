@@ -21,28 +21,28 @@ func TestServerRun(t *testing.T) {
 		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
 	}
 
-	tcs := []struct {
-		id                 int
-		method             string
-		endpoint           string
-		expectedStatusCode int
-		headers            map[string]string
-		body               []byte
+	tests := []struct {
+		desc       string
+		method     string
+		endpoint   string
+		statusCode int
+		headers    map[string]string
+		body       []byte
 	}{
-		{1, http.MethodGet, "https://localhost:1443/hello-world", 200, nil, nil},
-		{2, http.MethodGet, "https://localhost:1443/hello-world/", 200, nil, nil},
-		{3, http.MethodPost, "https://localhost:1443/post", 201, nil, []byte(`{"Username":"username"}`)},
-		{4, http.MethodPost, "https://localhost:1443/post/", 200, nil, []byte(`{"Username":"alreadyExist"}`)},
+		{"get hello-world success", http.MethodGet, "https://localhost:1443/hello-world", http.StatusOK, nil, nil},
+		{"get hello success", http.MethodGet, "https://localhost:1443/hello/", http.StatusOK, nil, nil},
+		{"post success", http.MethodPost, "https://localhost:1443/post", http.StatusCreated, nil, []byte(`{"Username":"username"}`)},
+		{"post existent entity", http.MethodPost, "https://localhost:1443/post/", http.StatusOK, nil, []byte(`{"Username":"alreadyExist"}`)},
 		// http will be redirected to https as redirect is set to true in https configuration
-		{5, http.MethodGet, "http://localhost:9007/hello?name=random", 200, nil, nil},
-		{6, http.MethodGet, "http://localhost:9007/multiple-errors", 500, nil, nil},
-		{6, http.MethodGet, "http://localhost:9007/multiple-errors?id=1", 400, nil, nil},
-		{7, http.MethodGet, "http://localhost:9007/.well-known/heartbeat", 200,
+		{"get hello over https redirect", http.MethodGet, "http://localhost:9007/hello?name=random", http.StatusOK, nil, nil},
+		{"get multiple errors", http.MethodGet, "http://localhost:9007/multiple-errors", http.StatusInternalServerError, nil, nil},
+		{"get multiple errors by id", http.MethodGet, "http://localhost:9007/multiple-errors?id=1", http.StatusBadRequest, nil, nil},
+		{"get hearthbeat", http.MethodGet, "http://localhost:9007/.well-known/heartbeat", http.StatusOK,
 			map[string]string{"Content-Type": "application/json"}, nil},
-		{8, http.MethodGet, "http://localhost:9007/error", 404, nil, nil},
+		{"get error", http.MethodGet, "http://localhost:9007/error", http.StatusNotFound, nil, nil},
 	}
 
-	for _, tc := range tcs {
+	for i, tc := range tests {
 		req, _ := request.NewMock(tc.method, tc.endpoint, bytes.NewBuffer(tc.body))
 		c := http.Client{Transport: tr}
 
@@ -50,17 +50,16 @@ func TestServerRun(t *testing.T) {
 			req.Header.Set("Custom-Header", "test")
 		}
 
-		resp, _ := c.Do(req)
-
-		if resp == nil {
-			t.Errorf("Test %v: Failed \t got nil response", tc.id)
-			return
+		resp, err := c.Do(req)
+		if err != nil {
+			t.Errorf("TEST[%v] Failed.\tHTTP request encountered Err: %v\n%s", i, err, tc.desc)
+			continue
 		}
 
-		if resp.StatusCode != tc.expectedStatusCode {
-			t.Errorf("Test %v: Failed.\tExpected %v\tGot %v\n", tc.id, tc.expectedStatusCode, resp.StatusCode)
+		if resp.StatusCode != tc.statusCode {
+			t.Errorf("TEST[%v] Failed.\tExpected %v\tGot %v\n%s", i, tc.statusCode, resp.StatusCode, tc.desc)
 		}
 
-		resp.Body.Close()
+		_ = resp.Body.Close()
 	}
 }

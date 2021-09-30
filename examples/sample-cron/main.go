@@ -13,14 +13,14 @@ var n = 0
 const minute = 3
 
 func main() {
-	g := gofr.New()
+	app := gofr.New()
 
 	c := gofr.NewCron()
 
 	// runs every minute
 	err := c.AddJob("* * * * *", count)
 	if err != nil {
-		g.Logger.Error(err)
+		app.Logger.Error(err)
 		return
 	}
 

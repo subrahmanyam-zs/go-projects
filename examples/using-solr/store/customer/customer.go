@@ -10,17 +10,18 @@ import (
 	"developer.zopsmart.com/go/gofr/pkg/gofr"
 )
 
-type Customer struct {
+type customer struct {
 	solr datastore.Document
 }
 
-// New Initializes the core layer
-func New(solrClient datastore.Document) *Customer {
-	return &Customer{solr: solrClient}
+// New is factory function for Store layer
+//nolint:revive // store should not be used without proper initilization with required dependency
+func New(client datastore.Document) customer {
+	return customer{solr: client}
 }
 
 // List searches customers based on the filters passed by querying to SOLR
-func (c *Customer) List(ctx *gofr.Context, collection string, filter store.Filter) ([]store.Model, error) {
+func (c customer) List(ctx *gofr.Context, collection string, filter store.Filter) ([]store.Model, error) {
 	resp, err := c.solr.Search(ctx, collection, map[string]interface{}{"q": filter.GenSolrQuery(), "wt": "json"})
 	if err != nil {
 		return nil, err
@@ -55,7 +56,7 @@ func (c *Customer) List(ctx *gofr.Context, collection string, filter store.Filte
 }
 
 // Create creates a document in the specified collection
-func (c *Customer) Create(ctx *gofr.Context, collection string, customer store.Model) error {
+func (c customer) Create(ctx *gofr.Context, collection string, customer store.Model) error {
 	b, _ := json.Marshal([]store.Model{customer})
 	_, err := c.solr.Create(ctx, collection, bytes.NewBuffer(b), map[string]interface{}{"commit": true})
 
@@ -63,7 +64,7 @@ func (c *Customer) Create(ctx *gofr.Context, collection string, customer store.M
 }
 
 // Update updates a document with id = customer.ID in the specified collection
-func (c *Customer) Update(ctx *gofr.Context, collection string, customer store.Model) error {
+func (c customer) Update(ctx *gofr.Context, collection string, customer store.Model) error {
 	b, _ := json.Marshal([]store.Model{customer})
 	_, err := c.solr.Update(ctx, collection, bytes.NewBuffer(b), map[string]interface{}{"commit": true})
 
@@ -71,7 +72,7 @@ func (c *Customer) Update(ctx *gofr.Context, collection string, customer store.M
 }
 
 // Delete deletes a document whose id = customer.ID in the specified collection
-func (c *Customer) Delete(ctx *gofr.Context, collection string, customer store.Model) error {
+func (c customer) Delete(ctx *gofr.Context, collection string, customer store.Model) error {
 	b := struct {
 		Delete []string `json:"delete"`
 	}{[]string{strconv.Itoa(customer.ID)}}

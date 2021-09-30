@@ -11,22 +11,28 @@ import (
 	"developer.zopsmart.com/go/gofr/pkg/gofr"
 )
 
-type Customer struct{}
+type store struct{}
+
+// New is factory function for customer
+//nolint:revive // customer should not be used without proper initilization with required dependency
+func New() store {
+	return store{}
+}
 
 const index = "customers"
 
-func (c Customer) Get(context *gofr.Context, name string) ([]model.Customer, error) {
+func (s store) Get(ctx *gofr.Context, name string) ([]model.Customer, error) {
 	var body string
 
 	if name != "" {
 		body = fmt.Sprintf(`{"query" : { "match" : {"name":"%s"} }}`, name)
 	}
 
-	es := context.Elasticsearch
+	es := ctx.Elasticsearch
 
 	res, err := es.Search(
 		es.Search.WithIndex(index),
-		es.Search.WithContext(context),
+		es.Search.WithContext(ctx),
 		es.Search.WithBody(strings.NewReader(body)),
 		es.Search.WithPretty(),
 	)
@@ -44,14 +50,14 @@ func (c Customer) Get(context *gofr.Context, name string) ([]model.Customer, err
 	return customers, nil
 }
 
-func (c Customer) GetByID(context *gofr.Context, id string) (model.Customer, error) {
+func (s store) GetByID(ctx *gofr.Context, id string) (model.Customer, error) {
 	var customer model.Customer
 
-	es := context.Elasticsearch
+	es := ctx.Elasticsearch
 
 	res, err := es.Search(
 		es.Search.WithIndex(index),
-		es.Search.WithContext(context),
+		es.Search.WithContext(ctx),
 		es.Search.WithBody(strings.NewReader(fmt.Sprintf(`{"query" : { "match" : {"id":"%s"} }}`, id))),
 		es.Search.WithPretty(),
 		es.Search.WithSize(1),
@@ -72,20 +78,20 @@ func (c Customer) GetByID(context *gofr.Context, id string) (model.Customer, err
 	return customer, nil
 }
 
-func (c Customer) Update(context *gofr.Context, customer model.Customer, id string) (model.Customer, error) {
-	body, err := json.Marshal(customer)
+func (s store) Update(ctx *gofr.Context, c model.Customer, id string) (model.Customer, error) {
+	body, err := json.Marshal(c)
 	if err != nil {
 		return model.Customer{}, errors.DB{Err: err}
 	}
 
-	es := context.Elasticsearch
+	es := ctx.Elasticsearch
 
 	res, err := es.Index(
 		index,
 		bytes.NewReader(body),
 		es.Index.WithRefresh("true"),
 		es.Index.WithPretty(),
-		es.Index.WithContext(context),
+		es.Index.WithContext(ctx),
 		es.Index.WithDocumentID(id),
 	)
 	if err != nil {
@@ -98,27 +104,27 @@ func (c Customer) Update(context *gofr.Context, customer model.Customer, id stri
 	}
 
 	if id, ok := resp["_id"].(string); ok {
-		return c.GetByID(context, id)
+		return s.GetByID(ctx, id)
 	}
 
 	return model.Customer{}, errors.Error("update error: invalid id")
 }
 
-func (c Customer) Create(context *gofr.Context, customer model.Customer) (model.Customer, error) {
-	body, err := json.Marshal(customer)
+func (s store) Create(ctx *gofr.Context, c model.Customer) (model.Customer, error) {
+	body, err := json.Marshal(c)
 	if err != nil {
 		return model.Customer{}, errors.DB{Err: err}
 	}
 
-	es := context.Elasticsearch
+	es := ctx.Elasticsearch
 
 	res, err := es.Index(
 		index,
 		bytes.NewReader(body),
 		es.Index.WithRefresh("true"),
 		es.Index.WithPretty(),
-		es.Index.WithContext(context),
-		es.Index.WithDocumentID(customer.ID),
+		es.Index.WithContext(ctx),
+		es.Index.WithDocumentID(c.ID),
 	)
 	if err != nil {
 		return model.Customer{}, errors.DB{Err: err}
@@ -130,19 +136,19 @@ func (c Customer) Create(context *gofr.Context, customer model.Customer) (model.
 	}
 
 	if id, ok := resp["_id"].(string); ok {
-		return c.GetByID(context, id)
+		return s.GetByID(ctx, id)
 	}
 
 	return model.Customer{}, errors.Error("create error: invalid id")
 }
 
-func (c Customer) Delete(context *gofr.Context, id string) error {
-	es := context.Elasticsearch
+func (s store) Delete(ctx *gofr.Context, id string) error {
+	es := ctx.Elasticsearch
 
 	_, err := es.Delete(
 		index,
 		id,
-		es.Delete.WithContext(context),
+		es.Delete.WithContext(ctx),
 		es.Delete.WithPretty(),
 	)
 	if err != nil {

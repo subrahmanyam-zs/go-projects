@@ -23,27 +23,28 @@ func Test_Get(t *testing.T) {
 	mockService.EXPECT().Get(gomock.Any(), "Vikash").Return(models.User{Name: "Vikash", Company: "ZopSmart"}, nil)
 	mockService.EXPECT().Get(gomock.Any(), "ABC").Return(models.User{}, errors.EntityNotFound{Entity: "User", ID: "ABC"})
 
-	testcases := []struct {
-		name     string
-		response interface{}
-		err      error
+	tests := []struct {
+		desc string
+		name string
+		resp interface{}
+		err  error
 	}{
-		{"", nil, errors.MissingParam{Param: []string{"name"}}},
-		{"Vikash", models.User{Name: "Vikash", Company: "ZopSmart"}, nil},
-		{"ABC", nil, errors.EntityNotFound{Entity: "User", ID: "ABC"}},
+		{"get with missing params", "", nil, errors.MissingParam{Param: []string{"name"}}},
+		{"get succuss", "Vikash", models.User{Name: "Vikash", Company: "ZopSmart"}, nil},
+		{"get non existent entity", "ABC", nil, errors.EntityNotFound{Entity: "User", ID: "ABC"}},
 	}
 
-	for i := range testcases {
+	for i, tc := range tests {
 		req := httptest.NewRequest(http.MethodGet, "http://dummy", nil)
-		c := gofr.NewContext(responder.NewContextualResponder(httptest.NewRecorder(), req), request.NewHTTPRequest(req), nil)
+		ctx := gofr.NewContext(responder.NewContextualResponder(httptest.NewRecorder(), req), request.NewHTTPRequest(req), nil)
 
 		h := New(mockService)
 
-		c.SetPathParams(map[string]string{"name": testcases[i].name})
-		resp, err := h.Get(c)
+		ctx.SetPathParams(map[string]string{"name": tc.name})
+		resp, err := h.Get(ctx)
 
-		assert.Equal(t, testcases[i].err, err, "TEST[%d], failed.", i)
+		assert.Equal(t, tc.err, err, "TEST[%d], failed.\n%s", i, tc.desc)
 
-		assert.Equal(t, testcases[i].response, resp, "TEST[%d], failed.", i)
+		assert.Equal(t, tc.resp, resp, "TEST[%d], failed.\n%s", i, tc.desc)
 	}
 }

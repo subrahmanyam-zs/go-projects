@@ -25,9 +25,9 @@ func initializeHandlerTest(t *testing.T) (*store.MockEmployee, employee, *gofr.G
 
 	employeeStore := store.NewMockEmployee(ctrl)
 	employee := New(employeeStore)
-	k := gofr.New()
+	app := gofr.New()
 
-	return employeeStore, employee, k
+	return employeeStore, employee, app
 }
 
 func TestCassandraEmployee_Get(t *testing.T) {
@@ -44,12 +44,12 @@ func TestCassandraEmployee_Get(t *testing.T) {
 		{"id=7&name=Sunita", nil, nil},
 	}
 
-	employeeStore, employee, k := initializeHandlerTest(t)
+	employeeStore, employee, app := initializeHandlerTest(t)
 
 	for i, tc := range tests {
-		r := httptest.NewRequest("GET", "/employees?"+tc.queryParams, nil)
+		r := httptest.NewRequest(http.MethodGet, "/employees?"+tc.queryParams, nil)
 		req := request.NewHTTPRequest(r)
-		context := gofr.NewContext(nil, req, k)
+		context := gofr.NewContext(nil, req, app)
 
 		employeeStore.EXPECT().Get(gomock.Any(), gomock.Any()).Return(tc.expectedResp)
 
@@ -71,13 +71,13 @@ func TestCassandraEmployee_Create(t *testing.T) {
 			[]entity.Employee{{ID: 4, Name: "Jay", Phone: "01933", Email: "jay@mahindra.com", City: "Gujrat"}}, nil},
 	}
 
-	employeeStore, employee, k := initializeHandlerTest(t)
+	employeeStore, employee, app := initializeHandlerTest(t)
 
 	for i, tc := range tests {
 		input := strings.NewReader(tc.query)
 		r := httptest.NewRequest(http.MethodPost, "/dummy", input)
 		req := request.NewHTTPRequest(r)
-		context := gofr.NewContext(nil, req, k)
+		context := gofr.NewContext(nil, req, app)
 
 		employeeStore.EXPECT().Get(gomock.Any(), gomock.Any()).Return(nil)
 		employeeStore.EXPECT().Create(gomock.Any(), gomock.Any()).Return(tc.expectedResp, tc.mockErr)
@@ -105,13 +105,13 @@ func TestCassandraEmployee_Create_InvalidInput_JsonError(t *testing.T) {
 			&json.UnmarshalTypeError{Value: "string", Type: reflect.TypeOf(2), Offset: 13, Struct: "Employee", Field: "id"}},
 	}
 
-	employeeStore, employee, k := initializeHandlerTest(t)
+	employeeStore, employee, app := initializeHandlerTest(t)
 
 	for i, tc := range tests {
 		input := strings.NewReader(tc.query)
 		r := httptest.NewRequest(http.MethodPost, "/dummy", input)
 		req := request.NewHTTPRequest(r)
-		context := gofr.NewContext(nil, req, k)
+		context := gofr.NewContext(nil, req, app)
 
 		if tc.callGet {
 			employeeStore.EXPECT().Get(gomock.Any(), gomock.Any()).Return(tc.mockGetOutput).AnyTimes()

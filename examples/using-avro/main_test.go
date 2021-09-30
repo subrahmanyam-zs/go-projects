@@ -40,42 +40,45 @@ func TestServerRun(t *testing.T) {
 	go main()
 	time.Sleep(3 * time.Second)
 
-	tcs := []struct {
-		id                 int
-		method             string
-		endpoint           string
-		expectedResponse   string
-		expectedStatusCode int
+	tests := []struct {
+		desc       string
+		endpoint   string
+		resp       string
+		statusCode int
 	}{
-		{1, http.MethodGet, "http://localhost:9111/pub?id=1", "", 200},
-		{2, http.MethodGet, "http://localhost:9111/sub", "1", 200},
+		{"produce", "/pub?id=1", "", http.StatusOK},
+		{"consume", "/sub", "1", http.StatusOK},
 	}
 
-	for _, tc := range tcs {
-		req, _ := request.NewMock(tc.method, tc.endpoint, nil)
+	for i, tc := range tests {
+		req, _ := request.NewMock(http.MethodGet, "http://localhost:9111"+tc.endpoint, nil)
 		c := http.Client{}
 
-		for i := 0; i < 5; i++ {
-			resp, _ := c.Do(req)
+		for j := 0; j < 5; j++ {
+			resp, err := c.Do(req)
+			if err != nil {
+				t.Errorf("TEST[%v] Failed.\tHTTP request encountered Err: %v\n%s", i, err, tc.desc)
+				continue
+			}
 
-			if resp != nil && resp.StatusCode != 200 {
+			if resp.StatusCode != http.StatusOK {
 				// retry is required since, creation of topic takes time
 				if checkRetry(resp.Body) {
 					time.Sleep(3 * time.Second)
 					continue
 				}
 
-				t.Errorf("Test %v: Failed.\tExpected %v\tGot %v\n", tc.id, 200, resp.StatusCode)
+				t.Errorf("TEST[%v] Failed.\tExpected %v\tGot %v\n%s", i, tc.statusCode, resp.StatusCode, tc.desc)
 
-				return
+				break
 			}
 
-			if resp != nil && resp.StatusCode != tc.expectedStatusCode {
-				t.Errorf("Test %v: Failed.\tExpected %v\tGot %v\n", tc.id, tc.expectedStatusCode, resp.StatusCode)
+			if resp.StatusCode != tc.statusCode {
+				t.Errorf("TEST[%v] Failed.\tExpected %v\tGot %v\n%s", i, tc.statusCode, resp.StatusCode, tc.desc)
 			}
 
 			// checks whether bind avro.Unmarshal functionality works fine
-			if tc.expectedResponse != "" && resp.Body != nil {
+			if tc.resp != "" && resp.Body != nil {
 				body, _ := io.ReadAll(resp.Body)
 
 				m := struct {
@@ -83,12 +86,12 @@ func TestServerRun(t *testing.T) {
 				}{}
 				_ = json.Unmarshal(body, &m)
 
-				if m.Data.ID != tc.expectedResponse {
-					t.Errorf("Expected: %v, Got: %v", tc.expectedResponse, m.Data.ID)
+				if m.Data.ID != tc.resp {
+					t.Errorf("TEST[%v] FAILED.\tExpected: %v,\tGot: %v\n%s", i, tc.resp, m.Data.ID, tc.desc)
 				}
 			}
 
-			resp.Body.Close()
+			_ = resp.Body.Close()
 
 			break
 		}

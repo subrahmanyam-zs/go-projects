@@ -14,11 +14,11 @@ type Person struct {
 	Email string `avro:"Email"`
 }
 
-func Producer(c *gofr.Context) (interface{}, error) {
-	id := c.Param("id")
+func Producer(ctx *gofr.Context) (interface{}, error) {
+	id := ctx.Param("id")
 	start := time.Now()
 
-	err := c.PublishEvent("", Person{
+	err := ctx.PublishEvent("", Person{
 		ID:    id,
 		Name:  "Rohan",
 		Email: "rohan@email.xyz",
@@ -27,32 +27,32 @@ func Producer(c *gofr.Context) (interface{}, error) {
 		return nil, err
 	}
 
-	err = c.Metric.ObserveHistogram(PublishEventHistogram, time.Since(start).Seconds())
+	err = ctx.Metric.ObserveHistogram(PublishEventHistogram, time.Since(start).Seconds())
 
 	return nil, err
 }
 
-func Consumer(c *gofr.Context) (interface{}, error) {
+func Consumer(ctx *gofr.Context) (interface{}, error) {
 	p := Person{}
 	start := time.Now()
 
-	message, err := c.Subscribe(&p)
+	message, err := ctx.Subscribe(&p)
 	if err != nil {
 		return nil, err
 	}
 
-	err = c.Metric.ObserveSummary(ConsumeEventSummary, time.Since(start).Seconds())
+	err = ctx.Metric.ObserveSummary(ConsumeEventSummary, time.Since(start).Seconds())
 
 	return types.Response{Data: p, Meta: message}, err
 }
 
-func ConsumerWithCommit(c *gofr.Context) (interface{}, error) {
+func ConsumerWithCommit(ctx *gofr.Context) (interface{}, error) {
 	p := Person{}
 
 	count := 0
-	message, err := c.SubscribeWithCommit(func(message *pubsub.Message) (bool, bool) {
+	message, err := ctx.SubscribeWithCommit(func(message *pubsub.Message) (bool, bool) {
 		count++
-		c.Logger.Infof("Consumed %v message(s), offset: %v, topic: %v", count, message.Offset, message.Topic)
+		ctx.Logger.Infof("Consumed %v message(s), offset: %v, topic: %v", count, message.Offset, message.Topic)
 
 		for count <= 2 {
 			return true, true

@@ -10,7 +10,7 @@ import (
 	"developer.zopsmart.com/go/gofr/pkg/gofr/template"
 )
 
-func Template(c *gofr.Context) (interface{}, error) {
+func Template(ctx *gofr.Context) (interface{}, error) {
 	data := struct {
 		Title string
 		Items []string
@@ -23,13 +23,13 @@ func Template(c *gofr.Context) (interface{}, error) {
 		},
 	}
 
-	return template.Template{Directory: c.TemplateDir, File: "test.html", Data: data, Type: template.HTML}, nil
+	return template.Template{Directory: ctx.TemplateDir, File: "test.html", Data: data, Type: template.HTML}, nil
 }
 
 // Image handler demonstrates how to use `template.File` for responding with any Content-Type,
 // in this example we respond with a PNG image
-func Image(c *gofr.Context) (interface{}, error) {
-	f, _ := os.Open(c.TemplateDir + "/gopher.png")
+func Image(ctx *gofr.Context) (interface{}, error) {
+	f, _ := os.Open(ctx.TemplateDir + "/gopher.png")
 
 	defer f.Close()
 
