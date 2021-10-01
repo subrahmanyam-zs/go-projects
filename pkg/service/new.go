@@ -3,6 +3,7 @@ package service
 import (
 	"encoding/base64"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
@@ -64,6 +65,7 @@ var (
 // hence we dont want to export the type
 func NewHTTPServiceWithOptions(resourceAddr string, logger log.Logger, options *Options) *httpService {
 	// Register the prometheus metric
+	resourceAddr = strings.TrimRight(resourceAddr, "/")
 	_ = prometheus.Register(httpServiceResponse)
 	transport := &ochttp.Transport{}
 

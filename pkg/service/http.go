@@ -20,7 +20,6 @@ import (
 	"developer.zopsmart.com/go/gofr/pkg/errors"
 	"developer.zopsmart.com/go/gofr/pkg/log"
 	"developer.zopsmart.com/go/gofr/pkg/middleware"
-
 )
 
 type httpService struct {
@@ -200,6 +199,7 @@ func getAppData(ctx context.Context) map[string]interface{} {
 // the endpoint and the method for the request are defined from the parameters provided to the function
 // nolint:lll,gocognit // cannot reduce the number of lines since there are many parameters.
 func (h *httpService) createReq(ctx context.Context, method, target string, params map[string]interface{}, body []byte, headers map[string]string) (*http.Request, error) {
+	target = strings.TrimLeft(target, "/")
 	uri := h.url + "/" + target
 
 	if target == "" {
@@ -394,6 +394,7 @@ func (l *callLog) String() string {
 	line, _ := json.Marshal(l)
 	return string(line)
 }
+
 func (l *errorLog) String() string {
 	line, _ := json.Marshal(l)
 	return string(line)

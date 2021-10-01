@@ -622,3 +622,34 @@ func Test_ResponseHeaders(t *testing.T) {
 
 	assert.Equal(t, "application/json", resp.GetHeader("Content-type"))
 }
+
+func Test_createReq(t *testing.T) {
+	ts := testServer()
+	defer ts.Close()
+	testcase := []struct {
+		desc        string
+		method      string
+		target      string
+		expectedURL string
+	}{
+		{"multiple backslashes in POST", "POST", "/////////post", ts.URL + "/post"},
+		{"single backslashes in GET", "GET", "/get", ts.URL + "/get"},
+		{"multiple backslashes in PUT", "PUT", "///put", ts.URL + "/put"},
+		{"single backslashes in PATCH", "PATCH", "/patch", ts.URL + "/patch"},
+	}
+
+	h := NewHTTPServiceWithOptions(ts.URL, nil, nil)
+	for _, tc := range testcase {
+
+		req, err := h.createReq(context.Background(), tc.method, tc.target, nil, nil, nil)
+		if err != nil {
+			t.Errorf("DESC: %v Error: %v", tc.desc, err)
+		}
+
+		if req.Method != tc.method || req.URL.String() != tc.expectedURL {
+			t.Errorf("DESC: %v\nExpectedMethod: %v\nGotMethod: %v\nExpectedURL: %v\nGotURL: %v",
+				tc.desc, tc.method, req.Method, tc.expectedURL, req.URL)
+		}
+	}
+
+}
