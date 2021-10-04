@@ -67,6 +67,29 @@ func TestCSPAuth_Success(t *testing.T) {
 	}
 }
 
+func Test_validSecurityVersion(t *testing.T) {
+	tcs := []struct {
+		desc            string
+		headerName      string
+		securityVersion string
+	}{
+		{"mix case letters in header name", "sV", "v1"},
+		{"lowercase header name and value", "sv", "v1"},
+		{"uppercase header name and value", "SV", "V1"},
+	}
+
+	for i, tc := range tcs {
+		req := httptest.NewRequest(http.MethodPost, "/dummy", nil)
+		req.Header.Set(tc.headerName, tc.securityVersion)
+		req.Header.Set("st", "1")
+
+		err := validateSecurityHeaders(req)
+		if err != nil {
+			t.Errorf("TESTCASE[%v] %v\ngot unexpected error %v", i, tc.desc, err)
+		}
+	}
+}
+
 func TestCSPAuth_InavlidSecurityHeader(t *testing.T) {
 	const authCtx = "QnlSSm53ZWJta1pITDYrU3JWaXkwSkJPTStmcnFDeDFDbWNYSUVWS01PMDBQSTlmT2kwSWFHTHB3Z3BVOWFlS21OVERLM29MT0" +
 		"F5aFVyTUUxcGVic0cxbzgzSkMzUC9ZUlA1MkFTR2ljY1BGa0NuVmNRdkxDRmZ4d2lqTDV" +

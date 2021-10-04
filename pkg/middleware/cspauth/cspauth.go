@@ -3,6 +3,7 @@ package cspauth
 import (
 	"encoding/json"
 	"net/http"
+	"strings"
 
 	"developer.zopsmart.com/go/gofr/pkg/log"
 	"developer.zopsmart.com/go/gofr/pkg/middleware"
@@ -150,7 +151,7 @@ func validateSecurityHeaders(r *http.Request) error {
 		return middleware.ErrMissingCSPSecurityVersionHeader
 	}
 
-	if sv != cspSecurityVersion {
+	if !strings.EqualFold(sv, cspSecurityVersion) {
 		return middleware.ErrInvalidCSPSecurityVersion
 	}
 
