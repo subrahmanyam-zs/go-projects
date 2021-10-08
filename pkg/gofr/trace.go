@@ -47,7 +47,7 @@ func TraceProvider(appName, exporterName, exporterHost, exporterPort string, log
 func (e *exporter) getZipkinExporter(c Config, logger log.Logger) *trace.TracerProvider {
 	url := fmt.Sprintf("http://%s:%s/api/v2/spans", e.host, e.port)
 
-	exporter, err := zipkin.New(url, zipkin.WithSDKOptions(trace.WithSampler(trace.AlwaysSample())))
+	exporter, err := zipkin.New(url)
 	if err != nil {
 		logger.Errorf("failed to initialize zipkinExporter export pipeline: %v", err)
 		return nil
@@ -67,7 +67,7 @@ func (e *exporter) getZipkinExporter(c Config, logger log.Logger) *trace.TracerP
 		return nil
 	}
 
-	tp := trace.NewTracerProvider(trace.WithSpanProcessor(batcher), trace.WithResource(r))
+	tp := trace.NewTracerProvider(trace.WithSampler(trace.AlwaysSample()), trace.WithSpanProcessor(batcher), trace.WithResource(r))
 
 	otel.SetTracerProvider(tp)
 	otel.SetTextMapPropagator(propagation.NewCompositeTextMapPropagator(propagation.TraceContext{}, propagation.Baggage{}))

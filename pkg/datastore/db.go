@@ -6,14 +6,15 @@ import (
 	"os"
 	"strings"
 
-	"github.com/jinzhu/gorm"
-	"github.com/jmoiron/sqlx"
-	"github.com/prometheus/client_golang/prometheus"
-
 	"developer.zopsmart.com/go/gofr/pkg"
 	"developer.zopsmart.com/go/gofr/pkg/gofr/types"
 	"developer.zopsmart.com/go/gofr/pkg/log"
 	"developer.zopsmart.com/go/gofr/pkg/middleware"
+
+	"github.com/XSAM/otelsql"
+	"github.com/jinzhu/gorm"
+	"github.com/jmoiron/sqlx"
+	"github.com/prometheus/client_golang/prometheus"
 
 	// empty imports are to ensure inits are run for these packages.
 	_ "github.com/jinzhu/gorm/dialects/mssql"
@@ -90,7 +91,18 @@ func NewORM(config *DBConfig) (GORMClient, error) {
 
 	connectionStr := formConnectionStr(config)
 
-	db, err := gorm.Open(config.Dialect, connectionStr)
+	dbSystem := config.Dialect
+
+	if config.Dialect == "postgres" {
+		dbSystem = "postgresql"
+	}
+
+	driverName, err := otelsql.Register(config.Dialect, dbSystem)
+	if err != nil {
+		return GORMClient{config: config}, err
+	}
+
+	db, err := gorm.Open(driverName, connectionStr)
 	if err != nil {
 		return GORMClient{config: config}, err
 	}
