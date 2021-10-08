@@ -7,7 +7,7 @@ import (
 
 func Test_main(t *testing.T) {
 	go main()
-	time.Sleep(1*time.Minute + 5*time.Second)
+	time.Sleep(1*time.Minute + 30*time.Second)
 
 	expected := 1
 	if n != expected {

@@ -2,83 +2,82 @@ package handlers
 
 import (
 	"encoding/json"
-	errors2 "errors"
+	"net/http"
 	"net/http/httptest"
 	"reflect"
 	"strings"
 	"testing"
 
 	"github.com/golang/mock/gomock"
-	"developer.zopsmart.com/go/gofr/examples/using-mongo/entity"
-	"developer.zopsmart.com/go/gofr/examples/using-mongo/store"
+	"github.com/stretchr/testify/assert"
+
+	"developer.zopsmart.com/go/gofr/examples/using-mongo/models"
+	"developer.zopsmart.com/go/gofr/examples/using-mongo/stores"
 	"developer.zopsmart.com/go/gofr/pkg/errors"
 	"developer.zopsmart.com/go/gofr/pkg/gofr"
 	"developer.zopsmart.com/go/gofr/pkg/gofr/request"
 )
 
-func initializeHandlersTest(t *testing.T) (*store.MockCustomer, Customer, *gofr.Gofr) {
+func initializeHandlersTest(t *testing.T) (*stores.MockCustomer, handler, *gofr.Gofr) {
 	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-	customerStore := store.NewMockCustomer(ctrl)
-	customer := New(customerStore)
-	k := gofr.New()
 
-	return customerStore, customer, k
+	store := stores.NewMockCustomer(ctrl)
+	h := New(store)
+	app := gofr.New()
+
+	return store, h, app
 }
 
-func TestCustomer_Get(t *testing.T) {
-	//nolint: govet, table tests
-	testCases := []struct {
-		queryParams  string
-		expectedResp interface{}
-		mockErr      error
+//nolint:govet //in table driven tests we don't add the key in the struct
+func TestHandler_Get(t *testing.T) {
+	tests := []struct {
+		desc        string
+		queryParams string
+		resp        interface{}
+		err         error
 	}{
-		{"", []*entity.Customer{{"Ponting", 24, "Sydney"}}, nil},
-		{"name=Tim", []*entity.Customer{{"Tim", 35, "Munich"}}, nil},
-		{"name=1", nil, errors.InvalidParam{Param: []string{"name"}}},
+		{"get without params", "", []models.Customer{{Name: "Ponting", Age: 24, City: "Sydney"}}, nil},
+		{"get with name", "name=Tim", []models.Customer{{Name: "Tim", Age: 35, City: "Munich"}}, nil},
+		{"get with invalid name", "name=1", nil, errors.InvalidParam{Param: []string{"name"}}},
 	}
 
-	customerStore, customer, k := initializeHandlersTest(t)
+	store, h, app := initializeHandlersTest(t)
 
-	for index, tc := range testCases {
-		req := httptest.NewRequest("GET", "/customer?"+tc.queryParams, nil)
+	for i, tc := range tests {
+		req := httptest.NewRequest(http.MethodGet, "/customer?"+tc.queryParams, nil)
 		r := request.NewHTTPRequest(req)
-		context2 := gofr.NewContext(nil, r, k)
+		ctx := gofr.NewContext(nil, r, app)
 
-		customerStore.EXPECT().Get(gomock.Any(), gomock.Any()).Return(tc.expectedResp, tc.mockErr)
+		store.EXPECT().Get(gomock.Any(), gomock.Any()).Return(tc.resp, tc.err)
 
-		resp, err := customer.Get(context2)
-		if !reflect.DeepEqual(err, tc.mockErr) {
-			t.Errorf("Testcase[%v] Failed\tExpected %v\tGot %v\n", index, tc.mockErr, err)
-		}
+		resp, err := h.Get(ctx)
 
-		if !reflect.DeepEqual(resp, tc.expectedResp) {
-			t.Errorf("Testcase[%v] Failed\tExpected %v\tGot %v\n", index, tc.expectedResp, resp)
-		}
+		assert.Equal(t, tc.err, err, "TEST[%d], failed.\n%s", i, tc.desc)
+
+		assert.Equal(t, tc.resp, resp, "TEST[%d], failed.\n%s", i, tc.desc)
 	}
 }
 
 type errReader int
 
 func (errReader) Read(p []byte) (n int, err error) {
-	return 0, errors2.New("test error")
+	return 0, errors.Error("test error")
 }
 
-func TestCustomer_Create_Invalid_Input_Error(t *testing.T) {
-	expErr := errors2.New("test error")
+func TestHandler_Create_Invalid_Input_Error(t *testing.T) {
+	expErr := errors.Error("test error")
 
-	_, customer, k := initializeHandlersTest(t)
-	req := httptest.NewRequest("GET", "/dummy", errReader(0))
+	_, h, app := initializeHandlersTest(t)
+	req := httptest.NewRequest(http.MethodGet, "/dummy", errReader(0))
 	r := request.NewHTTPRequest(req)
-	context2 := gofr.NewContext(nil, r, k)
+	ctx := gofr.NewContext(nil, r, app)
 
-	_, err := customer.Create(context2)
-	if !reflect.DeepEqual(err, expErr) {
-		t.Errorf("Testcase Failed\tExpected %v\tGot %v\n", expErr, err)
-	}
+	_, err := h.Create(ctx)
+
+	assert.Equal(t, expErr, err)
 }
 
-func TestCustomer_Create_Invalid_JSON(t *testing.T) {
+func TestHandler_Create_Invalid_JSON(t *testing.T) {
 	input := `{"name":"Pirlo","age":"42","city":"Turin"}`
 	expErr := &json.UnmarshalTypeError{
 		Value:  "string",
@@ -88,70 +87,72 @@ func TestCustomer_Create_Invalid_JSON(t *testing.T) {
 		Field:  "age",
 	}
 
-	_, customer, k := initializeHandlersTest(t)
+	_, h, app := initializeHandlersTest(t)
+
 	inputReader := strings.NewReader(input)
-	req := httptest.NewRequest("GET", "/dummy", inputReader)
+	req := httptest.NewRequest(http.MethodGet, "/dummy", inputReader)
 	r := request.NewHTTPRequest(req)
-	context2 := gofr.NewContext(nil, r, k)
+	ctx := gofr.NewContext(nil, r, app)
 
-	_, err := customer.Create(context2)
-	if !reflect.DeepEqual(err, expErr) {
-		t.Errorf("Testcase Failed\tExpected %v\tGot %v\n", expErr, err)
-	}
+	_, err := h.Create(ctx)
+
+	assert.Equal(t, expErr, err)
 }
 
-func TestCustomer_Create(t *testing.T) {
-	testCases := []struct {
-		customer         string
-		expectedResponse string
-		err              error
+func TestHandler_Create(t *testing.T) {
+	tests := []struct {
+		desc     string
+		customer string
+		resp     string
+		err      error
 	}{
-		{`{"name":"Pirlo","age":42,"city":"Turin"}`, "New Customer Added!!", nil},
-		{`{"name":"Pirlo","age":42,"city":"Turin"}`, "", errors2.New("test error")},
+		{"create succuss", `{"name":"Pirlo","age":42,"city":"Turin"}`, "New Customer Added!!", nil},
+		{"create fail", `{"name":"Pirlo","age":42,"city":"Turin"}`, "", errors.Error("test error")},
 	}
 
-	customerStore, customer, k := initializeHandlersTest(t)
+	store, h, app := initializeHandlersTest(t)
 
-	for i, tc := range testCases {
+	for i, tc := range tests {
 		input := strings.NewReader(tc.customer)
-		req := httptest.NewRequest("GET", "/dummy", input)
+
+		req := httptest.NewRequest(http.MethodGet, "/dummy", input)
 		r := request.NewHTTPRequest(req)
-		context2 := gofr.NewContext(nil, r, k)
+		ctx := gofr.NewContext(nil, r, app)
 
-		customerStore.EXPECT().Create(gomock.Any(), gomock.Any()).Return(tc.err)
+		store.EXPECT().Create(gomock.Any(), gomock.Any()).Return(tc.err)
 
-		_, err := customer.Create(context2)
-		if !reflect.DeepEqual(err, tc.err) {
-			t.Errorf("Testcase[%v] Failed\tExpected %v\tGot %v\n", i, tc.err, err)
-		}
+		_, err := h.Create(ctx)
+
+		assert.Equal(t, tc.err, err, "TEST[%d], failed.\n%s", i, tc.desc)
 	}
 }
 
-func TestCustomer_Delete(t *testing.T) {
-	testCases := []struct {
-		queryParams         string
-		expectedDeleteCount int
-		expectedResponse    string
-		err                 error
+func TestHandler_Delete(t *testing.T) {
+	tests := []struct {
+		desc        string
+		queryParams string
+		count       int
+		resp        interface{}
+		err         error
 	}{
-		{"name=1", 0, "", errors.InvalidParam{Param: []string{"name"}}},
-		{"name=Tim", 2, "2 Customers deleted!", nil},
-		{"name=Thomas", 1, "1 Customers deleted!", nil},
+		{"delete invalid entity", "name=1", 0, nil, errors.InvalidParam{Param: []string{"name"}}},
+		{"delete multiple entities", "name=Tim", 2, "2 Customers Deleted!", nil},
+		{"delete single entity", "name=Thomas", 1, "1 Customers Deleted!", nil},
 	}
 
-	customerStore, customer, k := initializeHandlersTest(t)
+	store, h, app := initializeHandlersTest(t)
 
-	for i, tc := range testCases {
-		req := httptest.NewRequest("GET", "/customer?"+tc.queryParams, nil)
+	for i, tc := range tests {
+		req := httptest.NewRequest(http.MethodGet, "/customer?"+tc.queryParams, nil)
 		r := request.NewHTTPRequest(req)
-		context2 := gofr.NewContext(nil, r, k)
+		ctx := gofr.NewContext(nil, r, app)
 
-		customerStore.EXPECT().Delete(gomock.Any(), gomock.Any()).Return(tc.expectedDeleteCount, tc.err).Times(1)
+		store.EXPECT().Delete(gomock.Any(), gomock.Any()).Return(tc.count, tc.err).Times(1)
 
-		_, err := customer.Delete(context2)
+		resp, err := h.Delete(ctx)
 
-		if !reflect.DeepEqual(err, tc.err) {
-			t.Errorf("Testcase[%v] failed\nExpected: %v \nGot: %v", i, tc.err, err)
-		}
+		assert.Equal(t, tc.err, err, "TEST[%d], failed.\n%s", i, tc.desc)
+
+		assert.Equal(t, tc.resp, resp, "TEST[%d], failed.\n%s", i, tc.desc)
 	}
 }

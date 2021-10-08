@@ -6,12 +6,12 @@ import (
 )
 
 func main() {
-	k := gofr.New()
+	app := gofr.New()
 
-	k.GET("/", handlers.HomeHandler)
-	k.GET("/ws", handlers.WSHandler)
+	app.GET("/", handlers.HomeHandler)
+	app.GET("/ws", handlers.WSHandler)
 
-	k.Server.WSUpgrader.WriteBufferSize = 4096
+	app.Server.WSUpgrader.WriteBufferSize = 4096
 
-	k.Start()
+	app.Start()
 }

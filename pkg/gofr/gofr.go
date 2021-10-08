@@ -1,6 +1,7 @@
 package gofr
 
 import (
+	"net/http"
 	"strings"
 
 	"developer.zopsmart.com/go/gofr/pkg/datastore"
@@ -48,26 +49,26 @@ func (k *Gofr) addRoute(method, path string, handler Handler) {
 }
 
 func (k *Gofr) GET(path string, handler Handler) {
-	k.addRoute("GET", path, handler)
+	k.addRoute(http.MethodGet, path, handler)
 }
 
 func (k *Gofr) PUT(path string, handler Handler) {
-	k.addRoute("PUT", path, handler)
+	k.addRoute(http.MethodPut, path, handler)
 }
 
 func (k *Gofr) POST(path string, handler Handler) {
-	k.addRoute("POST", path, handler)
+	k.addRoute(http.MethodPost, path, handler)
 }
 
 func (k *Gofr) DELETE(path string, handler Handler) {
-	k.addRoute("DELETE", path, handler)
+	k.addRoute(http.MethodDelete, path, handler)
 }
 
 func (k *Gofr) PATCH(path string, handler Handler) {
-	k.addRoute("PATCH", path, handler)
+	k.addRoute(http.MethodPatch, path, handler)
 }
 
 func (k *Gofr) EnableSwaggerUI() {
-	k.addRoute("GET", "/swagger", SwaggerUIHandler)
-	k.addRoute("GET", "/swagger/{name}", SwaggerUIHandler)
+	k.addRoute(http.MethodGet, "/swagger", SwaggerUIHandler)
+	k.addRoute(http.MethodGet, "/swagger/{name}", SwaggerUIHandler)
 }

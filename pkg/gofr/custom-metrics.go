@@ -3,7 +3,7 @@ package gofr
 import "developer.zopsmart.com/go/gofr/pkg/gofr/metrics"
 
 // NewCounter registers new custom counter metric
-func (k *Gofr) NewCounter(name string, help string, labels ...string) error {
+func (k *Gofr) NewCounter(name, help string, labels ...string) error {
 	if k.Metric == nil {
 		k.Metric = metrics.NewMetric()
 	}
@@ -12,7 +12,7 @@ func (k *Gofr) NewCounter(name string, help string, labels ...string) error {
 }
 
 // NewHistogram registers new custom histogram metric
-func (k *Gofr) NewHistogram(name string, help string, buckets []float64, labels ...string) error {
+func (k *Gofr) NewHistogram(name, help string, buckets []float64, labels ...string) error {
 	if k.Metric == nil {
 		k.Metric = metrics.NewMetric()
 	}
@@ -21,7 +21,7 @@ func (k *Gofr) NewHistogram(name string, help string, buckets []float64, labels 
 }
 
 // NewGauge registers new custom gauge metric
-func (k *Gofr) NewGauge(name string, help string, labels ...string) error {
+func (k *Gofr) NewGauge(name, help string, labels ...string) error {
 	if k.Metric == nil {
 		k.Metric = metrics.NewMetric()
 	}
@@ -30,7 +30,7 @@ func (k *Gofr) NewGauge(name string, help string, labels ...string) error {
 }
 
 // NewSummary registers new custom summary metric
-func (k *Gofr) NewSummary(name string, help string, labels ...string) error {
+func (k *Gofr) NewSummary(name, help string, labels ...string) error {
 	if k.Metric == nil {
 		k.Metric = metrics.NewMetric()
 	}

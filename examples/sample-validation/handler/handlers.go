@@ -5,15 +5,15 @@ import (
 	"developer.zopsmart.com/go/gofr/pkg/gofr/types"
 )
 
-type Details struct {
+type details struct {
 	Phone types.Phone `json:"phone"`
 	Email types.Email `json:"email"`
 }
 
-func ValidateEntry(c *gofr.Context) (interface{}, error) {
-	var detail Details
+func ValidateEntry(ctx *gofr.Context) (interface{}, error) {
+	var detail details
 
-	err := c.Bind(&detail)
+	err := ctx.Bind(&detail)
 	if err != nil {
 		return nil, err
 	}

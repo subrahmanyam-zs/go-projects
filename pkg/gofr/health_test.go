@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/assert"
+
 	"developer.zopsmart.com/go/gofr/pkg"
 	"developer.zopsmart.com/go/gofr/pkg/gofr/config"
 	"developer.zopsmart.com/go/gofr/pkg/gofr/request"
@@ -51,7 +52,7 @@ func Test_HeartBeatIntegration(t *testing.T) {
 
 	client := http.Client{}
 	url := "http://localhost:3339/.well-known/heartbeat"
-	req, _ := request.NewMock("GET", url, nil)
+	req, _ := request.NewMock(http.MethodGet, url, nil)
 
 	resp, err := client.Do(req)
 
@@ -66,7 +67,7 @@ func Test_HeartBeatIntegration(t *testing.T) {
 	resp.Body.Close()
 
 	url = "http://localhost:3339/.well-known/health-check"
-	req, _ = http.NewRequest("GET", url, nil)
+	req, _ = http.NewRequest(http.MethodGet, url, nil)
 	resp, err = client.Do(req)
 
 	if err != nil {
@@ -151,7 +152,8 @@ func Test_HealthCheckHandler(t *testing.T) {
 			{Name: "cassandra", Status: "UP", Host: "localhost", Database: "system"},
 			{Name: "mongo", Status: "UP", Host: "localhost", Database: "test"},
 			{Name: "kafka", Status: "UP", Host: "localhost:2008,localhost:2009", Database: "test-topic"},
-			{Name: "elasticsearch", Status: "UP", Host: "localhost", Database: ""}},
+			{Name: "elasticsearch", Status: "UP", Host: "localhost", Database: ""},
+			{Name: "dynamoDB", Status: "UP", Host: "", Database: ""}},
 			App:      types.AppDetails{Name: "gofr", Version: "dev", Framework: pkg.Framework},
 			Services: nil}, "status": "UP"}
 	k := New()

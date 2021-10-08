@@ -54,6 +54,10 @@ func Test_kafkaRetry(t *testing.T) {
 }
 
 func Test_eventhubRetry(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping testing in short mode")
+	}
+
 	var k Gofr
 
 	logger := log.NewMockLogger(io.Discard)
@@ -286,7 +290,6 @@ func Test_sqlxRetry(t *testing.T) {
 
 	go sqlxRetry(&dc, &k)
 
-	time.Sleep(5 * time.Second)
 	// Failure case
 	if k.SQLX() != nil {
 		t.Errorf("FAILED, expected: SQLX initialization to fail, got: sqlx initialized")
@@ -345,48 +348,39 @@ func Test_redisRetry(t *testing.T) {
 	}
 }
 
+//nolint:gocognit //breaks the readability of the code
 func Test_elasticSearchRetry(t *testing.T) {
-	var elasticSearchCfg datastore.ElasticSearchCfg
+	k := Gofr{Logger: log.NewMockLogger(io.Discard)}
 
-	var k Gofr
+	testcases := []struct {
+		name        string
+		config      datastore.ElasticSearchCfg
+		expectedErr bool
+	}{
+		{"success", datastore.ElasticSearchCfg{Ports: []int{2012}, ConnectionRetryDuration: 1, Host: "localhost"},
+			false},
+		{"failure", datastore.ElasticSearchCfg{Ports: []int{2012}, ConnectionRetryDuration: 1, Host: "localhost",
+			CloudID: "elastic-cloud-id"}, true},
+	}
 
-	logger := log.NewMockLogger(io.Discard)
-	c := config.NewGoDotEnvProvider(logger, "../../configs")
-	elasticSearchCfg.Port, _ = strconv.Atoi(c.Get("ELASTIC_SEARCH_PORT"))
-	elasticSearchCfg.User = c.Get("ELASTIC_SEARCH_USER")
-	elasticSearchCfg.Pass = c.Get("ELASTIC_SEARCH_PASS")
-	elasticSearchCfg.ConnectionRetryDuration = 1
-	elasticSearchCfg.Host = "invalid-url"
-	// for the failed case
-	k.Logger = logger
+	for _, tc := range testcases {
+		go elasticSearchRetry(&tc.config, &k)
 
-	go elasticSearchRetry(&elasticSearchCfg, &k)
+		for i := 0; i < 5; i++ {
+			time.Sleep(2 * time.Second)
 
-	for i := 0; i < 5; i++ {
-		time.Sleep(2 * time.Second)
-
-		if k.Elasticsearch.Client != nil {
-			break
+			if k.Elasticsearch.Client != nil {
+				break
+			}
 		}
-	}
 
-	if k.Elasticsearch.Client != nil {
-		t.Errorf("FAILED, expected: Elastic Search initialization failed, got: Elastic Search initialized successfully")
-	}
-
-	// for the success case
-	elasticSearchCfg.Host = c.Get("ELASTIC_SEARCH_HOST")
-
-	for i := 0; i < 5; i++ {
-		time.Sleep(3 * time.Second)
-
-		if k.Elasticsearch.Client != nil {
-			break
+		if !tc.expectedErr && k.Elasticsearch.Client == nil {
+			t.Errorf("%s\nFAILED, Expected: successful initialization, Got: initialization failed", tc.name)
 		}
-	}
 
-	if k.Elasticsearch.Client == nil {
-		t.Errorf("FAILED, expected: Elastic Search initialized successfully, got: Elastic Search initialization failed")
+		if tc.expectedErr && k.Elasticsearch.Client != nil {
+			t.Errorf("%s\nFAILED, Expected: failed initialization, Got: initialization successful", tc.name)
+		}
 	}
 }
 
@@ -410,4 +404,47 @@ func Test_AWSSNSRetry(t *testing.T) {
 	}
 
 	assert.True(t, k.Notifier.IsSet(), "FAILED, expected: AwsSNS initialized successfully, got: AwsSNS initialization failed")
+}
+
+func Test_dynamoRetry(t *testing.T) {
+	k := New()
+
+	dynamoConfig := datastore.DynamoDBConfig{
+		ConnRetryDuration: 1,
+	}
+
+	go dynamoRetry(dynamoConfig, k)
+
+	for i := 0; i < 5; i++ {
+		time.Sleep(2 * time.Second)
+
+		if k.DynamoDB.DynamoDB != nil {
+			t.Errorf("FAILED, expected: DynamoDB initialization to fail, got: DynamoDB initialized")
+			break
+		}
+	}
+
+	k = NewWithConfig(config.NewGoDotEnvProvider(log.NewMockLogger(io.Discard), "../../configs"))
+
+	dynamoConfig = datastore.DynamoDBConfig{
+		Region:            "ap-south-1",
+		Endpoint:          "http://localhost:2021",
+		SecretAccessKey:   "sample-secret-access-key",
+		AccessKeyID:       "sample-access-key",
+		ConnRetryDuration: 1,
+	}
+
+	go dynamoRetry(dynamoConfig, k)
+
+	for i := 0; i < 5; i++ {
+		time.Sleep(2 * time.Second)
+
+		if k.DynamoDB.DynamoDB != nil {
+			break
+		}
+	}
+
+	if k.DynamoDB.DynamoDB == nil {
+		t.Errorf("FAILED, expected: DynamoDB initialized successfully, got: DynamoDB initialization failed")
+	}
 }

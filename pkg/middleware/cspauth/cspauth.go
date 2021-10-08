@@ -3,6 +3,7 @@ package cspauth
 import (
 	"encoding/json"
 	"net/http"
+	"strings"
 
 	"developer.zopsmart.com/go/gofr/pkg/log"
 	"developer.zopsmart.com/go/gofr/pkg/middleware"
@@ -20,19 +21,15 @@ func CSPAuth(logger log.Logger, sharedKey string) func(inner http.Handler) http.
 				return
 			}
 
-			appKey, err := csp.getAppKey(req)
-			if err == nil {
-				err = csp.Validate(logger, req, appKey)
-				if err == nil {
-					inner.ServeHTTP(w, req)
-
-					return
-				}
+			err := csp.validate(logger, req)
+			if err != nil {
+				description, statusCode := middleware.GetDescription(err)
+				e := middleware.FetchErrResponseWithCode(statusCode, description, "UNAUTHORIZED")
+				middleware.ErrorResponse(w, req, logger, *e)
+				return
 			}
 
-			description, statusCode := middleware.GetDescription(err)
-			e := middleware.FetchErrResponseWithCode(statusCode, description, "UNAUTHORIZED")
-			middleware.ErrorResponse(w, req, logger, *e)
+			inner.ServeHTTP(w, req)
 		})
 	}
 }
@@ -40,7 +37,7 @@ func CSPAuth(logger log.Logger, sharedKey string) func(inner http.Handler) http.
 func (c *CSP) getAppKey(req *http.Request) (string, error) {
 	appKey := req.Header.Get(appKeyHeader)
 	if len(appKey) < minLenAppKey {
-		// ErrInvalidAppKey is raised when app key is is not more than 12 bytes
+		// ErrInvalidAppKey is raised when app key is not more than 12 bytes
 		return "", middleware.ErrInvalidAppKey
 	}
 
@@ -57,8 +54,24 @@ type cspAuthJSON struct {
 	SignatureHash string `json:"SignatureHash"`
 }
 
-// Validate the csp auth headers in given request
-func (c *CSP) Validate(logger log.Logger, r *http.Request, appKey string) error {
+// validate performs validation of csp related headers
+//
+// returns error for validation fail and nil otherwise
+func (c *CSP) validate(logger log.Logger, r *http.Request) error {
+	if err := validateSecurityHeaders(r); err != nil {
+		return err
+	}
+
+	appKey, err := c.getAppKey(r)
+	if err != nil {
+		return err
+	}
+
+	return c.validateAuthContext(logger, r, appKey)
+}
+
+// validateAuthContext validates the csp auth headers in given request
+func (c *CSP) validateAuthContext(logger log.Logger, r *http.Request, appKey string) error {
 	ac := r.Header.Get(authContextHeader)
 	if ac == "" {
 		return middleware.ErrMissingCSPHeader
@@ -125,4 +138,32 @@ func (c *CSP) getAuthContext(logger log.Logger, authContextHeader, appKey string
 	}
 
 	return decryptedAuthContext, nil
+}
+
+// validateSecurityHeaders validates request's sv(security-version),
+// st(security-type) headers with respect to implemented CSP type and version.
+//
+// returns error for mismatch and nil for successful validation
+func validateSecurityHeaders(r *http.Request) error {
+	// validate CSP security-version
+	sv := r.Header.Get(securityVersionHeader)
+	if sv == "" {
+		return middleware.ErrMissingCSPSecurityVersionHeader
+	}
+
+	if !strings.EqualFold(sv, cspSecurityVersion) {
+		return middleware.ErrInvalidCSPSecurityVersion
+	}
+
+	// validate CSP sercurity-type
+	st := r.Header.Get(securityTypeHeader)
+	if st == "" {
+		return middleware.ErrMissingCSPSecurityTypeHeader
+	}
+
+	if st != cspSecurityType {
+		return middleware.ErrInvalidCSPSecurityType
+	}
+
+	return nil
 }

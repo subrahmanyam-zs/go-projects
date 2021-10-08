@@ -2,8 +2,9 @@ package store
 
 import (
 	"context"
-	"reflect"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 
 	"developer.zopsmart.com/go/gofr/pkg/datastore"
 	"developer.zopsmart.com/go/gofr/pkg/errors"
@@ -11,107 +12,75 @@ import (
 )
 
 func TestGetSetDelete(t *testing.T) {
-	k := gofr.New()
-	c := gofr.NewContext(nil, nil, k)
+	app := gofr.New()
+	c := gofr.NewContext(nil, nil, app)
 	c.Context = context.Background()
 
-	//initializing the seeder
-	seeder := datastore.NewSeeder(&k.DataStore, "../db")
+	// initializing the seeder
+	seeder := datastore.NewSeeder(&app.DataStore, "../db")
 	seeder.RefreshRedis(t, "store")
 
 	testSet(t, c)
 	testGet(t, c)
 	testDelete(t, c)
-	testSetWithError(t, k, c)
+	testSetWithError(t, app, c)
 }
 
-func testSetWithError(t *testing.T, k *gofr.Gofr, c *gofr.Context) {
-	k.Redis.Close()
+func testSetWithError(t *testing.T, app *gofr.Gofr, c *gofr.Context) {
+	app.Redis.Close()
 
 	expected := "redis: client is closed"
-	got := Model{}.Set(c, "key", "value", 0)
 
-	if !reflect.DeepEqual(expected, got.Error()) {
-		t.Errorf("FAILED, Expected: %v, Got: %v", expected, got)
-	}
+	store := New()
+	resp := store.Set(c, "key", "value", 0)
+
+	assert.Equal(t, expected, resp.Error())
 }
 
 func testSet(t *testing.T, c *gofr.Context) {
-	tests := []struct {
-		key         string
-		value       string
-		expectedErr error
-	}{
-		{
-			key:         "someKey123",
-			value:       "someValue123",
-			expectedErr: nil,
-		},
-	}
+	store := New()
 
-	for _, test := range tests {
-		err := Model{}.Set(c, test.key, test.value, 0)
-
-		if !reflect.DeepEqual(err, test.expectedErr) {
-			t.Errorf("FAILED, Expected: %v, Got: %v", test.expectedErr, err)
-		}
+	err := store.Set(c, "someKey123", "someValue123", 0)
+	if err != nil {
+		t.Errorf("FAILED, Expected no error, Got: %v", err)
 	}
 }
 
 func testGet(t *testing.T, c *gofr.Context) {
 	tests := []struct {
-		key      string
-		expected string
-		err      error
+		desc string
+		key  string
+		resp string
+		err  error
 	}{
-		{
-			key:      "someKey123",
-			expected: "someValue123",
-			err:      nil,
-		},
-		{
-			key:      "someKey",
-			expected: "",
-			err:      errors.DB{},
-		},
+		{"get success", "someKey123", "someValue123", nil},
+		{"get fail", "someKey", "", errors.DB{}},
 	}
 
-	for i, test := range tests {
-		got, err := Model{}.Get(c, test.key)
+	for i, tc := range tests {
+		store := New()
+		resp, err := store.Get(c, tc.key)
 
-		if !reflect.DeepEqual(got, test.expected) {
-			t.Errorf("FAILED, Expected: %v, Got: %v", test.expected, got)
-		}
+		assert.Equal(t, tc.resp, resp, "TEST[%d], failed.\n%s", i, tc.desc)
 
-		if test.err == nil {
-			if err != nil {
-				t.Errorf("Testcase: %v FAILED", i)
-			}
-		} else {
-			if _, ok := err.(errors.DB); ok == false {
-				t.Errorf("Testcase: %v FAILED", i)
-			}
-		}
+		assert.IsType(t, tc.err, err, "TEST[%d], failed.\n%s", i, tc.desc)
 	}
 }
 
 func testDelete(t *testing.T, c *gofr.Context) {
 	tests := []struct {
-		key         string
-		expectedErr error
+		desc string
+		key  string
+		err  error
 	}{
-		{
-			key:         "someKey123",
-			expectedErr: nil,
-		},
+		{"delete success", "someKey123", nil},
 	}
 
-	for _, test := range tests {
-		err := Model{}.Delete(c, test.key)
+	for i, tc := range tests {
+		store := New()
+		err := store.Delete(c, tc.key)
 
-		if !reflect.DeepEqual(err, test.expectedErr) {
-			t.Errorf("FAILED, Expected: %v, Got: %v", test.expectedErr, err)
-		}
+		assert.Equal(t, tc.err, err, "TEST[%d], failed.\n%s", i, tc.desc)
 	}
 }
 

@@ -7,15 +7,15 @@ import (
 )
 
 func main() {
-	k := gofr.New()
+	app := gofr.New()
 
-	// initialize the core and consumer layers
-	brandCore := brand.New()
-	brandConsumer := handler.New(brandCore)
+	// initialize the store and handler layers
+	store := brand.New()
+	h := handler.New(store)
 
 	// Specifying the different routes supported by this service
-	k.GET("/brand", brandConsumer.Get)
-	k.POST("/brand", brandConsumer.Create)
+	app.GET("/brand", h.Get)
+	app.POST("/brand", h.Create)
 
-	k.Start()
+	app.Start()
 }

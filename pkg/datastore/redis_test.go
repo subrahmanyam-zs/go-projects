@@ -12,6 +12,7 @@ import (
 	"testing"
 
 	"github.com/go-redis/redis/v8"
+
 	"developer.zopsmart.com/go/gofr/pkg"
 	"developer.zopsmart.com/go/gofr/pkg/gofr/config"
 	"developer.zopsmart.com/go/gofr/pkg/gofr/types"
@@ -156,28 +157,41 @@ func Test_RedisQueryLog(t *testing.T) {
 func TestDataStore_RedisHealthCheck(t *testing.T) {
 	logger := log.NewLogger()
 	c := config.NewGoDotEnvProvider(logger, "../../configs")
-	testCases := []struct {
-		c        RedisConfig
-		expected types.Health
-	}{
-		{RedisConfig{HostName: c.Get("REDIS_HOST"), Port: c.Get("REDIS_PORT")},
-			types.Health{Name: pkg.Redis, Status: "UP", Host: c.Get("REDIS_HOST")}},
-		{RedisConfig{HostName: "Random", Port: c.Get("REDIS_PORT")},
-			types.Health{Name: pkg.Redis, Status: "DOWN", Host: "Random"}},
+
+	{
+		cfg := RedisConfig{HostName: c.Get("REDIS_HOST"), Port: c.Get("REDIS_PORT")}
+		expHealth := types.Health{Name: pkg.Redis, Status: "UP", Host: c.Get("REDIS_HOST")}
+
+		conn, _ := NewRedis(logger, cfg)
+		out := conn.HealthCheck()
+
+		if expHealth.Status != out.Status || expHealth.Host != out.Host || expHealth.Name != out.Name {
+			t.Errorf("Success case: Expected %v, got %v", expHealth, out)
+		}
+
+		if out.Details == nil {
+			t.Errorf("success case: details should not be nil")
+		} else if _, ok := out.Details.(map[string]map[string]string); !ok {
+			t.Errorf("Success case: type of details mismatched got %T", out.Details)
+		}
 	}
 
-	for i, tc := range testCases {
-		conn, _ := NewRedis(logger, tc.c)
+	{
+		cfg := RedisConfig{HostName: "Random", Port: c.Get("REDIS_PORT")}
+		exp := types.Health{Name: pkg.Redis, Status: "DOWN", Host: "Random"}
+
+		conn, _ := NewRedis(logger, cfg)
+
 		output := conn.HealthCheck()
 
-		if output != tc.expected {
-			t.Errorf("[Failed]%v, Got %v Exepcted %v", i, output, tc.expected)
+		if output != exp {
+			t.Errorf("Failed case,Got %v Exepcted %v", output, exp)
 		}
 	}
 }
 
 // connection is made and closed later for HealthCheck
-func Test_RedisHealthCheck(t *testing.T) {
+func Test_RedisHealthCheckConnClose(t *testing.T) {
 	logger := log.NewLogger()
 	c := config.NewGoDotEnvProvider(logger, "../../configs")
 	conf := RedisConfig{HostName: c.Get("REDIS_HOST"), Port: c.Get("REDIS_PORT")}
@@ -208,5 +222,29 @@ func Test_goroutineCount(t *testing.T) {
 
 	if prev != next {
 		t.Errorf("[FAILED] Goroutine leaked,Expected: %v,Got: %v", prev, next)
+	}
+}
+
+func Test_getInfoInMap(t *testing.T) {
+	logger := log.NewLogger()
+	c := config.NewGoDotEnvProvider(logger, "../../configs")
+
+	cfg := RedisConfig{
+		HostName:                c.Get("REDIS_HOST"),
+		Port:                    c.Get("REDIS_PORT"),
+		ConnectionRetryDuration: 2,
+		Options:                 new(redis.Options),
+	}
+
+	cfg.Options.Addr = cfg.HostName + ":" + cfg.Port
+
+	client := redisClient{
+		Client: redis.NewClient(cfg.Options),
+		config: cfg,
+	}
+
+	out := client.getInfoInMap()
+	if out == nil {
+		t.Errorf("Info about client connection should not be nil")
 	}
 }

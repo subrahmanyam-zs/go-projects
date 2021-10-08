@@ -2,12 +2,14 @@ package handler
 
 import (
 	"bytes"
+	"net/http"
 	"net/http/httptest"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+
 	"developer.zopsmart.com/go/gofr/examples/universal-example/pgsql/entity"
-	gofrError "developer.zopsmart.com/go/gofr/pkg/errors"
+	"developer.zopsmart.com/go/gofr/pkg/errors"
 	"developer.zopsmart.com/go/gofr/pkg/gofr"
 	"developer.zopsmart.com/go/gofr/pkg/gofr/request"
 	"developer.zopsmart.com/go/gofr/pkg/gofr/responder"
@@ -40,7 +42,7 @@ func (m mockStore) Create(c *gofr.Context, customer entity.Employee) error {
 	case "some_employee":
 		return nil
 	case "mock body error":
-		return gofrError.InvalidParam{Param: []string{"body"}}
+		return errors.InvalidParam{Param: []string{"body"}}
 	}
 
 	return createErr
@@ -49,7 +51,7 @@ func (m mockStore) Create(c *gofr.Context, customer entity.Employee) error {
 func TestPgsqlEmployee_Get(t *testing.T) {
 	m := New(mockStore{})
 
-	k := gofr.New()
+	app := gofr.New()
 
 	tests := []struct {
 		mockParamStr string
@@ -61,10 +63,10 @@ func TestPgsqlEmployee_Get(t *testing.T) {
 
 	for i, tc := range tests {
 		w := httptest.NewRecorder()
-		r := httptest.NewRequest("GET", "/dummy?"+tc.mockParamStr, nil)
+		r := httptest.NewRequest(http.MethodGet, "/dummy?"+tc.mockParamStr, nil)
 		req := request.NewHTTPRequest(r)
 		res := responder.NewContextualResponder(w, r)
-		c := gofr.NewContext(res, req, k)
+		c := gofr.NewContext(res, req, app)
 
 		_, err := m.Get(c)
 		assert.Equal(t, tc.expectedErr, err, i)
@@ -73,23 +75,23 @@ func TestPgsqlEmployee_Get(t *testing.T) {
 
 func TestPgsqlEmployee_Create(t *testing.T) {
 	m := New(mockStore{})
-	k := gofr.New()
+	app := gofr.New()
 
 	tests := []struct {
 		body        []byte
 		expectedErr error
 	}{
 		{[]byte(`{"name":"some_employee"}`), nil},
-		{[]byte(`mock body error`), gofrError.InvalidParam{Param: []string{"body"}}},
+		{[]byte(`mock body error`), errors.InvalidParam{Param: []string{"body"}}},
 		{[]byte(`{"name":"creation error"}`), createErr},
 	}
 
 	for i, tc := range tests {
 		w := httptest.NewRecorder()
-		r := httptest.NewRequest("POST", "http://dummy", bytes.NewReader(tc.body))
+		r := httptest.NewRequest(http.MethodPost, "http://dummy", bytes.NewReader(tc.body))
 		req := request.NewHTTPRequest(r)
 		res := responder.NewContextualResponder(w, r)
-		c := gofr.NewContext(res, req, k)
+		c := gofr.NewContext(res, req, app)
 
 		_, err := m.Create(c)
 		assert.Equal(t, tc.expectedErr, err, i)

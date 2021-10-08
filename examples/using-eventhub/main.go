@@ -6,11 +6,11 @@ import (
 )
 
 func main() {
-	k := gofr.New()
+	app := gofr.New()
 
-	k.GET("/pub", handlers.Producer)
-	k.GET("/sub", handlers.Consumer)
+	app.GET("/pub", handlers.Producer)
+	app.GET("/sub", handlers.Consumer)
 
-	k.Server.HTTP.Port = 9113
-	k.Start()
+	app.Server.HTTP.Port = 9113
+	app.Start()
 }

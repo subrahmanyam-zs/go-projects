@@ -1,17 +1,21 @@
 package main
 
 import (
-	"developer.zopsmart.com/go/gofr/examples/using-http-service/handler"
-	svc "developer.zopsmart.com/go/gofr/examples/using-http-service/service"
+	handlers "developer.zopsmart.com/go/gofr/examples/using-http-service/handlers/user"
+	services "developer.zopsmart.com/go/gofr/examples/using-http-service/services/user"
 	"developer.zopsmart.com/go/gofr/pkg/gofr"
+	svc "developer.zopsmart.com/go/gofr/pkg/service"
 )
 
 func main() {
-	k := gofr.New()
+	app := gofr.New()
 
-	catSvc := svc.New("http://catalog-service/brand", k.Logger)
-	h := handler.New(catSvc)
+	sampleSvc := svc.NewHTTPServiceWithOptions(app.Config.Get("SAMPLE_SERVICE"), app.Logger, nil)
 
-	k.GET("/brand/{id}", h.Get)
-	k.Start()
+	service := services.New(sampleSvc)
+	handler := handlers.New(service)
+
+	app.GET("/user/{name}", handler.Get)
+
+	app.Start()
 }

@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/gorilla/websocket"
+
 	"developer.zopsmart.com/go/gofr/pkg/gofr"
 	"developer.zopsmart.com/go/gofr/pkg/gofr/request"
 	"developer.zopsmart.com/go/gofr/pkg/gofr/responder"
@@ -41,11 +42,18 @@ func TestWSHandler(t *testing.T) {
 	req.Header.Set("Sec-WebSocket-Key", "wehkjeh21-sdjk210-wsknb")
 
 	wsURL := "ws" + strings.TrimPrefix(server.URL, "http") + "/ws"
-	ws, _, err := websocket.DefaultDialer.Dial(wsURL, nil)
 
-	defer ws.Close()
+	ws, resp, err := websocket.DefaultDialer.Dial(wsURL, nil)
+	if err != nil {
+		t.Errorf("err: %v", err)
+	}
 
-	if err := ws.WriteMessage(websocket.TextMessage, []byte("Hi")); err != nil {
+	defer func() {
+		_ = ws.Close()
+		_ = resp.Body.Close()
+	}()
+
+	if err = ws.WriteMessage(websocket.TextMessage, []byte("Hi")); err != nil {
 		t.Errorf("could not send message over ws connection %v", err)
 	}
 
@@ -55,8 +63,8 @@ func TestWSHandler(t *testing.T) {
 	_ = conn.Close()
 
 	got, err := WSHandler(ctx)
-	if err != nil {
-		t.Errorf("err: %v", err)
+	if err == nil {
+		t.Error("expected error got nil")
 	}
 
 	if got != nil {

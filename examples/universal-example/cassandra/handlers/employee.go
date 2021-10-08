@@ -13,7 +13,7 @@ type employee struct {
 	model store.Employee
 }
 
-//nolint:golint //employee should not get accessed, without initialization of store.Employee
+//nolint:revive //employee should not get accessed, without initialization of store.Employee
 func New(e store.Employee) employee {
 	return employee{
 		model: e,

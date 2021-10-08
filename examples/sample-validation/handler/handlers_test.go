@@ -3,39 +3,40 @@ package handler
 import (
 	"bytes"
 	"encoding/json"
+	"net/http"
 	"net/http/httptest"
-	"reflect"
 	"testing"
 
 	"developer.zopsmart.com/go/gofr/pkg/errors"
 	"developer.zopsmart.com/go/gofr/pkg/gofr"
 	"developer.zopsmart.com/go/gofr/pkg/gofr/request"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestValidateEntry(t *testing.T) {
-	k := gofr.New()
+	app := gofr.New()
 
-	testcases := []struct {
-		method        string
-		target        string
-		body          Details
-		expectedError error
+	tests := []struct {
+		desc string
+		body details
+		err  error
 	}{
-		{"POST", "http://localhost:9010/phone", Details{"+912123456789098", "c.r@yahoo.com"}, nil},
-		{"POST", "http://localhost:9010/phone", Details{}, errors.InvalidParam{Param: []string{"Phone Number length"}}},
+		{"create success", details{"+912123456789098", "c.r@yahoo.com"}, nil},
+		{"create fail with missing phone",
+			details{}, errors.InvalidParam{Param: []string{"Phone Number length"}}},
 	}
 
-	for index, tc := range testcases {
-		tempBody, _ := json.Marshal(tc.body)
-		body := bytes.NewReader(tempBody)
-		r := httptest.NewRequest(tc.method, tc.target, body)
+	for i, tc := range tests {
+		b, _ := json.Marshal(tc.body)
+		body := bytes.NewReader(b)
+		r := httptest.NewRequest(http.MethodPost, "http://localhost:9010/phone", body)
 		req := request.NewHTTPRequest(r)
 
-		c := gofr.NewContext(nil, req, k)
+		ctx := gofr.NewContext(nil, req, app)
 
-		_, err := ValidateEntry(c)
-		if !(reflect.DeepEqual(err, tc.expectedError)) {
-			t.Errorf("Test FAILED for %v, got error: %v, expected error : %v", index+1, err, tc.expectedError)
-		}
+		_, err := ValidateEntry(ctx)
+
+		assert.Equal(t, tc.err, err, "TEST[%d], failed.\n%s", i, tc.desc)
 	}
 }

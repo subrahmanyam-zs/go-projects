@@ -8,7 +8,7 @@ type svc struct {
 	http HTTPService
 }
 
-// nolint:golint // svc should not be exposed
+// nolint:revive // svc should not be exposed
 func New(service HTTPService) svc {
 	return svc{http: service}
 }

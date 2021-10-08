@@ -1,10 +1,12 @@
 package handler
 
 import (
+	"net/http"
 	"net/http/httptest"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+
 	"developer.zopsmart.com/go/gofr/pkg/datastore/pubsub"
 	"developer.zopsmart.com/go/gofr/pkg/errors"
 	"developer.zopsmart.com/go/gofr/pkg/gofr"
@@ -17,7 +19,7 @@ type mockPubSub struct {
 }
 
 func TestProducerHandler(t *testing.T) {
-	k := gofr.New()
+	app := gofr.New()
 
 	tests := []struct {
 		name         string
@@ -29,8 +31,8 @@ func TestProducerHandler(t *testing.T) {
 		{"success", "123", nil, nil},
 	}
 
-	req := httptest.NewRequest("GET", "http://dummy", nil)
-	context := gofr.NewContext(nil, request.NewHTTPRequest(req), k)
+	req := httptest.NewRequest(http.MethodGet, "http://dummy", nil)
+	context := gofr.NewContext(nil, request.NewHTTPRequest(req), app)
 
 	for _, tc := range tests {
 		context.SetPathParams(map[string]string{
@@ -44,9 +46,9 @@ func TestProducerHandler(t *testing.T) {
 }
 
 func TestConsumerHandler(t *testing.T) {
-	k := gofr.New()
+	app := gofr.New()
 
-	ctx := gofr.NewContext(nil, nil, k)
+	ctx := gofr.NewContext(nil, nil, app)
 	tests := []struct {
 		id          string
 		expectedErr error
@@ -95,6 +97,7 @@ func (m *mockPubSub) Ping() error {
 	return nil
 }
 
+//nolint:gosimple //redundant `return` statement
 func (m *mockPubSub) CommitOffset(offsets pubsub.TopicPartition) {
 	return
 }

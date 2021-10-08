@@ -247,6 +247,7 @@ func validateProjection(parentKey string, projectionRawMap map[string]interface{
 	return nil
 }
 
+// nolint:gocognit // splitting the code will reduce readability
 // createProjections creates resultant projection map from raw projections parsed from the request
 func createProjections(parentKey string, projectionRawMap map[string]interface{}, projectionMap ProjectionMapType) {
 	for key, val := range projectionRawMap {

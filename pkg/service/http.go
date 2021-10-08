@@ -37,8 +37,8 @@ type httpService struct {
 	contentType   responseType
 	sp            surgeProtector
 	numOfRetries  int
-
-	csp *csp
+	mu            sync.Mutex
+	csp           *csp
 
 	cache *cachedHTTPService
 }
@@ -126,6 +126,8 @@ func (h *httpService) call(ctx context.Context, method, target string, params ma
 			return nil, err
 		}
 
+		h.mu.Lock()
+
 		switch resp.Header.Get("content-type") {
 		case "application/xml":
 			h.contentType = XML
@@ -134,6 +136,8 @@ func (h *httpService) call(ctx context.Context, method, target string, params ma
 		default:
 			h.contentType = JSON
 		}
+
+		h.mu.Unlock()
 
 		h.logCall(&callLog{CorrelationID: correlationID, Method: method, URI: h.url + "/" + target,
 			ResponseCode: resp.StatusCode, Params: params, AppData: appData}, headers, start, authorizationHeader)
@@ -165,10 +169,14 @@ func (h *httpService) preCall(method, target, correlationID string, params, appD
 		statusCode = http.StatusUnauthorized
 	}
 
+	h.mu.Lock()
+
 	if !h.isHealthy {
 		err = ErrServiceDown{URL: h.url}
 		statusCode = http.StatusInternalServerError
 	}
+
+	h.mu.Unlock()
 
 	if err != nil {
 		httpServiceResponse.WithLabelValues(h.url+"/"+target, method, fmt.Sprintf("%d", statusCode)).Observe(time.Since(start).Seconds())
@@ -229,7 +237,7 @@ func (h *httpService) createReq(ctx context.Context, method, target string, para
 	}
 
 	// query parameters is required for GET,POST and PUT method
-	if (method == "GET" || method == "POST" || method == "PUT" || method == "PATCH") && params != nil {
+	if (method == http.MethodGet || method == http.MethodPost || method == http.MethodPut || method == http.MethodPatch) && params != nil {
 		encodeQueryParameters(req, params)
 	}
 
@@ -266,6 +274,7 @@ func (h *httpService) setHeadersFromContext(ctx context.Context, req *http.Reque
 	if h.auth != "" {
 		req.Header.Add("Authorization", h.auth)
 	}
+
 	// add headers for csp auth
 	if h.csp != nil {
 		authContext := h.csp.getAuthContext(req)
@@ -348,14 +357,14 @@ func (h *httpService) SetSurgeProtectorOptions(isEnabled bool, customHeartbeatUR
 				go h.sp.checkHealth(h.url, h.healthCh)
 
 				for ok := range h.healthCh {
-					h.sp.mu.Lock()
+					h.mu.Lock()
 					// If the circuit is open, the circuitOpenCount metric value will be increased otherwise, value will not change
 					if !ok && h.isHealthy {
 						circuitOpenCount.WithLabelValues(h.url).Inc()
 					}
 
 					h.isHealthy = ok
-					h.sp.mu.Unlock()
+					h.mu.Unlock()
 				}
 			}()
 		})

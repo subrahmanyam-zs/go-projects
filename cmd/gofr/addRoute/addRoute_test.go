@@ -3,15 +3,19 @@ package addroute
 import (
 	"errors"
 	"io"
+	"net/http"
 	"os"
 	"strings"
 	"testing"
+
+	"developer.zopsmart.com/go/gofr/cmd/gofr/migration"
 
 	"github.com/golang/mock/gomock"
 )
 
 func Test_addRoute(t *testing.T) {
 	currDir, _ := os.Getwd()
+
 	defer func() {
 		_ = os.Chdir(currDir)
 	}()
@@ -50,6 +54,7 @@ func Test_addRoute(t *testing.T) {
 
 func TestErrors(t *testing.T) {
 	currDir, _ := os.Getwd()
+
 	defer func() {
 		_ = os.Chdir(currDir)
 	}()
@@ -70,8 +75,8 @@ func TestErrors(t *testing.T) {
 		args    args
 		wantErr error
 	}{
-		{"invalid path", args{"/$/{id}", "GET"}, invalidPathError{"$/{id}"}},
-		{"invalid method", args{"/abcd/{id}", "PATCH"}, invalidMethodError{"PATCH"}},
+		{"invalid path", args{"/$/{id}", http.MethodGet}, invalidPathError{"$/{id}"}},
+		{"invalid method", args{"/abcd/{id}", http.MethodPatch}, invalidMethodError{"PATCH"}},
 	}
 
 	for _, tt := range tests {
@@ -89,6 +94,7 @@ func TestErrors_FileSystem(t *testing.T) {
 	dir := t.TempDir()
 
 	ctrl := gomock.NewController(t)
+
 	defer func() {
 		ctrl.Finish()
 
@@ -110,16 +116,16 @@ func TestErrors_FileSystem(t *testing.T) {
 		mockCalls []*gomock.Call
 		wantErr   bool
 	}{
-		{"error: Match error", args{"/brand", "GET"}, []*gomock.Call{
+		{"error: Match error", args{"/brand", http.MethodGet}, []*gomock.Call{
 			c.EXPECT().Match(gomock.Any(), gomock.Any()).Return(false, errors.New("test error")).Times(1),
 		}, true},
 
-		{"error: OpenFile", args{"/brand", "GET"}, []*gomock.Call{
+		{"error: OpenFile", args{"/brand", http.MethodGet}, []*gomock.Call{
 			c.EXPECT().Match(gomock.Any(), gomock.Any()).Return(true, nil).AnyTimes(),
 			c.EXPECT().OpenFile(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil, errors.New("test error")).Times(1),
 		}, true},
 
-		{"error: Getwd", args{"/brand", "GET"}, []*gomock.Call{
+		{"error: Getwd", args{"/brand", http.MethodGet}, []*gomock.Call{
 			c.EXPECT().OpenFile(gomock.Any(), gomock.Any(), gomock.Any()).Return(test, nil).AnyTimes(),
 			c.EXPECT().Getwd().Return("", errors.New("test error")).Times(1),
 		}, true},
@@ -137,6 +143,7 @@ func Test_populateMain(t *testing.T) {
 	dir := t.TempDir()
 
 	ctrl := gomock.NewController(t)
+
 	defer func() {
 		ctrl.Finish()
 
@@ -145,7 +152,7 @@ func Test_populateMain(t *testing.T) {
 
 	c := NewMockfileSystem(ctrl)
 	_ = os.Chdir(dir)
-	testFile, _ := os.OpenFile("testing.go", os.O_CREATE|os.O_RDONLY, 0666)
+	testFile, _ := os.OpenFile("testing.go", os.O_CREATE|os.O_RDONLY, migration.RWMode)
 
 	type args struct {
 		mainString string
@@ -190,6 +197,7 @@ func Test_populateHandler(t *testing.T) {
 	dir := t.TempDir()
 
 	ctrl := gomock.NewController(t)
+
 	defer func() {
 		ctrl.Finish()
 
@@ -198,7 +206,7 @@ func Test_populateHandler(t *testing.T) {
 
 	c := NewMockfileSystem(ctrl)
 	_ = os.Chdir(dir)
-	testFile, _ := os.OpenFile("testing.go", os.O_CREATE|os.O_RDONLY, 0666)
+	testFile, _ := os.OpenFile("testing.go", os.O_CREATE|os.O_RDONLY, migration.RWMode)
 
 	type args struct {
 		path          string

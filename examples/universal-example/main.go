@@ -21,11 +21,11 @@ import (
 
 func main() {
 	// Create the application object
-	k := gofr.New()
+	app := gofr.New()
 
 	// Service urls
-	urlHelloAPI := k.Config.Get("GOFR_HELLO_API")
-	urlLoggingService := k.Config.Get("GOFR_LOGGING_SERVICE")
+	urlHelloAPI := app.Config.Get("GOFR_HELLO_API")
+	urlLoggingService := app.Config.Get("GOFR_LOGGING_SERVICE")
 
 	// Skip TLS verification
 	var tr = &http.Transport{
@@ -34,78 +34,77 @@ func main() {
 	}
 
 	// Gofr-logging service
-	logService := service.NewHTTPServiceWithOptions(urlLoggingService, k.Logger, nil)
+	logService := service.NewHTTPServiceWithOptions(urlLoggingService, app.Logger, nil)
 
 	logService.Client = &http.Client{Transport: tr}
 	logService.Transport = tr
 
 	logSrv := svc.New(logService)
 	loggingHandler := svcHandler.New(logSrv)
-	k.GET("/level", loggingHandler.Log)
+	app.GET("/level", loggingHandler.Log)
 
 	// Gofr-hello-api service
-	helloService := service.NewHTTPServiceWithOptions(urlHelloAPI, k.Logger, nil)
+	helloService := service.NewHTTPServiceWithOptions(urlHelloAPI, app.Logger, nil)
 
 	helloService.Client = &http.Client{Transport: tr}
 	helloService.Transport = tr
 
 	helloSrv := svc.New(helloService)
 	helloSrvHandler := svcHandler.New(helloSrv)
-	k.GET("/hello", helloSrvHandler.Hello)
+	app.GET("/hello", helloSrvHandler.Hello)
 
 	// Redis
 	redisStr := redisStore.New()
 	redisHandle := redisHandler.New(redisStr)
 
-	k.GET("/redis/config/{key}", redisHandle.GetKey)
-	k.POST("/redis/config", redisHandle.SetKey)
+	app.GET("/redis/config/{key}", redisHandle.GetKey)
+	app.POST("/redis/config", redisHandle.SetKey)
 
 	// Postgres
 	pgsqlStr := pgsqlStore.New()
 	pgsqlHandle := pgsqlHandler.New(pgsqlStr)
 
-	k.GET("/pgsql/employee", pgsqlHandle.Get)
-	k.POST("/pgsql/employee", pgsqlHandle.Create)
+	app.GET("/pgsql/employee", pgsqlHandle.Get)
+	app.POST("/pgsql/employee", pgsqlHandle.Create)
 
 	// Cassandra
 	cassandraStr := cassandraStore.New()
 	cassandraHandle := cassandraHandler.New(cassandraStr)
 
-	k.GET("/cassandra/employee", cassandraHandle.Get)
-	k.POST("/cassandra/employee", cassandraHandle.Create)
+	app.GET("/cassandra/employee", cassandraHandle.Get)
+	app.POST("/cassandra/employee", cassandraHandle.Create)
 
-	k.GET("/avro/pub", avroHandler.Producer)
-	k.GET("/avro/sub", avroHandler.Consumer)
+	app.GET("/avro/pub", avroHandler.Producer)
+	app.GET("/avro/sub", avroHandler.Consumer)
 
 	config := eventhub.Config{
-		Namespace:    k.Config.Get("EVENTHUB_NAMESPACE"),
-		EventhubName: k.Config.Get("EVENTHUB_NAME"),
-		ClientID:     k.Config.Get("AZURE_CLIENT_ID"),
-		ClientSecret: k.Config.Get("AZURE_CLIENT_SECRET"),
-		TenantID:     k.Config.Get("AZURE_TENANT_ID"),
+		Namespace:    app.Config.Get("EVENTHUB_NAMESPACE"),
+		EventhubName: app.Config.Get("EVENTHUB_NAME"),
+		ClientID:     app.Config.Get("AZURE_CLIENT_ID"),
+		ClientSecret: app.Config.Get("AZURE_CLIENT_SECRET"),
+		TenantID:     app.Config.Get("AZURE_TENANT_ID"),
 	}
 
 	// Eventhub
 	eventHub, err := eventhub.New(&config)
-
 	if err != nil {
-		k.Logger.Errorf("Azure Eventhub could not be initialized, Namespace: %v, Eventhub: %v, error: %v\n",
+		app.Logger.Errorf("Azure Eventhub could not be initialized, Namespace: %v, Eventhub: %v, error: %v\n",
 			config.Namespace, config.EventhubName, err)
 		return
 	}
 
-	k.Logger.Infof("Azure Eventhub initialized, Namespace: %v, Eventhub: %v\n", config.Namespace, config.EventhubName)
+	app.Logger.Infof("Azure Eventhub initialized, Namespace: %v, Eventhub: %v\n", config.Namespace, config.EventhubName)
 
 	eventHandle := eventHandler.New(eventHub)
-	k.GET("/eventhub/pub", eventHandle.Producer)
-	k.GET("/eventhub/sub", eventHandle.Consumer)
+	app.GET("/eventhub/pub", eventHandle.Producer)
+	app.GET("/eventhub/sub", eventHandle.Consumer)
 
 	// HealthCheck for Services
-	k.ServiceHealth = append(k.ServiceHealth, helloService.HealthCheck, logService.HealthCheck)
+	app.ServiceHealth = append(app.ServiceHealth, helloService.HealthCheck, logService.HealthCheck)
 
 	// HealthCheck for EventHub
-	k.DatabaseHealth = append(k.DatabaseHealth, eventHub.HealthCheck)
+	app.DatabaseHealth = append(app.DatabaseHealth, eventHub.HealthCheck)
 
 	// Start the server
-	k.Start()
+	app.Start()
 }

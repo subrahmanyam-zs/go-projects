@@ -6,8 +6,8 @@ import (
 	"developer.zopsmart.com/go/gofr/pkg/gofr"
 )
 
-func Get(c *gofr.Context) (interface{}, error) {
-	if c.Param("id") == "1" {
+func Get(ctx *gofr.Context) (interface{}, error) {
+	if ctx.Param("id") == "1" {
 		resp := grpc.Response{
 			FirstName:  "Henry",
 			SecondName: "Marc",

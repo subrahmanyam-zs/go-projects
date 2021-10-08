@@ -9,11 +9,13 @@ import (
 	"strings"
 	"testing"
 
+	"developer.zopsmart.com/go/gofr/cmd/gofr/migration"
 	"developer.zopsmart.com/go/gofr/pkg/gofr/assert"
 )
 
 func TestCLI(t *testing.T) {
 	currDir, _ := os.Getwd()
+
 	defer func() {
 		_ = os.Chdir(currDir)
 	}()
@@ -48,7 +50,7 @@ func Test_Migrate(t *testing.T) {
 
 	currDir, _ := os.Getwd()
 	_ = os.Chdir(currDir)
-	_ = os.Mkdir("migrateCreateTest", 0777)
+	_ = os.Mkdir("migrateCreateTest", migration.RWXMode)
 	_ = os.Chdir("migrateCreateTest")
 
 	defer func() {
@@ -90,12 +92,13 @@ func Test_Migrate(t *testing.T) {
 
 func Test_CreateMigration(t *testing.T) {
 	currDir, _ := os.Getwd()
+
 	defer func() {
 		_ = os.Chdir(currDir)
 	}()
 
 	_ = os.Chdir(t.TempDir())
-	_ = os.Mkdir("migrationTest", 0777)
+	_ = os.Mkdir("migrationTest", migration.RWXMode)
 	_ = os.Chdir("migrationTest")
 
 	assert.CMDOutputContains(t, main, "gofr migrate create -name=removeColumn", "Migration created: removeColumn")
@@ -226,6 +229,7 @@ paths:
           description: Sample API Hello with name`
 
 	currDir, _ := os.Getwd()
+
 	defer func() {
 		_ = os.Chdir(currDir)
 	}()
@@ -303,6 +307,7 @@ paths:
           description: Sample API Hello`
 
 	currDir, _ := os.Getwd()
+
 	defer func() {
 		_ = os.Chdir(currDir)
 	}()

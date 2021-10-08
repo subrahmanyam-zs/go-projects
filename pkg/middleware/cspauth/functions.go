@@ -4,13 +4,15 @@ import (
 	"bytes"
 	"crypto/aes"
 	"crypto/cipher"
-	"crypto/sha1"
 	"crypto/sha256"
 	"encoding/base64"
 	"encoding/hex"
 	"io/ioutil"
 	"net/http"
 	"strings"
+
+	//nolint:gosec //existing functionality cannot be deprecated
+	"crypto/sha1"
 
 	"golang.org/x/crypto/pbkdf2"
 )

@@ -1,34 +1,40 @@
 package brand
 
 import (
-	"errors"
-
-	"developer.zopsmart.com/go/gofr/examples/mock-c-layer/store"
+	"developer.zopsmart.com/go/gofr/examples/mock-c-layer/models"
+	"developer.zopsmart.com/go/gofr/pkg/errors"
 	"developer.zopsmart.com/go/gofr/pkg/gofr"
 )
 
-type Brand struct{}
+type brand struct{}
 
-func New() *Brand {
-	return &Brand{}
+// New is factory function for store layer
+//nolint:revive // brand should not be used without proper initilization with required dependency
+func New() brand {
+	return brand{}
 }
 
-func (b *Brand) Get(ctx *gofr.Context) ([]store.Model, error) {
+func (b brand) Get(ctx *gofr.Context) ([]models.Brand, error) {
 	id := ctx.Param("id")
+
+	const (
+		id1 = 1
+		id2 = 2
+	)
 
 	switch id {
 	case "1":
-		return []store.Model{{ID: 1, Name: "brand 1"}}, nil
+		return []models.Brand{{ID: id1, Name: "brand 1"}}, nil
 	case "2":
-		return []store.Model{{ID: 1, Name: "brand 1"}, {ID: 2, Name: "brand 2"}}, nil
+		return []models.Brand{{ID: id1, Name: "brand 1"}, {ID: id2, Name: "brand 2"}}, nil
 	}
 
-	return nil, errors.New("core error")
+	return nil, errors.Error("core error")
 }
 
-func (b *Brand) Create(ctx *gofr.Context, brand store.Model) (store.Model, error) {
+func (b brand) Create(ctx *gofr.Context, brand models.Brand) (models.Brand, error) {
 	if brand.Name == "brand 3" {
-		return store.Model{}, errors.New("core error")
+		return models.Brand{}, errors.Error("core error")
 	}
 
 	return brand, nil

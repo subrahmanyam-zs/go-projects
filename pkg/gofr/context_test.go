@@ -9,11 +9,13 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/dgrijalva/jwt-go"
+	"github.com/golang-jwt/jwt/v4"
+
+	"golang.org/x/net/context"
+
 	"developer.zopsmart.com/go/gofr/pkg/gofr/request"
 	"developer.zopsmart.com/go/gofr/pkg/middleware"
 	"developer.zopsmart.com/go/gofr/pkg/middleware/oauth"
-	"golang.org/x/net/context"
 )
 
 func TestContext_Param(t *testing.T) {
@@ -29,7 +31,7 @@ func TestContext_Param(t *testing.T) {
 	}
 
 	for _, tc := range testCases {
-		r := httptest.NewRequest("GET", tc.target, nil)
+		r := httptest.NewRequest(http.MethodGet, tc.target, nil)
 		req := request.NewHTTPRequest(r)
 
 		c := NewContext(nil, req, nil)
@@ -49,7 +51,7 @@ func TestContext_Params(t *testing.T) {
 	}
 
 	for _, tc := range testCases {
-		r := httptest.NewRequest("GET", "http://dummy?"+tc.query, nil)
+		r := httptest.NewRequest(http.MethodGet, "http://dummy?"+tc.query, nil)
 		req := request.NewHTTPRequest(r)
 
 		c := NewContext(nil, req, nil)
@@ -70,7 +72,7 @@ func TestContext_Header(t *testing.T) {
 	}
 
 	for _, tc := range testCases {
-		r := httptest.NewRequest("GET", "http://dummy", nil)
+		r := httptest.NewRequest(http.MethodGet, "http://dummy", nil)
 		r.Header.Set(tc.key, tc.value)
 		req := request.NewHTTPRequest(r)
 
@@ -83,7 +85,7 @@ func TestContext_Header(t *testing.T) {
 
 func TestContext_Body_Response(t *testing.T) {
 	reqBody := `{"id":"1","name":"Bob"}`
-	r, _ := http.NewRequest("GET", "http://dummy", bytes.NewBuffer([]byte(reqBody)))
+	r, _ := http.NewRequest(http.MethodGet, "http://dummy", bytes.NewBuffer([]byte(reqBody)))
 	req := request.NewHTTPRequest(r)
 
 	c := NewContext(nil, req, nil)
@@ -124,7 +126,7 @@ func (c *customWriter) Header() http.Header {
 }
 
 func TestContext_Request(t *testing.T) {
-	expected := httptest.NewRequest("GET", "http://dummy", nil)
+	expected := httptest.NewRequest(http.MethodGet, "http://dummy", nil)
 	req := request.NewHTTPRequest(expected)
 
 	c := NewContext(nil, req, nil)
@@ -137,7 +139,7 @@ func Test_SetPathParams(t *testing.T) {
 	key := "id"
 	expectedValue := "12345"
 
-	r := httptest.NewRequest("GET", "http://dummy", nil)
+	r := httptest.NewRequest(http.MethodGet, "http://dummy", nil)
 
 	req := request.NewHTTPRequest(r)
 
@@ -170,7 +172,7 @@ func getAppData(c context.Context) map[string]interface{} {
 
 func Test_Log(t *testing.T) {
 	var (
-		r     = httptest.NewRequest("GET", "http://dummy", nil)
+		r     = httptest.NewRequest(http.MethodGet, "http://dummy", nil)
 		req   = request.NewHTTPRequest(r)
 		c     = NewContext(nil, req, New())
 		key   = "testKey"

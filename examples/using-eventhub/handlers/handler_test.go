@@ -1,10 +1,12 @@
 package handlers
 
 import (
+	"net/http"
 	"net/http/httptest"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+
 	"developer.zopsmart.com/go/gofr/pkg/datastore/pubsub"
 	"developer.zopsmart.com/go/gofr/pkg/errors"
 	"developer.zopsmart.com/go/gofr/pkg/gofr"
@@ -60,44 +62,42 @@ func (m *mockPubSub) IsSet() bool {
 }
 
 func TestProducerHandler(t *testing.T) {
-	k := gofr.New()
+	app := gofr.New()
 	m := mockPubSub{}
-	k.PubSub = &m
+	app.PubSub = &m
 
 	tests := []struct {
-		name    string
-		id      string
-		want    interface{}
-		wantErr bool
+		desc string
+		id   string
+		resp interface{}
+		err  error
 	}{
-		{"error from publisher", "1", nil, true},
-		{"success", "123", nil, false},
+		{"error from publisher", "1", nil, errors.EntityNotFound{ID: "1"}},
+		{"success", "123", nil, nil},
 	}
 
-	req := httptest.NewRequest("GET", "http://dummy", nil)
-	context := gofr.NewContext(nil, request.NewHTTPRequest(req), k)
+	req := httptest.NewRequest(http.MethodGet, "http://dummy", nil)
+	ctx := gofr.NewContext(nil, request.NewHTTPRequest(req), app)
 
-	for _, tt := range tests {
-		tt := tt
-		t.Run(tt.name, func(t *testing.T) {
-			context.SetPathParams(map[string]string{
-				"id": tt.id,
-			})
-
-			m.id = tt.id
-			got, err := Producer(context)
-
-			assert.Equal(t, tt.wantErr, err != nil)
-			assert.Equal(t, tt.want, got)
+	for i, tc := range tests {
+		ctx.SetPathParams(map[string]string{
+			"id": tc.id,
 		})
+
+		m.id = tc.id
+		resp, err := Producer(ctx)
+
+		assert.Equal(t, tc.err, err, "TEST[%d], failed.\n%s", i, tc.desc)
+
+		assert.Equal(t, tc.resp, resp, "TEST[%d], failed.\n%s", i, tc.desc)
 	}
 }
 
 func TestConsumerHandler(t *testing.T) {
-	k := gofr.New()
-	k.PubSub = &mockPubSub{}
+	app := gofr.New()
+	app.PubSub = &mockPubSub{}
 
-	ctx := gofr.NewContext(nil, nil, k)
+	ctx := gofr.NewContext(nil, nil, app)
 	_, err := Consumer(ctx)
 
 	assert.Equal(t, nil, err)

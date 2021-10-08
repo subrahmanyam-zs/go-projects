@@ -1,94 +1,159 @@
 package customer
 
 import (
+	"bytes"
 	"encoding/json"
+	"fmt"
+	"strings"
 
-	"github.com/olivere/elastic/v6"
 	"developer.zopsmart.com/go/gofr/examples/using-elasticsearch/model"
 	"developer.zopsmart.com/go/gofr/pkg/errors"
 	"developer.zopsmart.com/go/gofr/pkg/gofr"
 )
 
-type Customer struct{}
+type store struct{}
 
-func (c Customer) Get(context *gofr.Context, name string) ([]model.Customer, error) {
-	var query elastic.Query
-	query = elastic.MatchAllQuery{}
-
-	if name != "" {
-		query = elastic.NewMatchQuery("name", name)
-	}
-
-	searchResult, err := context.Elasticsearch.Search().Index("customers").Query(query).Pretty(true).Do(context)
-	if err != nil {
-		return nil, errors.DB{Err: err}
-	}
-
-	resp := make([]model.Customer, 0)
-
-	// Iterate through results and populate customers based on search results
-	for _, hit := range searchResult.Hits.Hits {
-		var c model.Customer
-
-		b, _ := hit.Source.MarshalJSON()
-
-		_ = json.Unmarshal(b, &c)
-
-		c.ID = hit.Id
-		resp = append(resp, c)
-	}
-
-	return resp, nil
+// New is factory function for customer
+//nolint:revive // customer should not be used without proper initilization with required dependency
+func New() store {
+	return store{}
 }
 
-func (c Customer) GetByID(context *gofr.Context, id string) (*model.Customer, error) {
-	var customer model.Customer
+const index = "customers"
 
-	searchResult, err := context.Elasticsearch.Get().Index("customers").Id(id).Pretty(true).Do(context)
+func (s store) Get(ctx *gofr.Context, name string) ([]model.Customer, error) {
+	var body string
+
+	if name != "" {
+		body = fmt.Sprintf(`{"query" : { "match" : {"name":"%s"} }}`, name)
+	}
+
+	es := ctx.Elasticsearch
+
+	res, err := es.Search(
+		es.Search.WithIndex(index),
+		es.Search.WithContext(ctx),
+		es.Search.WithBody(strings.NewReader(body)),
+		es.Search.WithPretty(),
+	)
 	if err != nil {
 		return nil, errors.DB{Err: err}
 	}
 
-	b, _ := searchResult.Source.MarshalJSON()
+	var customers []model.Customer
 
-	err = json.Unmarshal(b, &customer)
+	err = es.BindArray(res, &customers)
 	if err != nil {
 		return nil, err
 	}
 
-	customer.ID = searchResult.Id
-
-	return &customer, nil
+	return customers, nil
 }
 
-func (c Customer) Update(context *gofr.Context, customer model.Customer, id string) (*model.Customer, error) {
-	resp, err := context.Elasticsearch.Update().Index("customers").Type("_doc").Id(id).Doc(map[string]interface{}{
-		"name": customer.Name}).Do(context)
+func (s store) GetByID(ctx *gofr.Context, id string) (model.Customer, error) {
+	var customer model.Customer
+
+	es := ctx.Elasticsearch
+
+	res, err := es.Search(
+		es.Search.WithIndex(index),
+		es.Search.WithContext(ctx),
+		es.Search.WithBody(strings.NewReader(fmt.Sprintf(`{"query" : { "match" : {"id":"%s"} }}`, id))),
+		es.Search.WithPretty(),
+		es.Search.WithSize(1),
+	)
 	if err != nil {
-		return nil, errors.DB{Err: err}
+		return customer, errors.DB{Err: err}
 	}
 
-	customer.ID = resp.Id
-
-	return &customer, nil
-}
-
-func (c Customer) Create(context *gofr.Context, customer model.Customer) (*model.Customer, error) {
-	resp, err := context.Elasticsearch.Index().Index("customers").Type("_doc").BodyJson(customer).Do(context)
+	err = es.Bind(res, &customer)
 	if err != nil {
-		return nil, errors.DB{Err: err}
+		return customer, err
 	}
 
-	customer.ID = resp.Id
+	if customer.ID == "" {
+		return customer, errors.EntityNotFound{Entity: "customer", ID: id}
+	}
 
-	return &customer, nil
+	return customer, nil
 }
 
-func (c Customer) Delete(context *gofr.Context, id string) error {
-	_, err := context.Elasticsearch.Delete().Type("_doc").Index("customers").Id(id).Do(context)
+func (s store) Update(ctx *gofr.Context, c model.Customer, id string) (model.Customer, error) {
+	body, err := json.Marshal(c)
+	if err != nil {
+		return model.Customer{}, errors.DB{Err: err}
+	}
+
+	es := ctx.Elasticsearch
+
+	res, err := es.Index(
+		index,
+		bytes.NewReader(body),
+		es.Index.WithRefresh("true"),
+		es.Index.WithPretty(),
+		es.Index.WithContext(ctx),
+		es.Index.WithDocumentID(id),
+	)
+	if err != nil {
+		return model.Customer{}, errors.DB{Err: err}
+	}
+
+	resp, err := es.Body(res)
+	if err != nil {
+		return model.Customer{}, errors.DB{Err: err}
+	}
+
+	if id, ok := resp["_id"].(string); ok {
+		return s.GetByID(ctx, id)
+	}
+
+	return model.Customer{}, errors.Error("update error: invalid id")
+}
+
+func (s store) Create(ctx *gofr.Context, c model.Customer) (model.Customer, error) {
+	body, err := json.Marshal(c)
+	if err != nil {
+		return model.Customer{}, errors.DB{Err: err}
+	}
+
+	es := ctx.Elasticsearch
+
+	res, err := es.Index(
+		index,
+		bytes.NewReader(body),
+		es.Index.WithRefresh("true"),
+		es.Index.WithPretty(),
+		es.Index.WithContext(ctx),
+		es.Index.WithDocumentID(c.ID),
+	)
+	if err != nil {
+		return model.Customer{}, errors.DB{Err: err}
+	}
+
+	resp, err := es.Body(res)
+	if err != nil {
+		return model.Customer{}, errors.DB{Err: err}
+	}
+
+	if id, ok := resp["_id"].(string); ok {
+		return s.GetByID(ctx, id)
+	}
+
+	return model.Customer{}, errors.Error("create error: invalid id")
+}
+
+func (s store) Delete(ctx *gofr.Context, id string) error {
+	es := ctx.Elasticsearch
+
+	_, err := es.Delete(
+		index,
+		id,
+		es.Delete.WithContext(ctx),
+		es.Delete.WithPretty(),
+	)
 	if err != nil {
 		return errors.DB{Err: err}
 	}
 
-	return err
+	return nil
 }

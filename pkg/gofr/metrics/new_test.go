@@ -19,7 +19,7 @@ func Test_New(t *testing.T) {
 	}{
 		{metric, "success-case", nil},
 		{metric, "error-case", metricErr},
-		{ mockMetric, "error-case", errInvalidType},
+		{mockMetric, "error-case", errInvalidType},
 		{nil, "error-case", errInvalidMetric},
 	}
 

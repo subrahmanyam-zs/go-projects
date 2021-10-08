@@ -5,6 +5,8 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+
+	"developer.zopsmart.com/go/gofr/cmd/gofr/migration"
 )
 
 func createChangeDir(f fileSystem, name string) error {
@@ -25,7 +27,7 @@ func createModel(f fileSystem, projectDirectory, entity string) error {
 		return err
 	}
 
-	modelFile, err := f.OpenFile(entity+".go", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0666)
+	modelFile, err := f.OpenFile(entity+".go", os.O_APPEND|os.O_CREATE|os.O_WRONLY, migration.RWMode)
 	if err != nil {
 		return err
 	}
@@ -100,7 +102,7 @@ func populateEntityFile(f fileSystem, projectDirectory, layerDirectory, entity, 
 		return err
 	}
 
-	entityFile, err := f.OpenFile(entity+".go", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	entityFile, err := f.OpenFile(entity+".go", os.O_APPEND|os.O_CREATE|os.O_WRONLY, migration.RWOwner)
 	if err != nil {
 		return err
 	}

@@ -6,9 +6,9 @@ import (
 )
 
 func main() {
-	k := gofr.New()
-	k.POST("/phone", handler.ValidateEntry)
+	app := gofr.New()
+	app.POST("/phone", handler.ValidateEntry)
 
-	k.Server.HTTP.Port = 9010
-	k.Start()
+	app.Server.HTTP.Port = 9010
+	app.Start()
 }

@@ -14,26 +14,31 @@ func TestIntegration(t *testing.T) {
 	time.Sleep(time.Second * 5)
 
 	tcs := []struct {
-		method             string
-		endpoint           string
-		expectedStatusCode int
-		body               []byte
+		desc       string
+		method     string
+		endpoint   string
+		statusCode int
+		body       []byte
 	}{
-		{"GET", "config/key123", 500, nil},
-		{"POST", "config", 201, []byte(`{}`)},
-		{"DELETE", "config/key123", 204, nil},
+		{"call to get key", http.MethodGet, "config/key123", http.StatusInternalServerError, nil},
+		{"call to create key", http.MethodPost, "config", http.StatusCreated, []byte(`{}`)},
+		{"call to delete a non existent key", http.MethodDelete, "config/key123", http.StatusNoContent, nil},
 	}
 
-	for _, tc := range tcs {
+	for i, tc := range tcs {
 		req, _ := request.NewMock(tc.method, "http://localhost:9091/"+tc.endpoint, bytes.NewBuffer(tc.body))
 		c := http.Client{}
 
-		resp, _ := c.Do(req)
-
-		if resp != nil && resp.StatusCode != tc.expectedStatusCode {
-			t.Errorf("Failed.\tExpected %v\tGot %v\n", tc.expectedStatusCode, resp.StatusCode)
+		resp, err := c.Do(req)
+		if err != nil {
+			t.Errorf("TEST[%v] Failed.\tHTTP request encountered Err: %v\n%s", i, err, tc.desc)
+			continue
 		}
 
-		resp.Body.Close()
+		if resp.StatusCode != tc.statusCode {
+			t.Errorf("TEST[%v] Failed.\tExpected %v\tGot %v\n%s", i, tc.statusCode, resp.StatusCode, tc.desc)
+		}
+
+		_ = resp.Body.Close()
 	}
 }

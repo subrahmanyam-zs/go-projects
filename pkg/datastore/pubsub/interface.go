@@ -4,6 +4,7 @@ import (
 	"time"
 
 	eventhub "github.com/Azure/azure-event-hubs-go/v3"
+
 	"developer.zopsmart.com/go/gofr/pkg/gofr/types"
 )
 

@@ -4,13 +4,14 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+
 	"developer.zopsmart.com/go/gofr/examples/universal-example/pgsql/entity"
 	"developer.zopsmart.com/go/gofr/pkg/datastore"
 	"developer.zopsmart.com/go/gofr/pkg/gofr"
 )
 
 func initializeTest(t *testing.T) *gofr.Gofr {
-	k := gofr.New()
+	app := gofr.New()
 	queryTable := `
  	   CREATE TABLE IF NOT EXISTS employees (
 	   id         int primary key,
@@ -20,39 +21,42 @@ func initializeTest(t *testing.T) *gofr.Gofr {
  	   city       varchar(50))
 	`
 
-	if _, err := k.DB().Exec(queryTable); err != nil {
-		k.Logger.Errorf("Postgres Got error while sourcing the schema: ", err)
+	if _, err := app.DB().Exec(queryTable); err != nil {
+		app.Logger.Errorf("Postgres Got error while sourcing the schema: ", err)
 	}
 	// initializing the seeder
-	seeder := datastore.NewSeeder(&k.DataStore, "../db")
+	seeder := datastore.NewSeeder(&app.DataStore, "../db")
 	seeder.RefreshTables(t, "employees")
 
-	return k
+	return app
 }
 
 func TestEmployee_Get(t *testing.T) {
-	k := initializeTest(t)
-	c := gofr.NewContext(nil, nil, k)
+	app := initializeTest(t)
+	c := gofr.NewContext(nil, nil, app)
 
 	_, err := New().Get(c)
 	assert.Equal(t, nil, err)
 }
 
 func TestEmployee_Create(t *testing.T) {
-	k := initializeTest(t)
-	c := gofr.NewContext(nil, nil, k)
-	{
-		// Success Case
-		emp := entity.Employee{ID: 9, Name: "Sunita", Phone: "01234", Email: "sunita@zopsmart.com", City: "Darbhanga"}
-		err := New().Create(c, emp)
-		assert.Equal(t, nil, err)
+	app := initializeTest(t)
+	c := gofr.NewContext(nil, nil, app)
+	e := New()
+
+	tests := []struct {
+		desc    string
+		input   entity.Employee
+		wantErr bool
+	}{
+		{"success", entity.Employee{ID: 9, Name: "Sunita", Phone: "01234", Email: "sunita@zopsmart.com", City: "Darbhanga"}, false},
+		{"fail-primary key constraint violation", entity.Employee{ID: 9, Name: "Angi", Phone: "01333", Email: "anna@zopsmart.com", City: "Delhi"}, true},
 	}
-	{
-		// Failure Case using primary key constraint violation
-		emp := entity.Employee{ID: 9, Name: "Angi", Phone: "01333", Email: "anna@zopsmart.com", City: "Delhi"}
-		err := New().Create(c, emp)
-		if err == nil {
-			t.Error("Test Failed in create")
+
+	for i, tc := range tests {
+		err := e.Create(c, tc.input)
+		if (err != nil) != tc.wantErr {
+			t.Errorf("Testcase[%v] Failed in create", i)
 		}
 	}
 }

@@ -2,11 +2,13 @@ package handler
 
 import (
 	"bytes"
+	"net/http"
 	"net/http/httptest"
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/assert"
+
 	"developer.zopsmart.com/go/gofr/pkg/errors"
 	"developer.zopsmart.com/go/gofr/pkg/gofr"
 	"developer.zopsmart.com/go/gofr/pkg/gofr/request"
@@ -37,7 +39,7 @@ func (m mockStore) Set(ctx *gofr.Context, key, value string, expiration time.Dur
 
 func TestRedisModel_GetKey(t *testing.T) {
 	m := New(mockStore{})
-	k := gofr.New()
+	app := gofr.New()
 
 	tests := []struct {
 		key         string
@@ -50,9 +52,9 @@ func TestRedisModel_GetKey(t *testing.T) {
 	}
 
 	for _, tc := range tests {
-		r := httptest.NewRequest("GET", "http://dummy", nil)
+		r := httptest.NewRequest(http.MethodGet, "http://dummy", nil)
 		req := request.NewHTTPRequest(r)
-		c := gofr.NewContext(nil, req, k)
+		c := gofr.NewContext(nil, req, app)
 
 		if tc.key != "" {
 			c.SetPathParams(map[string]string{
@@ -67,7 +69,7 @@ func TestRedisModel_GetKey(t *testing.T) {
 
 func TestRedisModel_SetKey(t *testing.T) {
 	m := New(mockStore{})
-	k := gofr.New()
+	app := gofr.New()
 
 	tests := []struct {
 		body        []byte
@@ -79,9 +81,9 @@ func TestRedisModel_SetKey(t *testing.T) {
 	}
 
 	for _, tc := range tests {
-		r := httptest.NewRequest("POST", "http://dummy", bytes.NewReader(tc.body))
+		r := httptest.NewRequest(http.MethodPost, "http://dummy", bytes.NewReader(tc.body))
 		req := request.NewHTTPRequest(r)
-		c := gofr.NewContext(nil, req, k)
+		c := gofr.NewContext(nil, req, app)
 
 		_, gotErr := m.SetKey(c)
 		assert.Equal(t, tc.expectedErr, gotErr)

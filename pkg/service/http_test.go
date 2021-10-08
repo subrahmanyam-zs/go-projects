@@ -168,7 +168,7 @@ func TestService_GetRetry(t *testing.T) {
 
 func TestServiceLog_String(t *testing.T) {
 	l := &callLog{
-		Method:  "GET",
+		Method:  http.MethodGet,
 		URI:     "test",
 		Headers: map[string]string{"Content-Type": "application/json"},
 	}
@@ -211,7 +211,7 @@ func TestCallError(t *testing.T) {
 	}
 	expectedErr := ErrServiceDown{URL: "sample service"}
 
-	_, err := client.call(context.TODO(), "GET", "", nil, nil, nil)
+	_, err := client.call(context.TODO(), http.MethodGet, "", nil, nil, nil)
 
 	if !reflect.DeepEqual(err, expectedErr) {
 		t.Errorf("Failed.Expected %v\tGot %v", expectedErr, err)
@@ -231,7 +231,7 @@ func TestLogError(t *testing.T) {
 		isHealthy: true,
 	}
 
-	_, _ = client.call(context.TODO(), "GET", "", nil, nil, nil)
+	_, _ = client.call(context.TODO(), http.MethodGet, "", nil, nil, nil)
 	expected := "unsupported protocol scheme"
 
 	if !strings.Contains(b.String(), expected) {
@@ -255,7 +255,7 @@ func Test_SetContentType(t *testing.T) {
 	}
 
 	for i, v := range testcases {
-		req := httptest.NewRequest("GET", "/dummy", nil)
+		req := httptest.NewRequest(http.MethodGet, "/dummy", nil)
 		setContentTypeAndAcceptHeader(req, v.body)
 
 		contentType := req.Header.Get("content-type")
@@ -268,7 +268,7 @@ func Test_SetContentType(t *testing.T) {
 
 func Test_SetAcceptHeader(t *testing.T) {
 	expectedHeader := "application/json,application/xml,text/plain"
-	req := httptest.NewRequest("GET", "/dummy", nil)
+	req := httptest.NewRequest(http.MethodGet, "/dummy", nil)
 	setContentTypeAndAcceptHeader(req, nil)
 
 	header := req.Header.Get("accept")
@@ -299,7 +299,7 @@ func TestCorrelationIDPropagation(t *testing.T) {
 	for i := range correlationIDs {
 		h := httpService{}
 		ctx := context.WithValue(context.Background(), middleware.CorrelationIDKey, correlationIDs[i])
-		req, _ := h.createReq(ctx, "GET", "/", nil, nil, nil)
+		req, _ := h.createReq(ctx, http.MethodGet, "/", nil, nil, nil)
 
 		correlationID := req.Header.Get("X-Correlation-Id")
 		if correlationID != correlationIDs[i] {
@@ -332,7 +332,7 @@ func TestHttpService_SetHeaders(t *testing.T) {
 	ctx = context.WithValue(ctx, middleware.AuthenticatedUserIDKey, "2")
 	ctx = context.WithValue(ctx, middleware.ZopsmartTenantKey, "riu")
 
-	req, _ := httpSvc.createReq(ctx, "GET", "", nil, nil, nil)
+	req, _ := httpSvc.createReq(ctx, http.MethodGet, "", nil, nil, nil)
 
 	if req.Header.Get("X-Zopsmart-Channel") != "WEB" || req.Header.Get("X-Authenticated-UserId") != "2" ||
 		req.Header.Get("X-Zopsmart-Tenant") != "riu" {
@@ -348,7 +348,7 @@ func TestHttpService_CSPAuthHeaders(t *testing.T) {
 
 	httpSvc := NewHTTPServiceWithOptions("http://dummy", log.NewLogger(), opts)
 
-	req, _ := httpSvc.createReq(context.Background(), "GET", "", nil, nil, nil)
+	req, _ := httpSvc.createReq(context.Background(), http.MethodGet, "", nil, nil, nil)
 
 	if req.Header.Get("ac") == "" || req.Header.Get("ak") != "mock-app-key" || req.Header.Get("cd") != "" ||
 		req.Header.Get("sv") != "V1" || req.Header.Get("st") != "1" {
@@ -360,7 +360,7 @@ func TestHttpService_SetAuthClientIP(t *testing.T) {
 	s := NewHTTPServiceWithOptions("http://dummy", log.NewLogger(),
 		&Options{Headers: map[string]string{"Authorization": "se31-2fhhvhjf-9049"}})
 	ctx := context.WithValue(context.TODO(), middleware.ClientIPKey, "123.234.545.894")
-	req, _ := s.createReq(ctx, "GET", "", nil, nil, nil)
+	req, _ := s.createReq(ctx, http.MethodGet, "", nil, nil, nil)
 
 	if req.Header.Get("True-Client-Ip") != "123.234.545.894" || req.Header.Get("Authorization") != "se31-2fhhvhjf-9049" {
 		t.Errorf("setting of auth failed")
@@ -375,10 +375,10 @@ func TestHttpService_PropagateHeaders(t *testing.T) {
 
 	httpSvc.PropagateHeaders("X-Custom-Header")
 
-	// nolint:staticcheck,golint // cannot make the key a constant
+	// nolint:revive,staticcheck // cannot make the key a constant
 	ctx := context.WithValue(context.TODO(), "X-Custom-Header", "ab")
 
-	req, _ := httpSvc.createReq(ctx, "GET", "", nil, nil, nil)
+	req, _ := httpSvc.createReq(ctx, http.MethodGet, "", nil, nil, nil)
 	if req.Header.Get("X-Custom-Header") != "ab" {
 		t.Error("setting of custom headers failed")
 	}
@@ -410,7 +410,7 @@ func TestCallLog(t *testing.T) {
 
 func TestErrorLogString(t *testing.T) {
 	l := &errorLog{
-		Method:  "GET",
+		Method:  http.MethodGet,
 		URI:     "test",
 		Headers: map[string]string{"Content-Type": "application/json"},
 		Message: "cannot connect",
@@ -449,7 +449,7 @@ func TestCustomHeaderPropagation(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			h := httpService{customHeaders: tt.serviceLevelHeaders}
 
-			req, _ := h.createReq(context.TODO(), "GET", "/", nil, nil, tt.methodLevelHeaders)
+			req, _ := h.createReq(context.TODO(), http.MethodGet, "/", nil, nil, tt.methodLevelHeaders)
 
 			id := req.Header.Get("id")
 			entity := req.Header.Get("entity")
@@ -488,7 +488,7 @@ func TestHeaderPriority(t *testing.T) {
 
 			ctx := context.WithValue(context.TODO(), middleware.ClientIPKey, "0.0.0.0")
 			body, _ := json.Marshal(map[string]interface{}{"entity": "test"})
-			req, _ := h.createReq(ctx, "POST", "/", nil, body, tt.methodLevelHeaders)
+			req, _ := h.createReq(ctx, http.MethodPost, "/", nil, body, tt.methodLevelHeaders)
 
 			contentType := req.Header.Get("Content-Type")
 			if contentType != tt.wantContentType {
@@ -522,9 +522,9 @@ func TestNewHTTPAuthService(t *testing.T) {
 // TestHTTPCookieLogging checks, Cookie is getting logged or not for http client.
 func TestHTTPCookieLogging(t *testing.T) {
 	b := new(bytes.Buffer)
-	url := "http://dummmy"
+	url := "http://dummmyapi"
 	h := NewHTTPServiceWithOptions(url, log.NewMockLogger(b), nil)
-	_, _ = h.call(context.TODO(), "GET", "", nil, nil, map[string]string{"Cookie": "Some-Random-Value"})
+	_, _ = h.call(context.TODO(), http.MethodGet, "", nil, nil, map[string]string{"Cookie": "Some-Random-Value"})
 
 	x := b.String()
 	if strings.Contains(x, "Cookie") {
@@ -537,7 +537,7 @@ func TestCSPHeaderLogging(t *testing.T) {
 	b := new(bytes.Buffer)
 	url := "http://dummmy"
 	h := NewHTTPServiceWithOptions(url, log.NewMockLogger(b), nil)
-	_, _ = h.call(context.TODO(), "GET", "", nil, nil, map[string]string{"ac": "Some-Random-Value", "ak": "Some-Random-Value"})
+	_, _ = h.call(context.TODO(), http.MethodGet, "", nil, nil, map[string]string{"ac": "Some-Random-Value", "ak": "Some-Random-Value"})
 
 	x := b.String()
 	if strings.Contains(x, "\"ac\":") || strings.Contains(x, "\"Ac\":") ||
@@ -549,7 +549,7 @@ func TestCSPHeaderLogging(t *testing.T) {
 func Test_AuthCall(t *testing.T) {
 	b := new(bytes.Buffer)
 	logger := log.NewMockLogger(b)
-	url := "http://dummy"
+	url := "http://mockapi"
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		sampleTokenResponse := map[string]interface{}{

@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"io"
-	"os"
 	"reflect"
 	"strconv"
 	"strings"
@@ -16,30 +15,23 @@ import (
 	"developer.zopsmart.com/go/gofr/pkg/log"
 )
 
-func TestGetNewMongoDB(t *testing.T) {
-	testcases := []struct {
-		config MongoConfig
-		expErr error
-	}{
-		{
-			MongoConfig{"fake_host", "9999", "admin", "admin123", "test", false, false, 30},
-			context.DeadlineExceeded,
-		},
-		{
-			MongoConfig{"", "", "", "", "test", false, false, 30},
-			errors.New("authsource without username is invalid"),
-		},
+func TestGetNewMongoDB_ContextErr(t *testing.T) {
+	mongoConfig := MongoConfig{"fake_host", "9999", "admin", "admin123", "test", false, false, 30}
+	expErr := context.DeadlineExceeded
+
+	_, err := GetNewMongoDB(log.NewLogger(), &mongoConfig)
+	if err != nil && !strings.Contains(err.Error(), expErr.Error()) {
+		t.Errorf("Error in testcase. Expected: %v, Got: %v", expErr, err)
 	}
+}
 
-	for i := range testcases {
-		_, err := GetNewMongoDB(log.NewLogger(), &testcases[i].config)
-		if err != nil && !strings.Contains(err.Error(), testcases[i].expErr.Error()) {
-			t.Errorf("Error in testcase %v. Expected: %v, Got: %v", i, testcases[i].expErr, err)
-		}
+func TestGetNewMongoDB_ConnectionError(t *testing.T) {
+	mongoConfig := MongoConfig{"", "", "", "", "test", false, false, 30}
+	expErr := errors.New("error validating uri: username required if URI contains user info")
 
-		if err == nil && testcases[i].expErr != nil {
-			t.Errorf("Error in testcase %v. Expected: %v, Got: %v", i, testcases[i].expErr, err)
-		}
+	_, err := GetNewMongoDB(log.NewLogger(), &mongoConfig)
+	if err != nil && !strings.Contains(err.Error(), expErr.Error()) {
+		t.Errorf("Error in testcase. Expected: %v, Got: %v", expErr, err)
 	}
 }
 
@@ -75,20 +67,15 @@ func TestGetMongoDBFromEnv_Error(t *testing.T) {
 	for i := range testcases {
 		oldEnvVal := c.Get(testcases[i].envKey)
 
-		err := os.Setenv(testcases[i].envKey, testcases[i].newEnvVal)
-		if err != nil {
-			t.Error(err)
-		}
+		t.Setenv(testcases[i].envKey, testcases[i].newEnvVal)
+
 		// Checking for connection with default env vars
-		_, err = GetMongoDBFromEnv(logger)
+		_, err := GetMongoDBFromEnv(logger)
 		if err != nil && !strings.Contains(err.Error(), testcases[i].expErr.Error()) {
 			t.Errorf("Expected %v but got %v", testcases[i].expErr, err)
 		}
 
-		err = os.Setenv(testcases[i].envKey, oldEnvVal)
-		if err != nil {
-			t.Error(err)
-		}
+		t.Setenv(testcases[i].envKey, oldEnvVal)
 	}
 }
 
@@ -115,31 +102,19 @@ func TestGetMongoConfigFromEnv_SSL_RetryWrites(t *testing.T) {
 	}
 
 	for i := range testcases {
-		err := os.Setenv("MONGO_DB_ENABLE_SSL", testcases[i].enableSSL)
-		if err != nil {
-			t.Error(err)
-		}
+		t.Setenv("MONGO_DB_ENABLE_SSL", testcases[i].enableSSL)
 
-		err = os.Setenv("MONGO_DB_RETRY_WRITES", testcases[i].retryWrites)
-		if err != nil {
-			t.Error(err)
-		}
+		t.Setenv("MONGO_DB_RETRY_WRITES", testcases[i].retryWrites)
 
-		_, err = getMongoConfigFromEnv()
+		_, err := getMongoConfigFromEnv()
 		if !reflect.DeepEqual(err, testcases[i].expErr) {
 			t.Errorf("Expected: %v, Got:%v", testcases[i].expErr, err)
 		}
 	}
 
-	err := os.Setenv("MONGO_DB_ENABLE_SSL", oldEnableSSL)
-	if err != nil {
-		t.Error(err)
-	}
+	t.Setenv("MONGO_DB_ENABLE_SSL", oldEnableSSL)
 
-	err = os.Setenv("MONGO_DB_RETRY_WRITES", oldretryWrites)
-	if err != nil {
-		t.Error(err)
-	}
+	t.Setenv("MONGO_DB_RETRY_WRITES", oldretryWrites)
 }
 
 func Test_getMongoConnectionString(t *testing.T) {

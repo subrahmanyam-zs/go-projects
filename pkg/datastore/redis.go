@@ -2,6 +2,7 @@ package datastore
 
 import (
 	"context"
+	"crypto/tls"
 	"fmt"
 	"os"
 	"strings"
@@ -15,6 +16,8 @@ import (
 	"github.com/go-redis/redis/extra/redisotel"
 	"github.com/go-redis/redis/v8"
 	"github.com/prometheus/client_golang/prometheus"
+
+	"go.opentelemetry.io/otel/trace"
 )
 
 // Redis is an abstraction that embeds the UniversalClient from go-redis/redis
@@ -49,7 +52,9 @@ var (
 // configuration as defined in go-redis/redis. User defined config can be provided by populating the Options field.
 type RedisConfig struct {
 	HostName                string
+	Password                string
 	Port                    string
+	SSL                     bool
 	ConnectionRetryDuration int
 	Options                 *redis.Options
 }
@@ -65,6 +70,16 @@ func NewRedis(logger log.Logger, config RedisConfig) (Redis, error) {
 		config.Options = new(redis.Options)
 		config.Options.Addr = config.HostName + ":" + config.Port
 	}
+
+	config.Options.Password = config.Password
+
+	// If SSL is enabled add TLS Config
+	if config.SSL {
+		config.Options.TLSConfig = &tls.Config{}
+	}
+
+	span := trace.SpanFromContext(context.Background())
+	defer span.End()
 
 	rc := redis.NewClient(config.Options)
 
@@ -93,9 +108,16 @@ func NewRedisFromEnv(options *redis.Options) (Redis, error) {
 	// pushing deprecated feature count to prometheus
 	middleware.PushDeprecatedFeature("NewRedisFromEnv")
 
+	ssl := false
+	if strings.EqualFold(os.Getenv("REDIS_SSL"), "true") {
+		ssl = true
+	}
+
 	config := RedisConfig{
 		HostName: os.Getenv("REDIS_HOST"),
 		Port:     os.Getenv("REDIS_PORT"),
+		Password: os.Getenv("REDIS_PASSWORD"),
+		SSL:      ssl,
 	}
 
 	if options != nil {
@@ -134,8 +156,40 @@ func (r redisClient) HealthCheck() types.Health {
 	}
 
 	resp.Status = pkg.StatusUp
+	resp.Details = r.getInfoInMap()
 
 	return resp
+}
+
+// getInfoInMap runs the INFO command on redis and returns a structured map divided by sections of redis response.
+func (r redisClient) getInfoInMap() map[string]map[string]string {
+	info, _ := r.Client.Info(context.Background(), "all").Result()
+
+	result := make(map[string]map[string]string)
+	parts := strings.Split(info, "\r\n")
+
+	var currentSection string
+
+	for _, p := range parts {
+		// Take care of empty lines
+		if p == "" {
+			continue
+		}
+
+		// Take care of section headers
+		if strings.HasPrefix(p, "#") {
+			currentSection = strings.ToLower(strings.TrimPrefix(p, "# "))
+			result[currentSection] = make(map[string]string)
+
+			continue
+		}
+
+		// Normal lines
+		splits := strings.Split(p, ":")
+		result[currentSection][splits[0]] = splits[1]
+	}
+
+	return result
 }
 
 func (r redisClusterClient) HealthCheck() types.Health {
@@ -207,6 +261,7 @@ func (l *QueryLogger) AfterProcessPipeline(ctx context.Context, cmds []redis.Cmd
 		query = strings.TrimSuffix(query, "]")
 		l.Query[i] = query
 	}
+
 	query := strings.Split(l.Query[0], " ")
 
 	l.Duration = endTime.Sub(l.StartTime).Microseconds()

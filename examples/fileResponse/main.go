@@ -9,13 +9,13 @@ import (
 
 func main() {
 	// Create the application object
-	k := gofr.New()
+	app := gofr.New()
 	rootPath, _ := os.Getwd()
 
 	// overriding default template location.
-	k.TemplateDir = rootPath + "/static"
+	app.TemplateDir = rootPath + "/static"
 
-	k.GET("/file", handler.FileHandler)
+	app.GET("/file", handler.FileHandler)
 
-	k.Start()
+	app.Start()
 }

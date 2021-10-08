@@ -6,14 +6,14 @@ import (
 	"os"
 	"strings"
 
+	"github.com/jinzhu/gorm"
+	"github.com/jmoiron/sqlx"
+	"github.com/prometheus/client_golang/prometheus"
+
 	"developer.zopsmart.com/go/gofr/pkg"
 	"developer.zopsmart.com/go/gofr/pkg/gofr/types"
 	"developer.zopsmart.com/go/gofr/pkg/log"
 	"developer.zopsmart.com/go/gofr/pkg/middleware"
-
-	"github.com/jinzhu/gorm"
-	"github.com/jmoiron/sqlx"
-	"github.com/prometheus/client_golang/prometheus"
 
 	// empty imports are to ensure inits are run for these packages.
 	_ "github.com/jinzhu/gorm/dialects/mssql"
@@ -179,6 +179,7 @@ func (c GORMClient) HealthCheck() types.Health {
 	}
 
 	resp.Status = pkg.StatusUp
+	resp.Details = c.DB.DB().Stats()
 
 	return resp
 }
@@ -201,6 +202,7 @@ func (c SQLXClient) HealthCheck() types.Health {
 	}
 
 	resp.Status = pkg.StatusUp
+	resp.Details = c.DB.Stats()
 
 	return resp
 }

@@ -1,11 +1,13 @@
 package gofr
 
 import (
+	"net/http"
 	"net/http/httptest"
 	"reflect"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+
 	"developer.zopsmart.com/go/gofr/pkg/gofr/request"
 )
 
@@ -41,7 +43,7 @@ func TestContext_Filters(t *testing.T) {
 		},
 	}
 	for i, tc := range testCases {
-		r := httptest.NewRequest("GET", tc.target, nil)
+		r := httptest.NewRequest(http.MethodGet, tc.target, nil)
 		req := request.NewHTTPRequest(r)
 
 		c := NewContext(nil, req, nil)

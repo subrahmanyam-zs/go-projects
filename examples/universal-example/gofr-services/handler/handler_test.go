@@ -1,10 +1,12 @@
 package handler
 
 import (
+	"net/http"
 	"net/http/httptest"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+
 	"developer.zopsmart.com/go/gofr/pkg/errors"
 	"developer.zopsmart.com/go/gofr/pkg/gofr"
 	"developer.zopsmart.com/go/gofr/pkg/gofr/request"
@@ -24,7 +26,7 @@ func TestHandler_GetLog(t *testing.T) {
 	}
 
 	for i, tc := range tests {
-		req := httptest.NewRequest("GET", "http://dummy?"+tc.filter, nil)
+		req := httptest.NewRequest(http.MethodGet, "http://dummy?"+tc.filter, nil)
 		c := gofr.NewContext(responder.NewContextualResponder(httptest.NewRecorder(), req), request.NewHTTPRequest(req), nil)
 
 		h := New(mockService{})
@@ -46,7 +48,7 @@ func TestHandler_GetHello(t *testing.T) {
 	}
 
 	for i, tc := range tests {
-		req := httptest.NewRequest("GET", "http://dummy?"+tc.filter, nil)
+		req := httptest.NewRequest(http.MethodGet, "http://dummy?"+tc.filter, nil)
 		c := gofr.NewContext(responder.NewContextualResponder(httptest.NewRecorder(), req), request.NewHTTPRequest(req), nil)
 
 		h := New(mockService{})

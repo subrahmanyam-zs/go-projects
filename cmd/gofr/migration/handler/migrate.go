@@ -1,7 +1,9 @@
 package handler
 
 import (
+	"bufio"
 	"bytes"
+	"go/build"
 	"os"
 	"os/exec"
 	"strconv"
@@ -9,6 +11,7 @@ import (
 	"text/template"
 
 	"developer.zopsmart.com/go/gofr/cmd/gofr/helper"
+	mg "developer.zopsmart.com/go/gofr/cmd/gofr/migration"
 	"developer.zopsmart.com/go/gofr/pkg/errors"
 	"developer.zopsmart.com/go/gofr/pkg/gofr"
 )
@@ -91,15 +94,6 @@ func runMigration(f FSMigrate, method, db string, tagSlc []string) (interface{},
 		return nil, err
 	}
 
-	goPath := os.Getenv("GOPATH")
-
-	r := strings.SplitAfter(dir, goPath+"/src/")
-	if len(r) > 1 {
-		dir = r[1]
-	} else {
-		dir = r[0]
-	}
-
 	err = f.Chdir("migrations")
 	if f.IsNotExist(err) {
 		return nil, &errors.Response{Reason: "migrations do not exists! If you have created migrations " +
@@ -140,7 +134,12 @@ func createMain(f FSMigrate, method, db, directory string, tagSlc []string) erro
 	lastIndex := strings.LastIndex(directory, "/")
 	projectName := directory[lastIndex+1:]
 
-	err := templateCreate(f, projectName, directory, method, dbStr, tagSlc)
+	moduleName, err := getModulePath(f, directory)
+	if err != nil {
+		return err
+	}
+
+	err = templateCreate(f, projectName, method, dbStr, moduleName, tagSlc)
 	if err != nil {
 		return err
 	}
@@ -148,15 +147,15 @@ func createMain(f FSMigrate, method, db, directory string, tagSlc []string) erro
 	return nil
 }
 
-func templateCreate(f FSMigrate, projectName, directory, method, dbStr string, tagSlc []string) error {
+func templateCreate(f FSMigrate, projectName, method, dbStr, moduleName string, tagSlc []string) error {
 	migration := `migrations.All()` // if method is UP or DOWN method with no specific migrations to run, then `migrations.All() is used
 	mainTemplate := template.Must(template.New("").Parse(`// This is auto-generated file using 'gofr migrate' tool. DO NOT EDIT.
 package main
 
 import (
-	"{{.MigrationDir}}/migrations"
+	"{{.ModuleName}}/migrations"
 	"developer.zopsmart.com/go/gofr/cmd/gofr/migration"
-	dbmigration "developer.zopsmart.com/go/gofr/cmd/gofr/migration/dbMigration"
+	"developer.zopsmart.com/go/gofr/cmd/gofr/migration/dbMigration"
 	"developer.zopsmart.com/go/gofr/pkg/gofr"
 )
 
@@ -176,12 +175,12 @@ func main() {
 	}
 
 	tData := struct {
-		ProjectName  string
-		MigrationDir string
-		Method       string
-		Database     string
-		Migration    string
-	}{projectName, directory, method, dbStr, migration}
+		ProjectName string
+		Method      string
+		Database    string
+		Migration   string
+		ModuleName  string
+	}{projectName, method, dbStr, migration, moduleName}
 
 	if _, err := f.Stat("build"); f.IsNotExist(err) {
 		if er := f.Mkdir("build", os.ModePerm); er != nil {
@@ -195,7 +194,7 @@ func main() {
 
 	os.RemoveAll("main.go")
 
-	mainFile, err := f.OpenFile("main.go", os.O_CREATE|os.O_WRONLY, 0666)
+	mainFile, err := f.OpenFile("main.go", os.O_CREATE|os.O_WRONLY, mg.RWMode)
 	if err != nil {
 		return err
 	}
@@ -223,4 +222,41 @@ func getDownString(tagSlc []string) string {
 	}
 
 	return buf.String()
+}
+
+// Function to get modulePath that to be used in the import for Migration
+func getModulePath(f FSMigrate, directory string) (string, error) {
+	var modulePath string
+
+	file, err := f.OpenFile("../go.mod", os.O_RDONLY, mg.RWMode)
+	if err != nil {
+		return checkGoPath(directory)
+	}
+
+	scanner := bufio.NewScanner(file)
+
+	if scanner.Scan() {
+		modulePath = strings.Split(scanner.Text(), " ")[1]
+	}
+
+	defer file.Close()
+
+	return modulePath, nil
+}
+
+func checkGoPath(directory string) (string, error) {
+	var modulePath string
+
+	goPath := build.Default.GOPATH
+
+	if strings.Contains(directory, goPath+"/src/") {
+		r := strings.SplitAfter(directory, goPath+"/src")
+		if len(r) > 1 {
+			modulePath = r[1]
+		}
+	} else {
+		return "", &errors.Response{Reason: "Project is not in GOPATH and go.mod file not found in current directory"}
+	}
+
+	return modulePath, nil
 }

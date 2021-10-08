@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/hamba/avro"
+
 	"developer.zopsmart.com/go/gofr/pkg/datastore/pubsub"
 	"developer.zopsmart.com/go/gofr/pkg/errors"
 	"developer.zopsmart.com/go/gofr/pkg/gofr/types"
@@ -162,17 +163,19 @@ type Encoder struct {
 	Content  []byte
 }
 
-// Note: the Confluent schema registry has special requirements for the Avro serialization rules,
-// not only need to serialize the specific content, but also attach the Schema ID and Magic Byte.
+/* Note: the Confluent schema registry has special requirements for the Avro serialization rules,
+not only need to serialize the specific content, but also attach the Schema ID and Magic Byte.*/
 // Ref: https://docs.confluent.io/current/schema-registry/serializer-formatter.html#wire-format
 func (a *Encoder) Encode() []byte {
 	var binaryMsg []byte
+
+	n := 4
 
 	// Confluent serialization format version number; currently always 0.
 	binaryMsg = append(binaryMsg, byte(0))
 
 	// 4-byte schema ID as returned by Schema Registry
-	binarySchemaID := make([]byte, 4)
+	binarySchemaID := make([]byte, n)
 
 	binary.BigEndian.PutUint32(binarySchemaID, uint32(a.SchemaID))
 

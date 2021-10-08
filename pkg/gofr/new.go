@@ -6,6 +6,10 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/prometheus/client_golang/prometheus"
+
+	"go.opentelemetry.io/otel"
+
 	"developer.zopsmart.com/go/gofr/pkg"
 	"developer.zopsmart.com/go/gofr/pkg/datastore"
 	"developer.zopsmart.com/go/gofr/pkg/datastore/pubsub/avro"
@@ -17,10 +21,6 @@ import (
 	"developer.zopsmart.com/go/gofr/pkg/gofr/responder"
 	"developer.zopsmart.com/go/gofr/pkg/log"
 	awssns "developer.zopsmart.com/go/gofr/pkg/notifier/aws-sns"
-
-	"github.com/prometheus/client_golang/prometheus"
-
-	"go.opentelemetry.io/otel"
 )
 
 func New() (k *Gofr) {
@@ -112,7 +112,7 @@ func NewWithConfig(c Config) (k *Gofr) {
 	if err != nil {
 		logger.Error(err)
 	} else {
-		logger.Infof("Exporting traces to %v", c.Get("TRACER_EXPORTER"))
+		gofr.Logger.Logf("tracing is enabled on, %v:%v", c.Get("TRACER_HOST"), c.Get("TRACER_PORT"))
 	}
 
 	initializeDataStores(c, gofr)
@@ -236,7 +236,7 @@ func NewCMD() *Gofr {
 	if err != nil {
 		logger.Error(err)
 	} else {
-		logger.Infof("Exporting traces to %v", c.Get("TRACER_EXPORTER"))
+		gofr.Logger.Logf("tracing is enabled on, %v %v:%v", c.Get("TRACER_EXPORTER"), c.Get("TRACER_HOST"), c.Get("TRACER_PORT"))
 	}
 
 	initializeDataStores(c, gofr)
@@ -288,15 +288,46 @@ func initializeDataStores(c Config, k *Gofr) {
 
 	// Solr
 	initializeSolr(c, k)
+
+	// DynamoDB
+	initializeDynamoDB(c, k)
+}
+
+func initializeDynamoDB(c Config, k *Gofr) {
+	cfg := dynamoDBConfigFromEnv(c)
+
+	if cfg.SecretAccessKey != "" && cfg.AccessKeyID != "" {
+		var err error
+
+		k.DynamoDB, err = datastore.NewDynamoDB(k.Logger, cfg)
+		k.DatabaseHealth = append(k.DatabaseHealth, k.DynamoDBHealthCheck)
+
+		if err != nil {
+			k.Logger.Errorf("DynamoDB could not be initialized, error: %v\n", err)
+
+			go dynamoRetry(cfg, k)
+
+			return
+		}
+
+		k.Logger.Infof("DynamoDB initialized at %v", cfg.Endpoint)
+	}
 }
 
 // initializeRedis initializes the Redis client in the Gofr struct if the Redis configuration is set
 // in the environment, in case of an error, it logs the error
 func initializeRedis(c Config, k *Gofr) {
+	ssl := false
+	if strings.EqualFold(c.Get("REDIS_SSL"), "true") {
+		ssl = true
+	}
+
 	rc := datastore.RedisConfig{
 		HostName:                c.Get("REDIS_HOST"),
+		Password:                c.Get("REDIS_PASSWORD"),
 		Port:                    c.Get("REDIS_PORT"),
 		ConnectionRetryDuration: getRetryDuration(c.Get("REDIS_CONN_RETRY")),
+		SSL:                     ssl,
 	}
 
 	if rc.HostName != "" || rc.Port != "" {
@@ -318,9 +349,9 @@ func initializeRedis(c Config, k *Gofr) {
 	}
 }
 
+// nolint:gocognit //breaks code readability
 // initializeDB initializes the ORM object in the Gofr struct if the DB configuration is set
 // in the environment, in case of an error, it logs the error
-// nolint:gocognit // breaking down function will reduce readability
 func initializeDB(c Config, k *Gofr) {
 	dc := datastore.DBConfig{
 		HostName:          c.Get("DB_HOST"),
@@ -551,26 +582,26 @@ func getYcqlConfigs(c Config) datastore.CassandraCfg {
 }
 
 func initializeElasticsearch(c Config, k *Gofr) {
-	elasticSearchCfg := getElasticSearchConfigFromEnv(c)
+	elasticSearchCfg := elasticSearchConfigFromEnv(c)
 
-	if elasticSearchCfg.Host == "" || elasticSearchCfg.Port == 0 {
+	if (elasticSearchCfg.Host == "" || len(elasticSearchCfg.Ports) == 0) && elasticSearchCfg.CloudID == "" {
 		return
 	}
 
 	var err error
 
-	k.Elasticsearch, err = datastore.NewElasticsearchClient(&elasticSearchCfg)
+	k.Elasticsearch, err = datastore.NewElasticsearchClient(k.Logger, &elasticSearchCfg)
 	k.DatabaseHealth = append(k.DatabaseHealth, k.ElasticsearchHealthCheck)
 
 	if err != nil {
-		k.Logger.Errorf("could not connect to Elasticsearch, HOST: %s, PORT: %v, Error: %v\n", elasticSearchCfg.Host, elasticSearchCfg.Port, err)
+		k.Logger.Errorf("could not connect to elasticsearch, HOST: %s, PORT: %v, Error: %v\n", elasticSearchCfg.Host, elasticSearchCfg.Ports, err)
 
 		go elasticSearchRetry(&elasticSearchCfg, k)
 
 		return
 	}
 
-	k.Logger.Infof("connected to Elasticsearch, HOST: %s, PORT: %v\n", elasticSearchCfg.Host, elasticSearchCfg.Port)
+	k.Logger.Infof("connected to elasticsearch, HOST: %s, PORT: %v\n", elasticSearchCfg.Host, elasticSearchCfg.Ports)
 }
 
 func initializeSolr(c Config, k *Gofr) {
@@ -587,21 +618,23 @@ func initializeSolr(c Config, k *Gofr) {
 
 func initializeNotifiers(c Config, k *Gofr) {
 	notifierBackend := c.Get("NOTIFIER_BACKEND")
+
 	if notifierBackend == "" {
 		return
 	}
 
-	switch notifierBackend {
-	case "SNS":
+	if notifierBackend == "SNS" {
 		initializeAwsSNS(c, k)
 	}
 }
 func initializeAwsSNS(c Config, k *Gofr) {
-
 	awsConfig := awsSNSConfigFromEnv(c)
+
 	var err error
+
 	k.Notifier, err = awssns.New(&awsConfig)
 	k.DatabaseHealth = append(k.DatabaseHealth, k.Notifier.HealthCheck)
+
 	if err != nil {
 		k.Logger.Errorf("AWS SNS could not be initialized, error: %v\n", err)
 

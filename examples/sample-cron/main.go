@@ -7,16 +7,25 @@ import (
 	"developer.zopsmart.com/go/gofr/pkg/gofr"
 )
 
+//nolint:gochecknoglobals // used in main_test.go
 var n = 0
 
+const minute = 3
+
 func main() {
+	app := gofr.New()
+
 	c := gofr.NewCron()
 
 	// runs every minute
-	c.AddJob("* * * * *", count)
+	err := c.AddJob("* * * * *", count)
+	if err != nil {
+		app.Logger.Error(err)
+		return
+	}
 
 	// setting maximum duration of this program
-	time.Sleep(3 * time.Minute)
+	time.Sleep(minute * time.Minute)
 }
 
 func count() {

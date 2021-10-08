@@ -1,155 +1,169 @@
 package store
 
 import (
-	"reflect"
+	"context"
 	"testing"
 
 	"developer.zopsmart.com/go/gofr/examples/using-postgres/model"
 	"developer.zopsmart.com/go/gofr/pkg/datastore"
 	"developer.zopsmart.com/go/gofr/pkg/errors"
 	"developer.zopsmart.com/go/gofr/pkg/gofr"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestCoreLayer(t *testing.T) {
-	k := gofr.New()
+	app := gofr.New()
 
 	// initializing the seeder
-	seeder := datastore.NewSeeder(&k.DataStore, "../db")
+	seeder := datastore.NewSeeder(&app.DataStore, "../db")
 	seeder.ResetCounter = true
 
-	testAddCustomer(t, k, seeder)
-	testGetCustomerByID(t, k, seeder)
-	testUpdateCustomer(t, k, seeder)
-	testGetCustomers(t, k, seeder)
-	testDeleteCustomer(t, k, seeder)
+	createTable(app)
+	seeder.RefreshTables(t, "customers")
+	testGetCustomerByID(t, app)
+	testAddCustomer(t, app)
+	testAddCustomerWithError(t, app)
+	testUpdateCustomer(t, app)
+	testGetCustomers(t, app)
+	testDeleteCustomer(t, app)
+	testErrors(t, app)
 }
 
-func testAddCustomer(t *testing.T, k *gofr.Gofr, seeder *datastore.Seeder) {
-	tests := []struct {
-		customer    model.Customer
-		expectedErr error
-	}{
-		{
-			customer: model.Customer{
-				Name: "Test123",
-			},
-			expectedErr: nil,
-		},
-		{
-			customer: model.Customer{
-				Name: "Test234",
-			},
-			expectedErr: nil,
-		},
-		{
-			customer: model.Customer{
-				Name: "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
-			},
-			expectedErr: errors.DB{},
-		},
+func createTable(app *gofr.Gofr) {
+	// drop table to clean previously added id's
+	_, err := app.DB().Exec("DROP TABLE customers;")
+	if err != nil {
+		return
 	}
 
-	seeder.RefreshTables(t, "customers")
-	for i, test := range tests {
-		c := gofr.NewContext(nil, nil, k)
+	_, err = app.DB().Exec("CREATE TABLE customers (id serial primary key,name varchar (50));")
+	if err != nil {
+		return
+	}
+}
 
-		_, err := Model{}.Create(c, test.customer)
+func testAddCustomer(t *testing.T, app *gofr.Gofr) {
+	tests := []struct {
+		desc     string
+		customer model.Customer
+		err      error
+	}{
+		{"create succuss test #1", model.Customer{Name: "Test123"}, nil},
+		{"create succuss test #2", model.Customer{Name: "Test234"}, nil},
+	}
 
-		d, _ := Model{}.Get(c)
-		k.Logger.Log(d)
+	for i, tc := range tests {
+		ctx := gofr.NewContext(nil, nil, app)
+		ctx.Context = context.Background()
 
+		store := New()
+		resp, err := store.Create(ctx, tc.customer)
+
+		app.Logger.Log(resp)
+
+		assert.Equal(t, tc.err, err, "TEST[%d], failed.\n%s", i, tc.desc)
+	}
+}
+
+func testAddCustomerWithError(t *testing.T, app *gofr.Gofr) {
+	customer := model.Customer{
+		Name: "very-long-mock-name-lasdjflsdjfljasdlfjsdlfjsdfljlkj",
+	}
+
+	ctx := gofr.NewContext(nil, nil, app)
+	ctx.Context = context.Background()
+
+	store := New()
+
+	_, err := store.Create(ctx, customer)
+	if _, ok := err.(errors.DB); err != nil && ok == false {
+		t.Errorf("Error Testcase FAILED")
+	}
+}
+
+func testGetCustomerByID(t *testing.T, app *gofr.Gofr) {
+	tests := []struct {
+		desc string
+		id   int
+		err  error
+	}{
+		{"Get existent id", 1, nil},
+		{"Get non existent id", 1223, errors.EntityNotFound{Entity: "customer", ID: "1223"}},
+	}
+
+	for i, tc := range tests {
+		ctx := gofr.NewContext(nil, nil, app)
+		ctx.Context = context.Background()
+
+		store := New()
+
+		_, err := store.GetByID(ctx, tc.id)
+		assert.Equal(t, tc.err, err, "TEST[%d], failed.\n%s", i, tc.desc)
+	}
+}
+
+func testUpdateCustomer(t *testing.T, app *gofr.Gofr) {
+	tests := []struct {
+		desc     string
+		customer model.Customer
+		err      error
+	}{
+		{"update succuss", model.Customer{ID: 1, Name: "Test1234"}, nil},
+		{"update fail", model.Customer{ID: 1, Name: "very-long-mock-name-lasdjflsdjfljasdlfjsdlfjsdfljlkj"}, errors.DB{}},
+	}
+
+	for i, tc := range tests {
+		ctx := gofr.NewContext(nil, nil, app)
+		ctx.Context = context.Background()
+
+		store := New()
+
+		_, err := store.Update(ctx, tc.customer)
 		if _, ok := err.(errors.DB); err != nil && ok == false {
-			t.Errorf("Testcase %v FAILED", i)
-		}
-		if err != test.expectedErr && test.expectedErr == nil {
-			t.Errorf("Testcase %v FAILED, got err: %v expected: %v", i, err, test.expectedErr)
+			t.Errorf("TEST[%v] Failed.\tExpected %v\tGot %v\n%s", i, tc.err, err, tc.desc)
 		}
 	}
 }
 
-func testGetCustomerByID(t *testing.T, k *gofr.Gofr, seeder *datastore.Seeder) {
-	seeder.RefreshTables(t, "customers")
-	tests := []struct {
-		id  int
-		err error
-	}{
-		{
-			id:  1,
-			err: nil,
-		},
-		{
-			id: 1223,
-			err: errors.EntityNotFound{
-				Entity: "customer",
-				ID:     "1223",
-			},
-		},
-	}
+func testGetCustomers(t *testing.T, app *gofr.Gofr) {
+	ctx := gofr.NewContext(nil, nil, app)
+	ctx.Context = context.Background()
 
-	for _, test := range tests {
-		c := gofr.NewContext(nil, nil, k)
+	store := New()
 
-		_, err := Model{}.GetByID(c, test.id)
-		if !reflect.DeepEqual(err, test.err) {
-			t.Errorf("FAILED, Expected: %v, Got: %v", test.err, err)
-		}
-	}
-}
-
-func testUpdateCustomer(t *testing.T, k *gofr.Gofr, seeder *datastore.Seeder) {
-	seeder.RefreshTables(t, "customers")
-	tests := []struct {
-		customer    model.Customer
-		expectedErr error
-	}{
-		{
-			customer: model.Customer{
-				ID:   1,
-				Name: "Test1234",
-			},
-			expectedErr: nil,
-		},
-		{
-			customer: model.Customer{
-				ID:   1,
-				Name: "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
-			},
-			expectedErr: errors.DB{},
-		},
-	}
-
-	for i, test := range tests {
-		c := gofr.NewContext(nil, nil, k)
-
-		_, err := Model{}.Update(c, test.customer)
-		if test.expectedErr == nil {
-			if err != nil {
-				t.Errorf("Testcase %v FAILED", i)
-			}
-		} else {
-			if _, ok := err.(errors.DB); ok == false {
-				t.Errorf("Testcase %v FAILED", i)
-			}
-		}
-	}
-}
-
-func testGetCustomers(t *testing.T, k *gofr.Gofr, seeder *datastore.Seeder) {
-	seeder.RefreshTables(t, "customers")
-	c := gofr.NewContext(nil, nil, k)
-
-	_, err := Model{}.Get(c)
+	_, err := store.Get(ctx)
 	if err != nil {
 		t.Errorf("FAILED, Expected: %v, Got: %v", nil, err)
 	}
 }
 
-func testDeleteCustomer(t *testing.T, k *gofr.Gofr, seeder *datastore.Seeder) {
-	seeder.RefreshTables(t, "customers")
-	c := gofr.NewContext(nil, nil, k)
+func testDeleteCustomer(t *testing.T, app *gofr.Gofr) {
+	ctx := gofr.NewContext(nil, nil, app)
+	ctx.Context = context.Background()
 
-	err := Model{}.Delete(c, 12)
+	store := New()
+
+	err := store.Delete(ctx, 12)
 	if err != nil {
+		t.Errorf("FAILED, Expected: %v, Got: %v", nil, err)
+	}
+}
+
+func testErrors(t *testing.T, app *gofr.Gofr) {
+	ctx := gofr.NewContext(nil, nil, app)
+	ctx.Context = context.Background()
+	_ = ctx.DB().Close() // close the connection to generate errors
+
+	store := New()
+
+	err := store.Delete(ctx, 12)
+	if err == nil {
+		t.Errorf("FAILED, Expected: %v, Got: %v", nil, err)
+	}
+
+	_, err = store.Get(ctx)
+	if err == nil {
 		t.Errorf("FAILED, Expected: %v, Got: %v", nil, err)
 	}
 }

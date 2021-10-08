@@ -11,6 +11,7 @@ import (
 	"strings"
 
 	"developer.zopsmart.com/go/gofr/cmd/gofr/helper"
+	"developer.zopsmart.com/go/gofr/cmd/gofr/migration"
 	"developer.zopsmart.com/go/gofr/pkg/gofr"
 	"developer.zopsmart.com/go/gofr/pkg/log"
 )
@@ -145,10 +146,10 @@ func processRoute(f fileSystem, methodFlag, path, pathDirectory string) error {
 
 	if methodFlag != "all" {
 		inputMethods := strings.Split(methodFlag, ",")
-		methods = removeDuplicates(inputMethods) // removes duplicates methods, if passed in the --methods flag
+		methods = removeDuplicates(inputMethods) // Remove duplicates methods, if passed in the --methods flag
 	}
 
-	readFile, err := f.OpenFile("main.go", os.O_RDONLY, 0666)
+	readFile, err := f.OpenFile("main.go", os.O_RDONLY, migration.RWMode)
 	if err != nil {
 		return err
 	}
@@ -253,7 +254,7 @@ func populateHandler(f fileSystem, path, handlerString string) error {
 		return err
 	}
 
-	handlerFile, err := f.OpenFile(path+".go", os.O_APPEND|os.O_WRONLY|os.O_CREATE, 0666)
+	handlerFile, err := f.OpenFile(path+".go", os.O_APPEND|os.O_WRONLY|os.O_CREATE, migration.RWMode)
 	if err != nil {
 		return err
 	}
@@ -299,7 +300,7 @@ func populateMain(f fileSystem, mainString, path string) error {
 }
 
 func processMainFile(f fileSystem, mainString, path string) error {
-	mainFile, err := f.OpenFile("main.go", os.O_RDWR, 0666)
+	mainFile, err := f.OpenFile("main.go", os.O_RDWR, migration.RWMode)
 	if err != nil {
 		return err
 	}
@@ -399,7 +400,7 @@ func validatePath(f fileSystem, path string) bool {
 }
 
 func addHandlerImport(f fileSystem, parentDirectory, path string) error {
-	mainFile, err := f.OpenFile("main.go", os.O_RDWR, 0666)
+	mainFile, err := f.OpenFile("main.go", os.O_RDWR, migration.RWMode)
 	if err != nil {
 		return err
 	}

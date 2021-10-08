@@ -21,11 +21,11 @@ func initializeTests(t *testing.T, method string, body io.Reader) (*MockNotifier
 	defer mockCtrl.Finish()
 
 	mockService := NewMockNotifier(mockCtrl)
-	k := gofr.New()
-	k.Notifier = mockService
+	app := gofr.New()
+	app.Notifier = mockService
 	req := httptest.NewRequest(method, "/dummy", body)
 	r := request.NewHTTPRequest(req)
-	c := gofr.NewContext(nil, r, k)
+	c := gofr.NewContext(nil, r, app)
 
 	return mockService, c
 }
@@ -62,8 +62,8 @@ func TestSubscriberHandler(t *testing.T) {
 	}
 
 	for _, tc := range tests {
-
 		mockService.EXPECT().SubscribeWithResponse(gomock.Any()).Return(&notifier.Message{}, tc.wantErr)
+
 		_, err := Subscriber(ctx)
 
 		assert.ErrorIsf(t, err, tc.wantErr, "%v Error expected %v but got : %v", tc.desc, tc.wantErr, err)

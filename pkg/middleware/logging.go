@@ -52,6 +52,7 @@ type logger interface {
 	Debug(args ...interface{})
 	AddData(key string, value interface{})
 	Errorf(format string, a ...interface{})
+	Error(args ...interface{})
 }
 
 type contextKey string
@@ -96,11 +97,18 @@ func Logging(logger logger, omitHeaders string) func(inner http.Handler) http.Ha
 
 					// .well-known, swagger and metrics endpoints are logged in debug mode, so that it can be excluded
 					// from logs, as usually logs with level INFO or higher than INFO are logged
+
 					if ExemptPath(r) {
 						logger.Debug(&l)
 					} else {
 						logger.Log(&l)
 					}
+
+					if res.status >= http.StatusInternalServerError && res.status <= http.StatusNetworkAuthenticationRequired {
+						l.Type = "ERROR"
+						logger.Error(&l)
+					}
+
 				}
 			}(srw, r)
 
@@ -139,6 +147,7 @@ func GetIPAddress(r *http.Request) string {
 	return strings.TrimSpace(ipAddress)
 }
 
+//nolint:gocognit // splitting the code will reduce readability
 func fetchHeaders(omitHeaders map[string]bool, reqHeaders http.Header) map[string]string {
 	headers := make(map[string]string)
 

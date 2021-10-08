@@ -116,13 +116,14 @@ func TestSNS_SubscribeWithResponse(t *testing.T) {
 		mockService.EXPECT().Subscribe(&sns.SubscribeInput{Endpoint: &svc.cfg.Endpoint, Protocol: &svc.cfg.Protocol,
 			ReturnSubscriptionArn: aws.Bool(true), TopicArn: &svc.cfg.TopicArn}).
 			Return(&sns.SubscribeOutput{SubscriptionArn: &svc.cfg.TopicArn}, tc.wantErr)
+
 		var tar interface{}
+
 		result, err := svc.SubscribeWithResponse(tar)
 
 		assert.Equalf(t, tc.expOut, result, "%v Expected Output : %v , got %v", tc.desc, tc.expOut, result)
 
 		assert.ErrorIsf(t, err, tc.wantErr, " %s Expected Error : %v , got %v", tc.desc, tc.wantErr, err)
-
 	}
 }
 
@@ -217,6 +218,7 @@ func TestSNS_HealthCheck(t *testing.T) {
 
 func TestSNS_HealthCheckDown(t *testing.T) {
 	var s *SNS
+
 	expected := types.Health{
 		Name:   pkg.AWSSNS,
 		Status: pkg.StatusDown,
@@ -229,6 +231,7 @@ func TestSNS_HealthCheckDown(t *testing.T) {
 
 func TestSNS_IsSet(t *testing.T) {
 	var s *SNS
+
 	logger := log.NewMockLogger(ioutil.Discard)
 	cfg := config.NewGoDotEnvProvider(logger, "../../../configs")
 	conn, _ := New(&Config{

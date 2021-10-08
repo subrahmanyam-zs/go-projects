@@ -11,12 +11,12 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/assert"
+
 	"developer.zopsmart.com/go/gofr/pkg/gofr/config"
 	"developer.zopsmart.com/go/gofr/pkg/gofr/request"
 	"developer.zopsmart.com/go/gofr/pkg/gofr/types"
 	"developer.zopsmart.com/go/gofr/pkg/log"
-
-	"github.com/stretchr/testify/assert"
 )
 
 const helloWorld = "Hello World!"
@@ -31,10 +31,10 @@ func TestGofr_ServeHTTP_TextResponse(t *testing.T) {
 		headerKey string
 		headerVal string
 	}{
-		{"GET", "/hello", "Hello World!", "content-type", "text/plain"},               // Example 1
-		{"PUT", "/hello", "Hello World!", "content-type", "text/plain"},               // Example 1
-		{"POST", "/hello", "Hello World!", "content-type", "text/plain"},              // Example 1
-		{"GET", "/params?name=Vikash", "Hello Vikash!", "content-type", "text/plain"}, // Example 2 with query parameters
+		{http.MethodGet, "/hello", "Hello World!", "content-type", "text/plain"},               // Example 1
+		{http.MethodPut, "/hello", "Hello World!", "content-type", "text/plain"},               // Example 1
+		{http.MethodPost, "/hello", "Hello World!", "content-type", "text/plain"},              // Example 1
+		{http.MethodGet, "/params?name=Vikash", "Hello Vikash!", "content-type", "text/plain"}, // Example 2 with query parameters
 	}
 
 	k := New()
@@ -129,7 +129,7 @@ func TestGofr_EnableSwaggerUI(t *testing.T) {
 	k.EnableSwaggerUI()
 
 	w := httptest.NewRecorder()
-	r, _ := request.NewMock("GET", "/swagger", nil)
+	r, _ := request.NewMock(http.MethodGet, "/swagger", nil)
 
 	k.Server.Router.ServeHTTP(w, r)
 

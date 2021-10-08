@@ -3,11 +3,13 @@ package file
 import (
 	"context"
 	"io/ioutil"
+	"net/http"
 	"strings"
 	"testing"
 
 	"github.com/aws/aws-sdk-go-v2/service/s3"
-	"github.com/bmizerany/assert"
+	"github.com/stretchr/testify/assert"
+
 	"developer.zopsmart.com/go/gofr/pkg/errors"
 )
 
@@ -54,7 +56,7 @@ func TestAws_fetch(t *testing.T) {
 		err error
 	}{
 		{&aws{fileName: "aws.txt", fileMode: APPEND, client: m, bucketName: "test-bucket-zs"}, nil},
-		{&aws{fileName: "aws.txt", fileMode: READ, client: m, bucketName: "random-bucket"}, errors.InvalidParam{Param: []string{"bucket"}}},
+		{&aws{fileName: "aws.txt", fileMode: READ, client: m, bucketName: "random-bucket"}, &errors.Response{StatusCode: http.StatusInternalServerError, Code: "S3_ERROR", Reason: "Incorrect value for parameter: bucket"}},
 	}
 
 	for i, tc := range tests {
@@ -73,7 +75,8 @@ func TestAws_push(t *testing.T) {
 		cfg *aws
 		err error
 	}{
-		{&aws{fileName: "aws.txt", fileMode: READWRITE, client: m, bucketName: "random-bucket"}, errors.InvalidParam{Param: []string{"bucket"}}},
+		{&aws{fileName: "aws.txt", fileMode: READWRITE, client: m, bucketName: "random-bucket"}, 
+		 &errors.Response{StatusCode: http.StatusInternalServerError, Code: "S3_ERROR", Reason: "Incorrect value for parameter: bucket"}},
 		{&aws{fileName: "awstest.txt", fileMode: READ, client: m, bucketName: "test-bucket-zs"}, nil},
 	}
 

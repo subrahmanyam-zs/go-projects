@@ -3,23 +3,23 @@ package handler
 import (
 	"bytes"
 	"encoding/json"
-	"errors"
+	"net/http"
 	"net/http/httptest"
-	"reflect"
 	"testing"
 
-	"github.com/gorilla/mux"
 	"developer.zopsmart.com/go/gofr/examples/using-elasticsearch/model"
-	errors2 "developer.zopsmart.com/go/gofr/pkg/errors"
+	"developer.zopsmart.com/go/gofr/pkg/errors"
 	"developer.zopsmart.com/go/gofr/pkg/gofr"
 	"developer.zopsmart.com/go/gofr/pkg/gofr/request"
+
+	"github.com/stretchr/testify/assert"
 )
 
 type mockStore struct{}
 
-func (m mockStore) Get(context *gofr.Context, name string) ([]model.Customer, error) {
+func (m mockStore) Get(_ *gofr.Context, name string) ([]model.Customer, error) {
 	if name == "error" {
-		return nil, errors.New("elastic search error")
+		return nil, errors.Error("elastic search error")
 	} else if name == "multiple" {
 		return []model.Customer{{ID: "12", Name: "ee", City: "city"}, {ID: "189"}}, nil
 	}
@@ -27,231 +27,237 @@ func (m mockStore) Get(context *gofr.Context, name string) ([]model.Customer, er
 	return nil, nil
 }
 
-func (m mockStore) GetByID(context *gofr.Context, id string) (*model.Customer, error) {
+func (m mockStore) GetByID(_ *gofr.Context, id string) (model.Customer, error) {
 	if id == "o978" {
-		return nil, errors.New("error")
+		return model.Customer{}, errors.Error("error")
 	}
 
-	return &model.Customer{ID: "ipo897", Name: "Marc"}, nil
+	return model.Customer{ID: "ipo897", Name: "Marc"}, nil
 }
 
-func (m mockStore) Update(context *gofr.Context, customer model.Customer, id string) (*model.Customer, error) {
+func (m mockStore) Update(_ *gofr.Context, _ model.Customer, id string) (model.Customer, error) {
 	if id == "ofjru3343" {
-		return nil, errors.New("error")
+		return model.Customer{}, errors.Error("error")
 	}
 
-	return &model.Customer{ID: "ipo897", Name: "Henry"}, nil
+	return model.Customer{ID: "ipo897", Name: "Henry"}, nil
 }
 
-func (m mockStore) Create(context *gofr.Context, customer model.Customer) (*model.Customer, error) {
+func (m mockStore) Create(_ *gofr.Context, customer model.Customer) (model.Customer, error) {
 	if customer.Name == "March" {
-		return nil, errors.New("cannot insert")
+		return model.Customer{}, errors.Error("cannot insert")
 	}
 
-	return &model.Customer{ID: "weop24444", Name: "Mike"}, nil
+	return model.Customer{ID: "weop24444", Name: "Mike"}, nil
 }
 
-func (m mockStore) Delete(context *gofr.Context, id string) error {
+func (m mockStore) Delete(_ *gofr.Context, id string) error {
 	if id == "ef444" {
-		return errors.New("error while deleting")
+		return errors.Error("error while deleting")
 	}
 
 	return nil
 }
 
 func TestCustomer_Index(t *testing.T) {
-	testcases := []struct {
-		name      string
-		customers interface{}
-		err       error
+	tests := []struct {
+		desc string
+		name string
+		resp interface{}
+		err  error
 	}{
-		{"error", nil, &errors2.Response{StatusCode: 500, Reason: "something unexpected happened"}},
-		{"multiple", []model.Customer{{ID: "12", Name: "ee", City: "city"}, {ID: "189"}}, nil},
+		{"Index error case", "error", nil, &errors.Response{StatusCode: http.StatusInternalServerError, Reason: "something unexpected happened"}},
+		{"Index success case", "multiple", []model.Customer{{ID: "12", Name: "ee", City: "city"}, {ID: "189"}}, nil},
 	}
 
-	customer := New(mockStore{})
+	ms := mockStore{}
+	h := New(ms)
 
-	for i, v := range testcases {
-		k := gofr.New()
-		req := httptest.NewRequest("GET", "/customer?name="+v.name, nil)
+	for i, tc := range tests {
+		app := gofr.New()
+
+		req := httptest.NewRequest(http.MethodGet, "/customer?name="+tc.name, nil)
 		r := request.NewHTTPRequest(req)
-		context := gofr.NewContext(nil, r, k)
-		resp, err := customer.Index(context)
+		ctx := gofr.NewContext(nil, r, app)
 
-		if !reflect.DeepEqual(v.err, err) {
-			t.Errorf("[TESTCASE%d]Failed. Got: %v\tExpected: %v\n", i+1, err, v.err)
-		}
+		resp, err := h.Index(ctx)
 
-		if !reflect.DeepEqual(resp, v.customers) {
-			t.Errorf("[TESTCASE%d]Failed. Got: %v\tExpected: %v\n", i+1, resp, v.customers)
-		}
+		assert.Equal(t, tc.err, err, "TEST[%d], failed.\n%s", i, tc.desc)
+
+		assert.Equal(t, tc.resp, resp, "TEST[%d], failed.\n%s", i, tc.desc)
 	}
 }
 
-// nolint:dupl // some statement are similar to statement in other function
 func TestCustomer_Read(t *testing.T) {
-	testcases := []struct {
-		id       string
-		customer interface{}
-		err      error
+	tests := []struct {
+		desc string
+		id   string
+		resp interface{}
+		err  error
 	}{
-		{"", nil, errors2.MissingParam{Param: []string{"id"}}},
-		{"o978", nil, &errors2.Response{StatusCode: 500, Reason: "something unexpected happened"}},
-		{"ity6", &model.Customer{ID: "ipo897", Name: "Marc"}, nil},
+		{"read with missing id", "", nil, errors.MissingParam{Param: []string{"id"}}},
+		{"read fail", "o978", nil, &errors.Response{StatusCode: http.StatusInternalServerError, Reason: "something unexpected happened"}},
+		{"read success", "ity6", model.Customer{ID: "ipo897", Name: "Marc"}, nil},
 	}
 
-	customer := New(mockStore{})
+	ms := mockStore{}
+	h := New(ms)
 
-	for i, v := range testcases {
-		k := gofr.New()
-		req := httptest.NewRequest("GET", "/customer?"+v.id, nil)
-		req = mux.SetURLVars(req, map[string]string{
-			"id": v.id,
+	for i, tc := range tests {
+		app := gofr.New()
+
+		req := httptest.NewRequest("GET", "/customer", nil)
+		r := request.NewHTTPRequest(req)
+		ctx := gofr.NewContext(nil, r, app)
+
+		ctx.SetPathParams(map[string]string{
+			"id": tc.id,
 		})
 
-		r := request.NewHTTPRequest(req)
-		context := gofr.NewContext(nil, r, k)
-		resp, err := customer.Read(context)
+		resp, err := h.Read(ctx)
 
-		if !reflect.DeepEqual(err, v.err) {
-			t.Errorf("[TESTCASE%d]Failed. Got: %v\tExpected: %v\n", i+1, err, v.err)
-		}
+		assert.Equal(t, tc.err, err, "TEST[%d], failed.\n%s", i, tc.desc)
 
-		if !reflect.DeepEqual(resp, v.customer) {
-			t.Errorf("[TESTCASE%d]Failed. Got: %v\tExpected: %v\n", i+1, resp, v.customer)
-		}
+		assert.Equal(t, tc.resp, resp, "TEST[%d], failed.\n%s", i, tc.desc)
 	}
 }
 
 func TestCustomer_Create(t *testing.T) {
-	testcases := []struct {
+	tests := []struct {
+		desc     string
 		customer model.Customer
 		err      error
 		resp     interface{}
 	}{
-		{model.Customer{Name: "March"}, &errors2.Response{StatusCode: 500, Reason: "something unexpected happened"}, nil},
-		{model.Customer{Name: "Henry", City: "Marc City"}, nil, &model.Customer{ID: "weop24444", Name: "Mike"}},
+		{"create fail", model.Customer{Name: "March"},
+			&errors.Response{StatusCode: http.StatusInternalServerError, Reason: "something unexpected happened"}, nil},
+		{"create success", model.Customer{Name: "Henry", City: "Marc City"}, nil, model.Customer{ID: "weop24444", Name: "Mike"}},
 	}
 
-	customer := New(mockStore{})
+	ms := mockStore{}
+	h := New(ms)
 
-	for i, v := range testcases {
-		k := gofr.New()
-		body, _ := json.Marshal(v.customer)
+	for i, tc := range tests {
+		app := gofr.New()
+		body, _ := json.Marshal(tc.customer)
 		req := httptest.NewRequest("GET", "/customer", bytes.NewBuffer(body))
 
 		r := request.NewHTTPRequest(req)
-		context := gofr.NewContext(nil, r, k)
-		resp, err := customer.Create(context)
+		ctx := gofr.NewContext(nil, r, app)
+		resp, err := h.Create(ctx)
 
-		if !reflect.DeepEqual(err, v.err) {
-			t.Errorf("[TESTCASE%d]Failed. Got: %v\tExpected: %v\n", i+1, err, v.err)
-		}
+		assert.Equal(t, tc.err, err, "TEST[%d], failed.\n%s", i, tc.desc)
 
-		if !reflect.DeepEqual(resp, v.resp) {
-			t.Errorf("[TESTCASE%d]Failed. Got: %v\tExpected: %v\n", i+1, resp, v.resp)
-		}
+		assert.Equal(t, tc.resp, resp, "TEST[%d], failed.\n%s", i, tc.desc)
 	}
 }
 
 func TestCustomer_Update(t *testing.T) {
-	testcases := []struct {
+	tests := []struct {
+		desc     string
 		id       string
 		customer interface{}
 		err      error
-		resp     *model.Customer
+		resp     interface{}
 	}{
-		{"", nil, errors2.MissingParam{Param: []string{"id"}}, nil},
-		{"ofjru3343", nil, &errors2.Response{StatusCode: 500, Reason: "something unexpected happened"}, nil},
-		{"ity6", &model.Customer{ID: "ipo897", Name: "Henry"}, nil, &model.Customer{ID: "ipo897", Name: "Marc"}},
+		{"udpate with missing id", "", nil, errors.MissingParam{Param: []string{"id"}}, nil},
+		{"udpate fail", "ofjru3343", nil,
+			&errors.Response{StatusCode: http.StatusInternalServerError, Reason: "something unexpected happened"}, nil},
+		{"update success", "ity6", &model.Customer{ID: "ipo897", Name: "Henry"}, nil, model.Customer{ID: "ipo897", Name: "Henry"}},
 	}
 
-	customer := New(mockStore{})
+	ms := mockStore{}
+	h := New(ms)
 
-	for i, v := range testcases {
-		k := gofr.New()
-		body, _ := json.Marshal(v.customer)
-		req := httptest.NewRequest("GET", "/customer?"+v.id, bytes.NewBuffer(body))
-		req = mux.SetURLVars(req, map[string]string{
-			"id": v.id,
+	for i, tc := range tests {
+		app := gofr.New()
+
+		body, _ := json.Marshal(tc.customer)
+
+		req := httptest.NewRequest(http.MethodGet, "/customer", bytes.NewBuffer(body))
+		r := request.NewHTTPRequest(req)
+		ctx := gofr.NewContext(nil, r, app)
+
+		ctx.SetPathParams(map[string]string{
+			"id": tc.id,
 		})
 
-		r := request.NewHTTPRequest(req)
-		context := gofr.NewContext(nil, r, k)
-		resp, err := customer.Update(context)
+		resp, err := h.Update(ctx)
 
-		if !reflect.DeepEqual(err, v.err) {
-			t.Errorf("[TESTCASE%d]Failed. Got: %v\tExpected: %v\n", i+1, err, v.err)
-		}
+		assert.Equal(t, tc.err, err, "TEST[%d], failed.\n%s", i, tc.desc)
 
-		if !reflect.DeepEqual(resp, v.customer) {
-			t.Errorf("[TESTCASE%d]Failed. Got: %v\tExpected: %v\n", i+1, resp, v.customer)
-		}
+		assert.Equal(t, tc.resp, resp, "TEST[%d], failed.\n%s", i, tc.desc)
 	}
 }
 
-// nolint:dupl // some statement are similar to statement in other function
 func TestCustomer_Delete(t *testing.T) {
-	testcases := []struct {
-		id       string
-		customer interface{}
-		err      error
+	tests := []struct {
+		desc string
+		id   string
+		resp interface{}
+		err  error
 	}{
-		{"", nil, errors2.MissingParam{Param: []string{"id"}}},
-		{"12", "Deleted successfully", nil},
-		{"ef444", nil, &errors2.Response{StatusCode: 500, Reason: "something unexpected happened"}},
+		{"delete with missing id", "", nil, errors.MissingParam{Param: []string{"id"}}},
+		{"delete success", "12", "Deleted successfully", nil},
+		{"delete fail", "ef444", nil, &errors.Response{StatusCode: 500, Reason: "something unexpected happened"}},
 	}
 
-	customer := New(mockStore{})
+	ms := mockStore{}
+	h := New(ms)
 
-	for i, v := range testcases {
-		k := gofr.New()
-		req := httptest.NewRequest("DELETE", "/customer?"+v.id, nil)
-		req = mux.SetURLVars(req, map[string]string{
-			"id": v.id,
+	for i, tc := range tests {
+		app := gofr.New()
+
+		req := httptest.NewRequest(http.MethodDelete, "/customer?"+tc.id, nil)
+		r := request.NewHTTPRequest(req)
+		ctx := gofr.NewContext(nil, r, app)
+
+		ctx.SetPathParams(map[string]string{
+			"id": tc.id,
 		})
 
-		r := request.NewHTTPRequest(req)
-		context := gofr.NewContext(nil, r, k)
-		resp, err := customer.Delete(context)
+		resp, err := h.Delete(ctx)
 
-		if !reflect.DeepEqual(err, v.err) {
-			t.Errorf("[TESTCASE%d]Failed. Got: %v\tExpected: %v\n", i+1, err, v.err)
-		}
+		assert.Equal(t, tc.err, err, "TEST[%d], failed.\n%s", i, tc.desc)
 
-		if !reflect.DeepEqual(resp, v.customer) {
-			t.Errorf("[TESTCASE%d]Failed. Got: %v\tExpected: %v\n", i+1, resp, v.customer)
-		}
+		assert.Equal(t, tc.resp, resp, "TEST[%d], failed.\n%s", i, tc.desc)
 	}
 }
 
 func TestInvalidBody(t *testing.T) {
-	k := gofr.New()
-	customer := New(mockStore{})
-	req := httptest.NewRequest("POST", "/customer", nil)
-	r := request.NewHTTPRequest(req)
-	context := gofr.NewContext(nil, r, k)
-	_, err := customer.Create(context)
-	expectedErr := errors2.InvalidParam{Param: []string{"body"}}
+	app := gofr.New()
 
-	if !reflect.DeepEqual(err, expectedErr) {
-		t.Errorf("failed for invalid body")
-	}
+	ms := mockStore{}
+	h := New(ms)
+
+	req := httptest.NewRequest(http.MethodPost, "/customer", nil)
+	r := request.NewHTTPRequest(req)
+	ctx := gofr.NewContext(nil, r, app)
+
+	expErr := errors.InvalidParam{Param: []string{"body"}}
+
+	_, err := h.Create(ctx)
+
+	assert.Equal(t, expErr, err)
 }
 
 func TestInvalidBodyUpdate(t *testing.T) {
-	k := gofr.New()
-	customer := New(mockStore{})
-	req := httptest.NewRequest("POST", "/customer/1", nil)
-	req = mux.SetURLVars(req, map[string]string{
+	app := gofr.New()
+
+	ms := mockStore{}
+	h := New(ms)
+
+	req := httptest.NewRequest(http.MethodPost, "/customer", nil)
+	r := request.NewHTTPRequest(req)
+	ctx := gofr.NewContext(nil, r, app)
+
+	ctx.SetPathParams(map[string]string{
 		"id": "1",
 	})
-	r := request.NewHTTPRequest(req)
-	context := gofr.NewContext(nil, r, k)
-	_, err := customer.Update(context)
-	expectedErr := errors2.InvalidParam{Param: []string{"body"}}
 
-	if !reflect.DeepEqual(err, expectedErr) {
-		t.Errorf("failed for invalid body")
-	}
+	expErr := errors.InvalidParam{Param: []string{"body"}}
+
+	_, err := h.Update(ctx)
+
+	assert.Equal(t, expErr, err)
 }

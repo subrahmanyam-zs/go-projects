@@ -21,8 +21,8 @@ func TestIntegration(t *testing.T) {
 		expectedStatusCode int
 		body               []byte
 	}{
-		{method: http.MethodPost, endpoint: "publish", expectedStatusCode: 201, body: []byte(`{"name": "GOFR", "message":  "hi"}`)},
-		{method: http.MethodGet, endpoint: "subscribe", expectedStatusCode: 200, body: nil},
+		{http.MethodPost, "publish", http.StatusCreated, []byte(`{"name": "GOFR", "message":  "hi"}`)},
+		{http.MethodGet, "subscribe", http.StatusOK, nil},
 	}
 
 	for i, tc := range tests {
@@ -32,16 +32,15 @@ func TestIntegration(t *testing.T) {
 			req, _ := request.NewMock(tc.method, tc.endpoint, nil)
 			c := http.Client{}
 
-			resp, _ := c.Do(req)
-
-			if resp != nil {
-				assert.Equal(t, tc.expectedStatusCode, resp.StatusCode, "Test %v: Failed.\tExpected %v\tGot %v\n", i+1, tc.expectedStatusCode, resp.StatusCode)
+			resp, err := c.Do(req)
+			if resp == nil || err != nil {
+				t.Error(err)
 			}
 
 			if resp != nil {
+				assert.Equal(t, tc.expectedStatusCode, resp.StatusCode, "Test %v: Failed.\n", i+1)
 				resp.Body.Close()
 			}
-
 		})
 	}
 }

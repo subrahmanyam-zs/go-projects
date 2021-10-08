@@ -33,6 +33,8 @@ func (sp *surgeProtector) checkHealth(url string, ch chan bool) {
 	for {
 		var isHealthy bool
 
+		sp.mu.Lock()
+
 		resp, err := http.Get(url + sp.customHeartbeatURL)
 		if err != nil || (resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusNotFound) {
 			isHealthy = false
@@ -41,8 +43,11 @@ func (sp *surgeProtector) checkHealth(url string, ch chan bool) {
 			resp.Body.Close()
 		}
 
+		retryFrequency := sp.retryFrequencySeconds
+		sp.mu.Unlock()
+
 		ch <- isHealthy
 
-		time.Sleep(time.Duration(sp.retryFrequencySeconds) * time.Second)
+		time.Sleep(time.Duration(retryFrequency) * time.Second)
 	}
 }

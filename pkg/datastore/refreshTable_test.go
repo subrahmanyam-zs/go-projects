@@ -7,6 +7,9 @@ import (
 	"strconv"
 	"testing"
 
+	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/service/dynamodb"
+
 	"developer.zopsmart.com/go/gofr/pkg/gofr/config"
 	"developer.zopsmart.com/go/gofr/pkg/log"
 )
@@ -664,6 +667,50 @@ func TestSeeder_resetIdentitySequence(t *testing.T) {
 
 		if tester.TotalErrors != 0 {
 			t.Errorf("reset identity sequence failed. Expecting 0 errors but got %v errors", tester.TotalErrors)
+		}
+	}
+}
+
+func Test_RefreshDynamoDB(t *testing.T) {
+	cfg := DynamoDBConfig{
+		Region:          "ap-south-1",
+		Endpoint:        "http://localhost:2021",
+		SecretAccessKey: "access-key",
+		AccessKeyID:     "access-key-id",
+	}
+
+	db, _ := NewDynamoDB(log.NewMockLogger(io.Discard), cfg)
+	input := &dynamodb.CreateTableInput{
+		AttributeDefinitions:  []*dynamodb.AttributeDefinition{{AttributeName: aws.String("name"), AttributeType: aws.String("S")}},
+		KeySchema:             []*dynamodb.KeySchemaElement{{AttributeName: aws.String("name"), KeyType: aws.String("HASH")}},
+		ProvisionedThroughput: &dynamodb.ProvisionedThroughput{ReadCapacityUnits: aws.Int64(10), WriteCapacityUnits: aws.Int64(5)},
+		TableName:             aws.String("customers"),
+	}
+
+	_, err := db.CreateTable(input)
+	if err != nil {
+		t.Errorf("Failed creation of table, %v", err)
+	}
+
+	ds := DataStore{DynamoDB: db}
+
+	tcs := []struct {
+		dir     string
+		expErrs int
+	}{
+		{"./test_data", 0},
+		{"../test_data", 1},
+	}
+
+	for i, tc := range tcs {
+		seeder := NewSeeder(&ds, tc.dir)
+
+		tester := &MockTesting{}
+
+		seeder.RefreshDynamoDB(tester, "customers")
+
+		if tester.TotalErrors != tc.expErrs {
+			t.Errorf("TestCase[%v] expecting %v errors, got %v errors", i, tc.expErrs, tester.TotalErrors)
 		}
 	}
 }

@@ -13,31 +13,39 @@ func TestServerIntegration(t *testing.T) {
 	go main()
 	time.Sleep(3 * time.Second)
 
-	tcs := []struct {
-		method              string
-		endpoint            string
-		expectedStatusCode  int
-		body                []byte
-		expectedContentType string
+	tests := []struct {
+		desc        string
+		method      string
+		endpoint    string
+		statusCode  int
+		body        []byte
+		contentType string
 	}{
-		{"GET", "test", 200, nil, "text/html"},
-		{"GET", "test2", 404, nil, "application/json"},
-		{"GET", "image", 200, nil, "image/png"},
+		{"get test success", http.MethodGet, "test", http.StatusOK, nil, "text/html"},
+		{"get invalid route", http.MethodGet, "test2", http.StatusNotFound, nil, "application/json"},
+		{"get image success", http.MethodGet, "image", http.StatusOK, nil, "image/png"},
+		{"unregistered update route", http.MethodPut, "unkown", http.StatusNotFound, []byte(`{}`), "application/json"},
 	}
 
-	for index, tc := range tcs {
+	for i, tc := range tests {
 		req, _ := request.NewMock(tc.method, "http://localhost:8000/"+tc.endpoint, bytes.NewBuffer(tc.body))
+
 		c := http.Client{}
 
-		resp, _ := c.Do(req)
-		if resp != nil && resp.StatusCode != tc.expectedStatusCode {
-			t.Errorf("Testcase[%v] Failed.\tExpected %v\tGot %v\n", index, tc.expectedStatusCode, resp.StatusCode)
+		resp, err := c.Do(req)
+		if err != nil {
+			t.Errorf("TEST[%v] Failed.\tHTTP request encountered Err: %v\n%s", i, err, tc.desc)
+			continue
 		}
 
-		if resp != nil && resp.Header.Get("Content-type") != tc.expectedContentType {
-			t.Errorf("Testcase[%v] Failed.\tExpected %v\tGot %v\n", index, tc.expectedContentType, resp.Header.Get("Content-type"))
+		if resp.StatusCode != tc.statusCode {
+			t.Errorf("TEST[%v] Failed.\tExpected %v\tGot %v\n%s", i, tc.statusCode, resp.StatusCode, tc.desc)
 		}
 
-		resp.Body.Close()
+		if resp.Header.Get("Content-type") != tc.contentType {
+			t.Errorf("TEST[%v] Failed.\tExpected %v\tGot %v\n%s", i, tc.contentType, resp.Header.Get("Content-type"), tc.desc)
+		}
+
+		_ = resp.Body.Close()
 	}
 }

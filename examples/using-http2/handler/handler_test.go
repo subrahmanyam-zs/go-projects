@@ -1,11 +1,11 @@
 package handler
 
 import (
-	errors2 "errors"
 	"net/http"
 	"net/http/httptest"
-	"reflect"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 
 	"developer.zopsmart.com/go/gofr/pkg/errors"
 	"developer.zopsmart.com/go/gofr/pkg/gofr"
@@ -25,11 +25,12 @@ func (p pusher) Push(target string, opts *http.PushOptions) error {
 	// record passed arguments for later inspection
 	p.target = target
 	p.opts = opts
+
 	return p.err
 }
 
 func TestHomeHandler(t *testing.T) {
-	k := gofr.New()
+	app := gofr.New()
 	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		pusher, ok := w.(http.Pusher)
 		if !ok {
@@ -44,47 +45,40 @@ func TestHomeHandler(t *testing.T) {
 	server := httptest.NewTLSServer(handler)
 	defer server.Close()
 
-	req, _ := request.NewMock("GET", server.URL+"/", nil)
+	req, _ := request.NewMock(http.MethodGet, server.URL+"/", nil)
 	w := pusher{}
-	ctx := gofr.NewContext(responder.NewContextualResponder(w, req), request.NewHTTPRequest(req), k)
+	ctx := gofr.NewContext(responder.NewContextualResponder(w, req), request.NewHTTPRequest(req), app)
 
-	testCases := []struct {
-		push    pusher
-		wantErr error
+	tests := []struct {
+		desc string
+		push pusher
+		err  error
 	}{
-		{pusher{err: nil}, nil},
-		{pusher{err: &errors.Response{Reason: "test error"}}, &errors.Response{Reason: "test error"}},
+		{"push without error", pusher{err: nil}, nil},
+		{"push with error", pusher{err: &errors.Response{Reason: "test error"}}, &errors.Response{Reason: "test error"}},
 	}
 
-	for _, tt := range testCases {
-		ctx.ServerPush = tt.push
+	for i, tc := range tests {
+		ctx.ServerPush = tc.push
 
 		_, err := HomeHandler(ctx)
-		if (err != nil) && !errors2.As(err, &tt.wantErr) {
-			t.Errorf("err: %v", err)
-		}
 
+		assert.Equal(t, tc.err, err, "TEST[%d], failed.\n%s", i, tc.desc)
 	}
 }
 
 func TestServeStatic(t *testing.T) {
 	w := httptest.NewRecorder()
-	req := httptest.NewRequest("GET", "http://dummy", nil)
+	req := httptest.NewRequest(http.MethodGet, "http://dummy", nil)
 
-	c := gofr.NewContext(responder.NewContextualResponder(w, req), request.NewHTTPRequest(req), nil)
+	ctx := gofr.NewContext(responder.NewContextualResponder(w, req), request.NewHTTPRequest(req), nil)
 
-	c.SetPathParams(map[string]string{
+	ctx.SetPathParams(map[string]string{
 		"name": "app.js",
 	})
 
-	got, err := ServeStatic(c)
-	if err != nil {
-		t.Errorf("ServeStatic() error = %v, wantErr nil", err)
-		return
-	}
+	resp, err := ServeStatic(ctx)
+	assert.Nil(t, err)
 
-	if !reflect.DeepEqual(got, template.Template{File: "app.js"}) {
-		t.Errorf("ServeStatic() got = %v, want app.js", got)
-	}
-
+	assert.Equal(t, resp, template.Template{File: "app.js"})
 }

@@ -10,7 +10,7 @@ type config struct {
 	store store.Store
 }
 
-//nolint:golint //config should not get accessed, without initialization of store.Store
+//nolint:revive //config should not get accessed, without initialization of store.Store
 func New(c store.Store) config {
 	return config{
 		store: c,

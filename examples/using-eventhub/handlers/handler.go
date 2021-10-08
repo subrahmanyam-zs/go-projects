@@ -11,19 +11,19 @@ type Person struct {
 	Email string `avro:"Email"`
 }
 
-func Producer(c *gofr.Context) (interface{}, error) {
-	id := c.Param("id")
+func Producer(ctx *gofr.Context) (interface{}, error) {
+	id := ctx.Param("id")
 
-	return nil, c.PublishEvent("", Person{
+	return nil, ctx.PublishEvent("", Person{
 		ID:    id,
 		Name:  "Rohan",
 		Email: "rohan@email.xyz",
 	}, map[string]string{"test": "test"})
 }
 
-func Consumer(c *gofr.Context) (interface{}, error) {
+func Consumer(ctx *gofr.Context) (interface{}, error) {
 	p := map[string]interface{}{}
-	message, err := c.Subscribe(&p)
+	message, err := ctx.Subscribe(&p)
 
 	return types.Response{Data: p, Meta: message}, err
 }

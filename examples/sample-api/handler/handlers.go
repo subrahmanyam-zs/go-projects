@@ -2,6 +2,8 @@ package handler
 
 import (
 	"fmt"
+	"net/http"
+	"strings"
 	"sync"
 	"time"
 
@@ -11,31 +13,31 @@ import (
 )
 
 // HelloWorld is a handler function of type gofr.Handler, it responds with a message
-func HelloWorld(c *gofr.Context) (interface{}, error) {
+func HelloWorld(ctx *gofr.Context) (interface{}, error) {
 	return "Hello World!", nil
 }
 
 // HelloName is a handler function of type gofr.Handler, it responds with a message and uses query params
-func HelloName(c *gofr.Context) (interface{}, error) {
-	return fmt.Sprintf("Hello %s", c.Param("name")), nil
+func HelloName(ctx *gofr.Context) (interface{}, error) {
+	return fmt.Sprintf("Hello %s", ctx.Param("name")), nil
 }
 
 // ErrorHandler always returns an error
-func ErrorHandler(c *gofr.Context) (interface{}, error) {
+func ErrorHandler(ctx *gofr.Context) (interface{}, error) {
 	return nil, &errors.Response{
-		StatusCode: 500,
+		StatusCode: http.StatusInternalServerError,
 		Code:       "UNKNOWN_ERROR",
 		Reason:     "unknown error occurred",
 	}
 }
 
 type resp struct {
-	Name    string
-	Company string
+	Name    string `json:"name"`
+	Company string `json:"company"`
 }
 
 // JSONHandler is a handler function of type gofr.Handler, it responds with a JSON message
-func JSONHandler(c *gofr.Context) (interface{}, error) {
+func JSONHandler(ctx *gofr.Context) (interface{}, error) {
 	r := resp{
 		Name:    "Vikash",
 		Company: "ZopSmart",
@@ -89,4 +91,16 @@ func HelloLogHandler(c *gofr.Context) (interface{}, error) {
 	}{"Struct Test", 1}) // This is how you can give multiple messages
 
 	return "Logging OK", nil
+}
+
+// UserHandler is a handler function of type gofr.Handler, it responds with a JSON message
+func UserHandler(ctx *gofr.Context) (interface{}, error) {
+	name := ctx.PathParam("name")
+
+	switch strings.ToLower(name) {
+	case "vikash":
+		return resp{Name: "Vikash", Company: "ZopSmart"}, nil
+	default:
+		return nil, errors.EntityNotFound{Entity: "user", ID: name}
+	}
 }

@@ -1,3 +1,5 @@
+//go:build !integration
+
 package middleware
 
 import (
@@ -12,9 +14,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/bmizerany/assert"
-
 	"github.com/go-ldap/ldap/v3"
+	"github.com/stretchr/testify/assert"
+
 	"developer.zopsmart.com/go/gofr/pkg/errors"
 	"developer.zopsmart.com/go/gofr/pkg/log"
 )

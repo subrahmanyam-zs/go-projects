@@ -10,7 +10,7 @@ type handler struct {
 	Service service.Service
 }
 
-//nolint:golint //handler should not get accessed, without initialization of service.Service
+//nolint:revive //handler should not get accessed, without initialization of service.Service
 func New(svc service.Service) handler {
 	return handler{Service: svc}
 }

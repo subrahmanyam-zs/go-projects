@@ -53,9 +53,9 @@ func (e *entry) TerminalOutput() string {
 	// Add some system stats
 	if e.CorrelationID != "" {
 		s += fmt.Sprintf("\n%15s: %s \u001B[%dm(Memory: %v GoRoutines: %v) \u001B[0m",
-			"CorrelationId", e.CorrelationID, 37, e.System["alloc"], e.System["goRoutines"])
+			"CorrelationId", e.CorrelationID, normalColor, e.System["alloc"], e.System["goRoutines"])
 	} else {
-		s += fmt.Sprintf("\n%15s \u001B[%dm (Memory: %v GoRoutines: %v) \u001B[0m", "", 37, e.System["alloc"], e.System["goRoutines"])
+		s += fmt.Sprintf("\n%15s \u001B[%dm (Memory: %v GoRoutines: %v) \u001B[0m", "", normalColor, e.System["alloc"], e.System["goRoutines"])
 	}
 
 	return s + "\n"
@@ -74,7 +74,7 @@ func populateDatastoreAndMessage(e *entry) string {
 	if v, ok := e.Data["query"]; ok {
 		s += fmt.Sprintf(" %v", v)
 	} else {
-		s += fmt.Sprintf("\u001B[%dm %s\u001B[0m %v", 37, e.Data["method"], e.Data["uri"])
+		s += fmt.Sprintf("\u001B[%dm %s\u001B[0m %v", normalColor, e.Data["method"], e.Data["uri"])
 	}
 
 	return s

@@ -5,7 +5,7 @@ import (
 	fs2 "io/fs"
 	"testing"
 
-	"github.com/bmizerany/assert"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestGetSwaggerFile(t *testing.T) {
