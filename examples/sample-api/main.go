@@ -9,8 +9,6 @@ func main() {
 	// create the application object
 	app := gofr.New()
 
-	h := handler.New(app.Config.Get("USING_REDIS_EXAMPLE"))
-
 	// enabling /swagger endpoint for Swagger UI
 	app.EnableSwaggerUI()
 
@@ -31,8 +29,6 @@ func main() {
 
 	// Handler function which uses logging
 	app.GET("/log", handler.HelloLogHandler)
-
-	app.GET("/trace", h.Trace)
 
 	// start the server
 	app.Start()
