@@ -43,8 +43,16 @@ func JSONHandler(ctx *gofr.Context) (interface{}, error) {
 	return r, nil
 }
 
-type handler struct {
-	serviceUrl string
+// UserHandler is a handler function of type gofr.Handler, it responds with a JSON message
+func UserHandler(ctx *gofr.Context) (interface{}, error) {
+	name := ctx.PathParam("name")
+
+	switch strings.ToLower(name) {
+	case "vikash":
+		return resp{Name: "Vikash", Company: "ZopSmart"}, nil
+	default:
+		return nil, errors.EntityNotFound{Entity: "user", ID: name}
+	}
 }
 
 func HelloLogHandler(c *gofr.Context) (interface{}, error) {
@@ -57,16 +65,4 @@ func HelloLogHandler(c *gofr.Context) (interface{}, error) {
 	}{"Struct Test", 1}) // This is how you can give multiple messages
 
 	return "Logging OK", nil
-}
-
-// UserHandler is a handler function of type gofr.Handler, it responds with a JSON message
-func UserHandler(ctx *gofr.Context) (interface{}, error) {
-	name := ctx.PathParam("name")
-
-	switch strings.ToLower(name) {
-	case "vikash":
-		return resp{Name: "Vikash", Company: "ZopSmart"}, nil
-	default:
-		return nil, errors.EntityNotFound{Entity: "user", ID: name}
-	}
 }
