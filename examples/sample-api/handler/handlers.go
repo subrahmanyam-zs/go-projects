@@ -55,11 +55,11 @@ func UserHandler(ctx *gofr.Context) (interface{}, error) {
 	}
 }
 
-func HelloLogHandler(c *gofr.Context) (interface{}, error) {
-	c.Log("key", "value")          // This is how we can add more data to framework log.
-	c.Logger.Log("Hello Logging!") // This is how we can add a log from handlers.
-	c.Log("key2", "value2")
-	c.Logger.Warn("Warning 1", "Warning 2", struct {
+func HelloLogHandler(ctx *gofr.Context) (interface{}, error) {
+	ctx.Log("key", "value")          // This is how we can add more data to framework log.
+	ctx.Logger.Log("Hello Logging!") // This is how we can add a log from handlers.
+	ctx.Log("key2", "value2")
+	ctx.Logger.Warn("Warning 1", "Warning 2", struct {
 		key1 string
 		key2 int
 	}{"Struct Test", 1}) // This is how you can give multiple messages
