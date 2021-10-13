@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"strings"
+	"time"
 
 	"developer.zopsmart.com/go/gofr/pkg"
 	"developer.zopsmart.com/go/gofr/pkg/gofr/types"
@@ -22,7 +23,10 @@ import (
 	_ "github.com/jinzhu/gorm/dialects/sqlite"
 )
 
-const invalidDialectErr = "invalid dialect: supported dialects are - mysql, mssql, sqlite, postgres"
+const (
+	invalidDialectErr  = "invalid dialect: supported dialects are - mysql, mssql, sqlite, postgres"
+	pushMetricDuration = 100
+)
 
 type invalidDialect struct{}
 
@@ -72,8 +76,36 @@ var (
 		Buckets: []float64{.001, .003, .005, .01, .025, .05, .1, .2, .3, .4, .5, .75, 1, 2, 3, 5, 10, 30},
 	}, []string{"type", "host", "database"})
 
+	sqlOpen = prometheus.NewGaugeVec(prometheus.GaugeOpts{
+		Name: "zs_sql_open_connections",
+		Help: "Gauge for sql open connections",
+	}, []string{"database", "host"})
+
+	sqlIdle = prometheus.NewGaugeVec(prometheus.GaugeOpts{
+		Name: "zs_sql_idle_connections",
+		Help: "Gauge for sql idle connections",
+	}, []string{"database", "host"})
+
+	sqlInUse = prometheus.NewGaugeVec(prometheus.GaugeOpts{
+		Name: "zs_sql_inUse_connections",
+		Help: "Gauge for sql InUse connections",
+	}, []string{"database", "host"})
+
 	_ = prometheus.Register(sqlStats)
+	_ = prometheus.Register(sqlOpen)
+	_ = prometheus.Register(sqlIdle)
+	_ = prometheus.Register(sqlInUse)
 )
+
+func pushConnMetrics(database, hostname string, db *sql.DB) {
+	for {
+		stats := db.Stats()
+		sqlOpen.WithLabelValues(database, hostname).Set(float64(stats.OpenConnections))
+		sqlIdle.WithLabelValues(database, hostname).Set(float64(stats.Idle))
+		sqlInUse.WithLabelValues(database, hostname).Set(float64(stats.InUse))
+		time.Sleep(pushMetricDuration * time.Millisecond)
+	}
+}
 
 // NewORM returns a new ORM object if the config is correct, otherwise it returns the error thrown
 func NewORM(config *DBConfig) (GORMClient, error) {
@@ -94,6 +126,8 @@ func NewORM(config *DBConfig) (GORMClient, error) {
 	if err != nil {
 		return GORMClient{config: config}, err
 	}
+
+	go pushConnMetrics(config.Database, config.HostName, db.DB())
 
 	return GORMClient{DB: db, config: config}, err
 }
@@ -121,6 +155,8 @@ func NewSQLX(config *DBConfig) (SQLXClient, error) {
 	if err != nil {
 		return SQLXClient{config: config}, err
 	}
+
+	go pushConnMetrics(config.Database, config.HostName, DB.DB)
 
 	return SQLXClient{DB: DB, config: config}, err
 }
