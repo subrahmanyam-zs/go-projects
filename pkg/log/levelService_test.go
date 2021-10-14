@@ -2,35 +2,43 @@ package log
 
 import (
 	"bytes"
-	"encoding/json"
 	"io"
 	"net/http"
 	"net/http/httptest"
-	"reflect"
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestRemoteLevelLogger(t *testing.T) {
-	// test server that returns log level for the app
-	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		level := struct {
-			Data string `json:"data"`
-		}{Data: "debug"}
-		reBytes, _ := json.Marshal(level)
-		_, _ = w.Write(reBytes)
-	}))
+	tests := []struct {
+		desc  string
+		level level
+		body  []byte
+	}{
+		{"success case", Info, []byte(`{"data": [{"serviceName": "gofr-sample-api","config": {"LOG_LEVEL": "INFO"}}]}`)},
+		{"failure case", Debug, nil},
+	}
 
-	defer ts.Close()
+	for i, tc := range tests {
+		// test server that returns log level for the app
+		ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			_, _ = w.Write(tc.body)
+		}))
 
-	rls.logger = NewMockLogger(io.Discard)
-	s := &levelService{url: ts.URL, logger: rls.logger}
+		rls.logger = NewMockLogger(io.Discard)
 
-	s.updateRemoteLevel()
+		s := &levelService{url: ts.URL, logger: rls.logger}
 
-	if !reflect.DeepEqual(s.level, Debug) {
-		t.Errorf("update remote logging failed")
+		s.level = Debug
+
+		s.updateRemoteLevel()
+
+		ts.Close()
+
+		assert.Equal(t, tc.level, s.level, "TEST[%d], failed.\n%s", i, tc.desc)
 	}
 }
 
@@ -38,14 +46,14 @@ func TestRemoteLevelLoggerRequestError(t *testing.T) {
 	// test server that returns log level for the app
 	b := new(bytes.Buffer)
 	l := NewMockLogger(b)
+
 	rls.logger = l
+
 	s := &levelService{url: "", logger: l}
 
 	s.updateRemoteLevel()
 
-	if !strings.Contains(b.String(), "Could not create log service client") {
-		t.Errorf("expected error")
-	}
+	assert.Contains(t, b.String(), "Could not create log service client")
 }
 
 func TestRemoteLevelLoggerNoResponse(t *testing.T) {
@@ -58,7 +66,9 @@ func TestRemoteLevelLoggerNoResponse(t *testing.T) {
 
 	b := new(bytes.Buffer)
 	l := NewMockLogger(b)
+
 	rls.logger = l
+
 	s := &levelService{url: ts.URL, logger: l}
 
 	s.updateRemoteLevel()
@@ -71,13 +81,10 @@ func TestRemoteLevelLoggerNoResponse(t *testing.T) {
 }
 
 func TestRemoteLevelLogging(t *testing.T) {
+	body := []byte(`{"data": [{"serviceName": "gofr-sample-api","config": {"LOG_LEVEL": "WARN"}}]}`)
 	// test server that returns log level for the app
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		level := struct {
-			Data string `json:"data"`
-		}{Data: "warn"}
-		reBytes, _ := json.Marshal(level)
-		_, _ = w.Write(reBytes)
+		_, _ = w.Write(body)
 	}))
 
 	defer ts.Close()
@@ -86,6 +93,7 @@ func TestRemoteLevelLogging(t *testing.T) {
 
 	b := new(bytes.Buffer)
 	l := NewMockLogger(b)
+
 	rls.logger = l
 
 	newLevelService(l, "gofr-app")
