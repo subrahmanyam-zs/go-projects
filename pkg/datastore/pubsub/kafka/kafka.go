@@ -430,11 +430,8 @@ func (k *Kafka) PublishEventWithOptions(key string, value interface{}, headers m
 	}
 
 	message := &sarama.ProducerMessage{
-
 		Topic:     options.Topic,
-		Offset:    int64(options.Offset),
 		Partition: int32(options.Partition),
-
 		Value:     sarama.ByteEncoder(valBytes),
 		Key:       sarama.StringEncoder(key),
 		Timestamp: options.Timestamp,
@@ -442,7 +439,6 @@ func (k *Kafka) PublishEventWithOptions(key string, value interface{}, headers m
 	}
 
 	_, _, err = k.Producer.SendMessage(message)
-
 	if err != nil {
 		publishFailureCount.WithLabelValues(message.Topic, k.config.GroupID).Inc()
 
