@@ -4,7 +4,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/jinzhu/gorm"
+	"gorm.io/gorm"
 
 	"developer.zopsmart.com/go/gofr/pkg/datastore"
 	"developer.zopsmart.com/go/gofr/pkg/errors"
@@ -68,8 +68,8 @@ func (g *GORM) Run(m Migrator, app, name, methods string, logger log.Logger) err
 }
 
 func (g *GORM) preRun(app, method, name string) error {
-	if !g.database.HasTable(&gofrMigration{}) {
-		err := g.database.CreateTable(&gofrMigration{}).Error
+	if !g.database.Migrator().HasTable(&gofrMigration{}) {
+		err := g.database.Migrator().CreateTable(&gofrMigration{}).Error
 		if err != nil {
 			return &errors.Response{Reason: "unable to create gofr_migrations table", Detail: err}
 		}
@@ -90,7 +90,7 @@ func (g *GORM) preRun(app, method, name string) error {
 }
 
 func (g *GORM) isDirty(app string) bool {
-	val := 0
+	var val int64
 
 	err := g.txn.Table("gofr_migrations").Where("app = ? AND end_time is null", app).Count(&val).Error
 	if err != nil || val > 0 {
@@ -102,8 +102,8 @@ func (g *GORM) isDirty(app string) bool {
 
 func (g *GORM) postRun(app, method, name string) error {
 	// finish the migration
-	err := g.txn.Table("gofr_migrations").Where("app = ? AND version = ? AND method = ?", app, name, method).
-		Update(&gofrMigration{EndTime: time.Now()}).Error
+	err := g.txn.Table("gofr_migrations").Where("app = ? AND version = ? AND method = ?", app, name, method).Update(`end_time`, &gofrMigration{EndTime: time.Now()}).Error
+	//err := g.txn.Table("gofr_migrations").Where("app = $1 AND version = $2 AND method = $3", app, name, method).Update(&gofrMigration{EndTime: time.Now()}).Error
 	return err
 }
 

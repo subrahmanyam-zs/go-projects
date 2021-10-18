@@ -137,6 +137,7 @@ require (
 
 require (
 	github.com/felixge/httpsnoop v1.0.2 // indirect
+	github.com/jinzhu/now v1.1.2 // indirect
 	github.com/openzipkin/zipkin-go v0.2.5 // indirect
 	go.opentelemetry.io/contrib v0.21.0 // indirect
 	go.opentelemetry.io/otel/metric v0.22.0 // indirect
@@ -146,4 +147,5 @@ require (
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b // indirect
+	gorm.io/gorm v1.21.16 // indirect
 )
