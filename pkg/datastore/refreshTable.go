@@ -10,6 +10,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/dynamodb"
@@ -210,7 +211,7 @@ func (d *Seeder) getQueryFromRecords(records [][]string, tableName string) strin
 	return query
 }
 
-func (d *Seeder) getCassandraQueryFromRecords(records [][]string, tableName string) (query string, rows []interface{}) {
+func (d *Seeder) getCassandraQueryFromRecords(records [][]string, tableName string) (query string, rows []interface{}, err error) {
 	columns := records[0]
 	columnsStr := " (\"" + strings.Join(columns, "\",\"") + "\")"
 
@@ -222,17 +223,86 @@ func (d *Seeder) getCassandraQueryFromRecords(records [][]string, tableName stri
 	qRowsStr := strings.Join(qRows, ",")
 	query = "BEGIN BATCH"
 
-	for i := 1; i < len(records); i++ {
-		for j := range records[i] {
-			rows = append(rows, records[i][j])
-		}
+	schema, err := d.Cassandra.Session.KeyspaceMetadata(d.Cassandra.config.Keyspace)
+	if err != nil {
+		return "", nil, err
+	}
+	// types contains mapping of columns to their types
+	types := make(map[string]string)
+	for _, col := range schema.Tables[tableName].Columns {
+		types[col.Name] = col.Validator
+	}
 
+	rows, err = marshalRecords(records, types)
+	if err != nil {
+		return "", nil, err
+	}
+
+	for i := 0; i < len(records)-1; i++ {
 		query += " insert into " + tableName + columnsStr + " values(" + qRowsStr + ");"
 	}
 
 	query += " APPLY BATCH"
 
-	return
+	return query, rows, nil
+}
+
+// nolint:gocyclo,gocognit // cannot break down the function further
+func marshalRecords(records [][]string, types map[string]string) ([]interface{}, error) {
+	columns := records[0]
+	rows := make([]interface{}, len(columns)*(len(records)-1))
+	// type casting all values by columns
+	for col := range columns {
+		switch types[columns[col]] {
+		case "double":
+			const bitSize = 64
+			// marshaling whole row for double type
+			for row := 1; row < len(records); row++ {
+				f, err := strconv.ParseFloat(records[row][col], bitSize)
+				if err != nil {
+					return nil, err
+				}
+
+				rows[col+(row-1)*(len(columns))] = f
+			}
+		case "timestamp":
+			const layout = "2006-01-02 15:04:05"
+
+			for row := 1; row < len(records); row++ {
+				t, err := time.Parse(layout, records[row][col])
+				if err != nil {
+					return nil, err
+				}
+
+				rows[col+(row-1)*(len(columns))] = t
+			}
+		case "time":
+			for row := 1; row < len(records); row++ {
+				t, err := time.ParseDuration(records[row][col])
+				if err != nil {
+					return nil, err
+				}
+
+				rows[col+(row-1)*(len(columns))] = t
+			}
+		case "boolean":
+			for row := 1; row < len(records); row++ {
+				t, err := strconv.ParseBool(records[row][col])
+				if err != nil {
+					return nil, err
+				}
+
+				rows[col+(row-1)*(len(columns))] = t
+			}
+		default:
+			// marshaling whole row for other types
+			for row := 1; row < len(records); row++ {
+				rows[col+(row-1)*(len(columns))] = records[row][col]
+			}
+		}
+	}
+
+	return rows, nil
 }
 
 // check the type is int or float type or not
@@ -379,7 +449,11 @@ func (d *Seeder) RefreshCassandra(t tester, tableNames ...string) {
 			return
 		}
 
-		query, rows := d.getCassandraQueryFromRecords(records, tableName)
+		query, rows, err := d.getCassandraQueryFromRecords(records, tableName)
+		if err != nil {
+			t.Error(err)
+			return
+		}
 
 		err = d.Cassandra.Session.Query(query, rows...).Exec()
 		if err != nil {
