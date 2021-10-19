@@ -6,21 +6,22 @@ import (
 	"os"
 	"strings"
 
+	"developer.zopsmart.com/go/gofr/pkg/errors"
+	"go.opentelemetry.io/otel"
+	"gorm.io/driver/mysql"
+	"gorm.io/driver/postgres"
+	"gorm.io/driver/sqlite"
+	"gorm.io/driver/sqlserver"
+
 	"developer.zopsmart.com/go/gofr/pkg"
 	"developer.zopsmart.com/go/gofr/pkg/gofr/types"
 	"developer.zopsmart.com/go/gofr/pkg/log"
 	"developer.zopsmart.com/go/gofr/pkg/middleware"
+	"gorm.io/gorm"
 
-	"github.com/XSAM/otelsql"
-	"github.com/jinzhu/gorm"
+	gormOtel "github.com/go-codes/gorm-opentelemetry"
 	"github.com/jmoiron/sqlx"
 	"github.com/prometheus/client_golang/prometheus"
-
-	// empty imports are to ensure inits are run for these packages.
-	_ "github.com/jinzhu/gorm/dialects/mssql"
-	_ "github.com/jinzhu/gorm/dialects/mysql"
-	_ "github.com/jinzhu/gorm/dialects/postgres"
-	_ "github.com/jinzhu/gorm/dialects/sqlite"
 )
 
 const invalidDialectErr = "invalid dialect: supported dialects are - mysql, mssql, sqlite, postgres"
@@ -78,6 +79,7 @@ var (
 
 // NewORM returns a new ORM object if the config is correct, otherwise it returns the error thrown
 func NewORM(config *DBConfig) (GORMClient, error) {
+
 	validDialects := map[string]bool{
 		"mysql":    true,
 		"mssql":    true,
@@ -91,23 +93,50 @@ func NewORM(config *DBConfig) (GORMClient, error) {
 
 	connectionStr := formConnectionStr(config)
 
-	dbSystem := config.Dialect
+	switch config.Dialect {
+	case "mysql":
+		DB, err := gorm.Open(mysql.Open(connectionStr), &gorm.Config{})
+		if err != nil {
+			return GORMClient{config: config}, err
+		}
 
-	if config.Dialect == "postgres" {
-		dbSystem = "postgresql"
+		return GORMClient{DB: DB, config: config}, err
+
+	case "postgres":
+		DB, err := gorm.Open(postgres.Open(connectionStr), &gorm.Config{})
+		if err != nil {
+			return GORMClient{config: config}, err
+		}
+
+		plugin := gormOtel.NewPlugin(gormOtel.WithTracerProvider(otel.GetTracerProvider()))
+		if err = plugin.Initialize(DB); err != nil {
+			return GORMClient{DB: DB, config: config}, err
+		}
+
+		if err := DB.Use(plugin); err != nil {
+			return GORMClient{config: config}, err
+		}
+
+		return GORMClient{DB: DB, config: config}, err
+	case "sqlite":
+		DB, err := gorm.Open(sqlite.Open(connectionStr), &gorm.Config{})
+		if err != nil {
+			return GORMClient{config: config}, err
+		}
+
+		return GORMClient{DB: DB, config: config}, err
 	}
 
-	driverName, err := otelsql.Register(config.Dialect, dbSystem)
+	if config.Dialect != "sqlserver" {
+		return GORMClient{config: config}, errors.DB{}
+	}
+
+	DB, err := gorm.Open(sqlserver.Open(connectionStr), &gorm.Config{})
 	if err != nil {
 		return GORMClient{config: config}, err
 	}
 
-	db, err := gorm.Open(driverName, connectionStr)
-	if err != nil {
-		return GORMClient{config: config}, err
-	}
-
-	return GORMClient{DB: db, config: config}, err
+	return GORMClient{DB: DB, config: config}, err
 }
 
 // NewORMFromEnv fetches the config from environment variables and returns a new ORM object if the config was
@@ -185,17 +214,21 @@ func (c GORMClient) HealthCheck() types.Health {
 		return resp
 	}
 
-	err := c.DB.DB().Ping()
+	d, err := c.DB.DB()
+	if err != nil {
+		return resp
+	}
+
+	err = d.Ping()
 	if err != nil {
 		return resp
 	}
 
 	resp.Status = pkg.StatusUp
-	resp.Details = c.DB.DB().Stats()
+	resp.Details = d.Stats()
 
 	return resp
 }
-
 func (c SQLXClient) HealthCheck() types.Health {
 	resp := types.Health{
 		Name:     pkg.SQL,
@@ -215,6 +248,5 @@ func (c SQLXClient) HealthCheck() types.Health {
 
 	resp.Status = pkg.StatusUp
 	resp.Details = c.DB.Stats()
-
 	return resp
 }

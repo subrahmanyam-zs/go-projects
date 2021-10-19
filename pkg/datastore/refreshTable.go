@@ -2,7 +2,6 @@ package datastore
 
 import (
 	"context"
-	"database/sql"
 	"encoding/csv"
 	"encoding/json"
 	"fmt"
@@ -14,6 +13,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/dynamodb"
 	"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbattribute"
+	"gorm.io/gorm"
 )
 
 const (
@@ -35,7 +35,7 @@ func NewSeeder(db *DataStore, directoryPath string) *Seeder {
 	dialect := ""
 
 	if v != nil {
-		dialect = db.GORM().Dialect().GetName()
+		dialect = db.GORM().Dialector.Name()
 	}
 
 	return &Seeder{DataStore: db, path: directoryPath, dialect: dialect}
@@ -71,7 +71,7 @@ func (d *Seeder) ClearTable(t tester, tableName string) {
 
 func (d *Seeder) populateTable(t tester, tableName string, records [][]string) {
 	d.resetIdentitySequence(t, tableName, true)
-	txn, _ := d.GORM().DB().Begin()
+	txn := d.GORM().Begin()
 
 	var err error
 
@@ -91,7 +91,7 @@ func (d *Seeder) populateTable(t tester, tableName string, records [][]string) {
 
 	query := d.getQueryFromRecords(records, tableName)
 
-	_, err = txn.Exec(query)
+	err = txn.Exec(query).Error
 	if err != nil {
 		_ = txn.Rollback()
 
@@ -101,7 +101,7 @@ func (d *Seeder) populateTable(t tester, tableName string, records [][]string) {
 	}
 
 	if d.dialect == msSQL && identityInsert {
-		_, err = txn.Exec(`SET ` + `IDENTITY_INSERT ` + tableName + ` OFF`)
+		err = txn.Exec(`SET ` + `IDENTITY_INSERT ` + tableName + ` OFF`).Error
 		if err != nil {
 			_ = txn.Rollback()
 
@@ -142,17 +142,17 @@ func (d *Seeder) resetIdentitySequence(t tester, tableName string, beforeTransac
 		}
 	}
 
-	if _, err := d.GORM().DB().Exec(q); err != nil {
+	if err := d.GORM().Exec(q).Error; err != nil {
 		t.Errorf("Unable to reset identity. got err: %v", err)
 	}
 }
 
 // getIdentityInsert checks if the MSSQL table has an identity column, if yes, it will turn IDENTITY_INSERT to ON in order to insert
 // values to the identity columns
-func getIdentityInsert(txn *sql.Tx, tableName string) (bool, error) {
+func getIdentityInsert(txn *gorm.DB, tableName string) (bool, error) {
 	var name string
 	// query the information schema to identify if the tables has an identity
-	_ = txn.QueryRow(`SELECT TABLE_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE 
+	_ = txn.Raw(`SELECT TABLE_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE 
 		COLUMNPROPERTY(object_id(TABLE_SCHEMA+'.'+TABLE_NAME), COLUMN_NAME, 'IsIdentity') = 1 AND TABLE_NAME = ?`, tableName).Scan(&name)
 
 	identityInsert := false
@@ -162,7 +162,7 @@ func getIdentityInsert(txn *sql.Tx, tableName string) (bool, error) {
 	}
 
 	if identityInsert {
-		_, err := txn.Exec(`SET` + ` IDENTITY_INSERT ` + tableName + ` ON`)
+		err := txn.Exec(`SET` + ` IDENTITY_INSERT ` + tableName + ` ON`).Error
 
 		if err != nil {
 			return identityInsert, err
