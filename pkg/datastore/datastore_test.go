@@ -5,8 +5,8 @@ import (
 	"io"
 	"testing"
 
-	"github.com/jinzhu/gorm"
 	"github.com/jmoiron/sqlx"
+	"gorm.io/gorm"
 
 	"developer.zopsmart.com/go/gofr/pkg"
 	"developer.zopsmart.com/go/gofr/pkg/gofr/config"
@@ -122,7 +122,19 @@ func TestDataStore_DB(t *testing.T) {
 
 	{
 		ds := new(DataStore)
-		ds.SetORM(GORMClient{DB: new(gorm.DB)})
+		c := config.NewGoDotEnvProvider(log.NewMockLogger(io.Discard), "../../configs")
+		cfg := &DBConfig{
+			HostName: c.Get("DB_HOST"),
+			Username: c.Get("DB_USER"),
+			Password: c.Get("DB_PASSWORD"),
+			Database: c.Get("DB_NAME"),
+			Port:     c.Get("DB_PORT"),
+			Dialect:  c.Get("DB_DIALECT"),
+		}
+		client, _ := NewORM(cfg)
+
+		ds.SetORM(client)
+
 		db := ds.DB()
 
 		if db.DB != nil {

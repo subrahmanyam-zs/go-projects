@@ -61,7 +61,7 @@ func TestNewORM(t *testing.T) {
 			return
 		}
 
-		_, err = db.LogMode(true).DB().Exec("SELECT User FROM mysql.user")
+		err = db.Exec("SELECT User FROM mysql.user").Error
 		if err != nil {
 			t.Errorf("FAILED, Could not run sql command, got error: %v\n", err)
 		}
@@ -223,7 +223,10 @@ func Test_SQL_SQLX_HealthCheck_Down(t *testing.T) {
 		clientSQL, _ := NewORM(&dbConfig)
 		dsSQL := DataStore{gorm: clientSQL}
 
-		clientSQL.Close()
+		db, _ := clientSQL.DB.DB()
+
+		// db connected but goes down in between
+		db.Close()
 
 		healthCheck := dsSQL.SQLHealthCheck()
 		if healthCheck.Status != pkg.StatusDown {
