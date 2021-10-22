@@ -124,6 +124,10 @@ func GetCorrelationID(r *http.Request) string {
 	}
 
 	if correlationID == "" {
+		correlationID = r.Header.Get("X-TRACE-Id")
+	}
+
+	if correlationID == "" {
 		correlationID = trace.SpanFromContext(r.Context()).SpanContext().TraceID().String()
 		r.Header.Set("X-Correlation-Id", correlationID)
 	}
