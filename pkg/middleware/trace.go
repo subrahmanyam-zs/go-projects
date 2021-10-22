@@ -16,9 +16,8 @@ func Trace(appName, appVersion, tracerExporter string) func(inner http.Handler) 
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			ctx := otel.GetTextMapPropagator().Extract(r.Context(), propagation.HeaderCarrier(r.Header))
 
-			if r.Header.Get("X-TRACE-ID") == "" {
-				r.Header.Set("X-TRACE-ID", trace.SpanFromContext(ctx).SpanContext().TraceID().String())
-			}
+			cID, _ := trace.TraceIDFromHex(GetCorrelationID(r))
+			ctx = trace.ContextWithSpanContext(ctx, trace.SpanContextFromContext(r.Context()).WithTraceID(cID))
 
 			tracer := otel.GetTracerProvider().Tracer("gofr", trace.WithInstrumentationVersion(appVersion))
 
