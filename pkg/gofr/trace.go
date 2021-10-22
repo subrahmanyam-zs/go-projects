@@ -2,7 +2,6 @@ package gofr
 
 import (
 	"context"
-	"fmt"
 	"strings"
 
 	"developer.zopsmart.com/go/gofr/pkg/log"
@@ -22,6 +21,7 @@ type exporter struct {
 	name    string
 	host    string
 	port    string
+	url     string
 	appName string
 }
 
@@ -29,8 +29,7 @@ func TraceProvider(appName, exporterName, exporterHost, exporterPort string, log
 	exporterName = strings.ToLower(exporterName)
 	e := exporter{
 		name:    exporterName,
-		host:    exporterHost,
-		port:    exporterPort,
+		url:     config.Get("TRACER_URL"),
 		appName: appName,
 	}
 
@@ -45,7 +44,7 @@ func TraceProvider(appName, exporterName, exporterHost, exporterPort string, log
 }
 
 func (e *exporter) getZipkinExporter(c Config, logger log.Logger) *trace.TracerProvider {
-	url := fmt.Sprintf("http://%s:%s/api/v2/spans", e.host, e.port)
+	url := e.url + "/api/v2/spans"
 
 	exporter, err := zipkin.New(url)
 	if err != nil {
