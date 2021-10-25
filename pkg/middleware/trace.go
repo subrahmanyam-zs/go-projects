@@ -14,12 +14,14 @@ import (
 func Trace(appName, appVersion, tracerExporter string) func(inner http.Handler) http.Handler {
 	return func(inner http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			ctx := otel.GetTextMapPropagator().Extract(r.Context(), propagation.HeaderCarrier(r.Header))
+			ctx := r.Context()
 
 			cID, err := trace.TraceIDFromHex(getCorrelationID(r))
 			if err == nil {
 				ctx = trace.ContextWithSpanContext(ctx, trace.SpanContextFromContext(r.Context()).WithTraceID(cID))
 			}
+
+			ctx = otel.GetTextMapPropagator().Extract(ctx, propagation.HeaderCarrier(r.Header))
 
 			tracer := otel.GetTracerProvider().Tracer("gofr", trace.WithInstrumentationVersion(appVersion))
 
