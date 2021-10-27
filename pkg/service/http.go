@@ -21,8 +21,6 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
-	"go.opentelemetry.io/otel"
-	"go.opentelemetry.io/otel/propagation"
 )
 
 type httpService struct {
@@ -101,8 +99,6 @@ func (h *httpService) call(ctx context.Context, method, target string, params ma
 			resp       *http.Response
 			statusCode int
 		)
-
-		otel.GetTextMapPropagator().Inject(ctx, propagation.HeaderCarrier(req.Header))
 
 		for i := 0; i <= h.numOfRetries; i++ {
 			resp, err = h.Do(req.WithContext(ctx)) //nolint:bodyclose // body is being closed after call response is logged

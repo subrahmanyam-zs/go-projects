@@ -118,10 +118,10 @@ require (
 	go.mongodb.org/mongo-driver v1.5.2
 	go.opencensus.io v0.23.0
 	go.opentelemetry.io/collector v0.31.0
-	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.21.0
+	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.25.0
 	go.opentelemetry.io/otel v1.0.1
 	go.opentelemetry.io/otel/exporters/zipkin v1.0.1
-	go.opentelemetry.io/otel/internal/metric v0.22.0 // indirect
+	go.opentelemetry.io/otel/internal/metric v0.24.0 // indirect
 	go.opentelemetry.io/otel/sdk v1.0.1
 	go.opentelemetry.io/otel/trace v1.0.1
 	golang.org/x/crypto v0.0.0-20210616213533-5ff15b29337e
@@ -138,8 +138,7 @@ require (
 require (
 	github.com/felixge/httpsnoop v1.0.2 // indirect
 	github.com/openzipkin/zipkin-go v0.2.5 // indirect
-	go.opentelemetry.io/contrib v0.21.0 // indirect
-	go.opentelemetry.io/otel/metric v0.22.0 // indirect
+	go.opentelemetry.io/otel/metric v0.24.0 // indirect
 	golang.org/x/sync v0.0.0-20210220032951-036812b2e83c // indirect
 	golang.org/x/term v0.0.0-20210220032956-6a3ed077a48d // indirect
 	google.golang.org/appengine v1.6.7 // indirect

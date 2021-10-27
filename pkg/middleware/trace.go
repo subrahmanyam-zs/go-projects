@@ -23,7 +23,7 @@ func Trace(appName, appVersion, tracerExporter string) func(inner http.Handler) 
 
 			ctx = otel.GetTextMapPropagator().Extract(ctx, propagation.HeaderCarrier(r.Header))
 
-			tracer := otel.GetTracerProvider().Tracer("gofr", trace.WithInstrumentationVersion(appVersion))
+			tracer := otel.Tracer("gofr", trace.WithInstrumentationVersion(appVersion))
 
 			ctx, span := tracer.Start(ctx, fmt.Sprintf("%s-Middleware %s %s", appName, r.Method, r.URL.Path),
 				trace.WithSpanKind(trace.SpanKindClient), trace.WithAttributes(semconv.ServiceNameKey.String(appName),
