@@ -114,6 +114,7 @@ func Test_kafkaConfigFromEnv(t *testing.T) {
 		MaxRetry:          10,
 		InitialOffsets:    kafka.OffsetOldest,
 		GroupID:           "testing-dev-consumer",
+		DisableAutoCommit: false,
 	}
 	kafkaConfig := kafkaConfigFromEnv(&config.MockConfig{
 		Data: map[string]string{
@@ -121,6 +122,7 @@ func Test_kafkaConfigFromEnv(t *testing.T) {
 			"KAFKA_TOPIC": "test-topics",
 			"APP_NAME":    "testing",
 			"APP_VERSION": "dev",
+			"KAFKA_AUTOCOMMIT_DISABLE": "false",
 		},
 	})
 

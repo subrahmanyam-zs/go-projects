@@ -95,6 +95,9 @@ type Config struct {
 	Offsets []pubsub.TopicPartition
 
 	InitialOffsets int64
+
+	// This config will allow application to disable kafka consumer auto commit
+	DisableAutoCommit bool
 }
 
 type SASLConfig struct {
@@ -315,6 +318,10 @@ func convertKafkaConfig(config *Config) {
 		config.Config.Producer.Retry.Max = config.MaxRetry
 	}
 
+	if config.DisableAutoCommit == true {
+		config.Config.Consumer.Offsets.AutoCommit.Enable = false
+	}
+
 	if config.RetryFrequency > 0 {
 		config.Config.Producer.Retry.Backoff = time.Duration(config.RetryFrequency)
 	}
@@ -502,6 +509,9 @@ func (k *Kafka) subscribeMessage() (*pubsub.Message, error) {
 		}
 	}
 
+	// Mark the message as read for autocommit to work
+	k.Consumer.ConsumerGroupHandler.consumerGroupSession.MarkMessage(msg, "")
+	
 	return &pubsub.Message{
 		Topic:     msg.Topic,
 		Partition: int(msg.Partition),
@@ -569,7 +579,7 @@ func (k *Kafka) SubscribeWithCommit(f pubsub.CommitFunc) (*pubsub.Message, error
 				Partition: msg.Partition,
 				Offset:    msg.Offset,
 			})
-		}
+		}		
 
 		if !isContinue {
 			// for successful subscribe
@@ -701,7 +711,10 @@ func (kl kafkaLogger) Println(v ...interface{}) {
 // Consumer.Offsets.AutoCommit
 func (k *Kafka) CommitOffset(offsets pubsub.TopicPartition) {
 	k.Consumer.ConsumerGroupHandler.consumerGroupSession.MarkOffset(
-		offsets.Topic, int32(offsets.Partition), offsets.Offset+1, "")
+			offsets.Topic, int32(offsets.Partition), offsets.Offset+1, "")
+	if k.config.DisableAutoCommit == true {
+		k.Consumer.ConsumerGroupHandler.consumerGroupSession.Commit()
+	}
 }
 
 func (k *Kafka) HealthCheck() types.Health {
