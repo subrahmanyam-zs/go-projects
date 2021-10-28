@@ -15,10 +15,12 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/assert"
+
+	"go.opencensus.io/plugin/ochttp"
+
 	"developer.zopsmart.com/go/gofr/pkg/log"
 	"developer.zopsmart.com/go/gofr/pkg/middleware"
-	"github.com/stretchr/testify/assert"
-	"go.opencensus.io/plugin/ochttp"
 )
 
 func testServer() *httptest.Server {
