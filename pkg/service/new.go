@@ -115,6 +115,8 @@ func NewHTTPServiceWithOptions(resourceAddr string, logger log.Logger, options *
 	}
 
 	if options.Auth != nil && options.CSPOption != nil && options.CSPSecurityOption == nil {
+		logger.Warn("Deprecated CSPOption is used, instead use CSPSecurityOption for CSP Security")
+
 		options.CSPSecurityOption = &generator.Option{
 			AppKey:      options.AppKey,
 			SharedKey:   options.SharedKey,
