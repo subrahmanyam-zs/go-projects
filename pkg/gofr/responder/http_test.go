@@ -16,7 +16,8 @@ import (
 
 func TestNewContextualResponder(t *testing.T) {
 	var (
-		w = httptest.NewRecorder()
+		w             = httptest.NewRecorder()
+		correlationId = "696e9fd279187593174f422b3f2cf27d"
 	)
 
 	path := "/dummy"
@@ -24,18 +25,19 @@ func TestNewContextualResponder(t *testing.T) {
 		contentType string
 		want        Responder
 	}{
-		{"", &HTTP{w: w, resType: JSON, method: "GET", path: path}},
-		{"text/xml", &HTTP{w: w, resType: XML, method: "GET", path: path}},
-		{"application/xml", &HTTP{w: w, resType: XML, method: "GET", path: path}},
-		{"text/json", &HTTP{w: w, resType: JSON, method: "GET", path: path}},
-		{"application/json", &HTTP{w: w, resType: JSON, method: "GET", path: path}},
-		{"text/plain", &HTTP{w: w, resType: TEXT, method: "GET", path: path}},
+		{"", &HTTP{w: w, resType: JSON, method: "GET", path: path, correlationID: correlationId}},
+		{"text/xml", &HTTP{w: w, resType: XML, method: "GET", path: path, correlationID: correlationId}},
+		{"application/xml", &HTTP{w: w, resType: XML, method: "GET", path: path, correlationID: correlationId}},
+		{"text/json", &HTTP{w: w, resType: JSON, method: "GET", path: path, correlationID: correlationId}},
+		{"application/json", &HTTP{w: w, resType: JSON, method: "GET", path: path, correlationID: correlationId}},
+		{"text/plain", &HTTP{w: w, resType: TEXT, method: "GET", path: path, correlationID: correlationId}},
 	}
 
 	for _, tc := range testCases {
 		r := httptest.NewRequest("GET", "/dummy", nil)
 		// handler to set the routeKey in request context
 		handler := http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+			req.Header.Set("X-Correlation-Id", correlationId)
 			r = req
 		})
 
@@ -44,6 +46,7 @@ func TestNewContextualResponder(t *testing.T) {
 		muxRouter.ServeHTTP(w, r)
 
 		r.Header.Set("Content-Type", tc.contentType)
+		r.Header.Set("X-Correlation-Id", correlationId)
 
 		if got := NewContextualResponder(w, r); !reflect.DeepEqual(got, tc.want) {
 			t.Errorf("NewContextualResponder() = %v, want %v", got, tc.want)
