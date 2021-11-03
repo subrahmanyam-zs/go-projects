@@ -8,8 +8,6 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 
-	"github-lvs.corpzone.internalzone.com/mcafee/cnsr-gofr-csp-auth/generator"
-
 	"go.opencensus.io/plugin/ochttp"
 
 	"developer.zopsmart.com/go/gofr/pkg"
@@ -38,7 +36,7 @@ type Auth struct {
 	// Deprecated: Instead us CSPSecurityOption
 	*CSPOption
 
-	CSPSecurityOption *generator.Option
+	//CSPSecurityOption *generator.Option
 }
 
 // Cache provides the options needed for caching of HTTPService responses
@@ -112,26 +110,6 @@ func NewHTTPServiceWithOptions(resourceAddr string, logger log.Logger, options *
 	if options.Auth != nil && options.OAuthOption != nil && httpSvc.auth == "" { // if auth is already set to basic auth, dont set oauth
 		httpSvc.isAuthSet = true
 		go httpSvc.setClientOauthHeader(options.OAuthOption)
-	}
-
-	if options.Auth != nil && options.CSPOption != nil && options.CSPSecurityOption == nil {
-		logger.Warn("Deprecated CSPOption is used, instead use CSPSecurityOption for CSP Security")
-
-		options.CSPSecurityOption = &generator.Option{
-			AppKey:      options.AppKey,
-			SharedKey:   options.SharedKey,
-			MachineName: options.MachineName,
-			IPAddress:   options.IPAddress,
-		}
-	}
-
-	if options.Auth != nil && options.CSPSecurityOption != nil {
-		var err error
-
-		httpSvc.csp, err = generator.New(options.CSPSecurityOption)
-		if err != nil {
-			logger.Warnf("CSP Auth is not enabled, %v", err)
-		}
 	}
 
 	enableSP := true

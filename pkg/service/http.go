@@ -16,8 +16,6 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 
-	"github-lvs.corpzone.internalzone.com/mcafee/cnsr-gofr-csp-auth/generator"
-
 	"go.opencensus.io/plugin/ochttp"
 
 	"developer.zopsmart.com/go/gofr/pkg/errors"
@@ -41,7 +39,6 @@ type httpService struct {
 	numOfRetries  int
 	mu            sync.Mutex
 
-	csp   *generator.CSP
 	cache *cachedHTTPService
 }
 
@@ -276,15 +273,6 @@ func (h *httpService) setHeadersFromContext(ctx context.Context, req *http.Reque
 
 	if h.auth != "" {
 		req.Header.Add("Authorization", h.auth)
-	}
-
-	// set csp headers
-	if h.csp != nil {
-		headers := h.csp.GetCSPHeaders(req)
-
-		for key, val := range headers {
-			req.Header.Add(key, val)
-		}
 	}
 
 	// add custom headers to the request
