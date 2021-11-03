@@ -6,7 +6,11 @@ import (
 )
 
 func NewMockLogger(output io.Writer) Logger {
+	mu.Lock()
+
 	rls.level = Debug
+
+	mu.Unlock()
 
 	return &logger{
 		out: output,

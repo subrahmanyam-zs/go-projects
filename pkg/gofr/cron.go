@@ -6,12 +6,14 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 )
 
 type Crontab struct {
 	ticker *time.Ticker
 	jobs   []job
+	mu     sync.RWMutex
 }
 
 // job in cron table
@@ -253,7 +255,15 @@ func parseParts(s string, min, max int) (map[int]struct{}, error) {
 }
 
 func (c *Crontab) runScheduled(t time.Time) {
-	for _, j := range c.jobs {
+	c.mu.Lock()
+
+	n := len(c.jobs)
+	jb := make([]job, n)
+	copy(jb, c.jobs)
+
+	c.mu.Unlock()
+
+	for _, j := range jb {
 		if j.tick(getTick(t)) {
 			go j.fn()
 		}
@@ -293,7 +303,12 @@ func (c *Crontab) AddJob(schedule string, fn func()) error {
 	}
 
 	j.fn = fn
+
+	c.mu.Lock()
+
 	c.jobs = append(c.jobs, j)
+
+	c.mu.Unlock()
 
 	return nil
 }

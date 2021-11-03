@@ -10,7 +10,14 @@ func Test_main(t *testing.T) {
 	time.Sleep(1*time.Minute + 30*time.Second)
 
 	expected := 1
-	if n != expected {
-		t.Errorf("FAILED, Expected: %v, Got: %v", expected, n)
+
+	var m int
+
+	mu.Lock()
+	m = n
+	mu.Unlock()
+
+	if m != expected {
+		t.Errorf("FAILED, Expected: %v, Got: %v", expected, m)
 	}
 }
