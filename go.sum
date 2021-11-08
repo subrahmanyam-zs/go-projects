@@ -53,10 +53,7 @@ contrib.go.opencensus.io/exporter/stackdriver v0.13.8 h1:lIFYmQsqejvlq+GobFUbC5F
 contrib.go.opencensus.io/exporter/stackdriver v0.13.8/go.mod h1:huNtlWx75MwO7qMs0KrMxPZXzNNWebav1Sq/pm02JdQ=
 contrib.go.opencensus.io/exporter/zipkin v0.1.2 h1:YqE293IZrKtqPnpwDPH/lOqTWD/s3Iwabycam74JV3g=
 contrib.go.opencensus.io/exporter/zipkin v0.1.2/go.mod h1:mP5xM3rrgOjpn79MM8fZbj3gsxcuytSqtH0dxSWW1RE=
-developer.zopsmart.com/go/gofr v0.2.2/go.mod h1:2wiqdS6nWA9MSz7WInSSzPWe2F5s+56GR8NzgfUGelU=
 dmitri.shuralyov.com/gpu/mtl v0.0.0-20190408044501-666a987793e9/go.mod h1:H6x//7gZCb22OMCxBHrMx7a5I7Hp++hsVxbQ4BYO7hU=
-github-lvs.corpzone.internalzone.com/mcafee/cnsr-gofr-csp-auth v0.1.0 h1:7E0koC+NvPNAWLVh4TBxEJXP03Wh+gsP7BzlfMKt8MU=
-github-lvs.corpzone.internalzone.com/mcafee/cnsr-gofr-csp-auth v0.1.0/go.mod h1:ZlwsDBN3gv1Lt4PSigmnliOmcx6Rrpk5ad0QDrW5lz8=
 github.com/Azure/azure-amqp-common-go/v3 v3.0.1/go.mod h1:PBIGdzcO1teYoufTKMcGibdKaYZv4avS+O6LNIp8bq0=
 github.com/Azure/azure-amqp-common-go/v3 v3.2.0 h1:BK/3P4TW4z2HLD6G5tMlHRvptOxxi4s9ee5r8sdHBUs=
 github.com/Azure/azure-amqp-common-go/v3 v3.2.0/go.mod h1:zN7QL/vfCsq3XQxQaTkg4ScO786CA2rQnZ1LXX7QryE=
@@ -547,7 +544,6 @@ github.com/prometheus/client_model v0.2.0/go.mod h1:xMI15A0UPsDsEKsMN9yxemIoYk6T
 github.com/prometheus/common v0.4.1/go.mod h1:TNfzLD0ON7rHzMJeJkieUDPYmFC7Snx/y86RQel1bk4=
 github.com/prometheus/common v0.10.0/go.mod h1:Tlit/dnDKsSWFlCLTWaA1cyBgKHSMdTB80sz/V91rCo=
 github.com/prometheus/common v0.26.0/go.mod h1:M7rCNAaPfAosfx8veZJCuw84e35h3Cfd9VFqTh1DIvc=
-github.com/prometheus/common v0.30.0/go.mod h1:vu+V0TpY+O6vW9J44gczi3Ap/oXXR10b+M/gUGO4Hls=
 github.com/prometheus/common v0.31.1 h1:d18hG4PkHnNAKNMOmFuXFaiY8Us0nird/2m60uS1AMs=
 github.com/prometheus/common v0.31.1/go.mod h1:vu+V0TpY+O6vW9J44gczi3Ap/oXXR10b+M/gUGO4Hls=
 github.com/prometheus/procfs v0.0.0-20181005140218-185b4288413d/go.mod h1:c3At6R/oaqEKCNdg8wHV1ftS6bRYblBhIjjI8uT2IGk=
