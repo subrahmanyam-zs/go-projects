@@ -22,12 +22,14 @@ type levelService struct {
 var rls levelService          // TODO - remove this
 const LevelFetchInterval = 10 // In seconds
 
+// nolint:whitespace // giving error for whitespace removing this will give cuddle assignment.
 func newLevelService(l Logger, appName string) *levelService {
 	if !rls.init {
 		rls.level = getLevel(os.Getenv("LOG_LEVEL"))
 		rls.url = os.Getenv("LOG_SERVICE_URL")
 		rls.app = appName
 		rls.logger = l
+
 		if rls.url != "" {
 			rls.init = true
 
