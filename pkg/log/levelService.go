@@ -28,6 +28,7 @@ func newLevelService(l Logger, appName string) *levelService {
 		rls.url = os.Getenv("LOG_SERVICE_URL")
 		rls.app = appName
 		rls.logger = l
+
 		if rls.url != "" {
 			rls.init = true
 

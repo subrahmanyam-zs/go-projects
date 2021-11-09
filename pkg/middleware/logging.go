@@ -59,7 +59,6 @@ type contextKey string
 
 const CorrelationIDKey contextKey = "correlationID"
 
-
 // nolint:gocognit // cannot reduce complexity witout affecting readability.
 // It's sequential statements and some closures. Trying to break it will make it
 // Logging is a middleware which logs response status and time in microseconds along with other data.
