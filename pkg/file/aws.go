@@ -2,7 +2,7 @@ package file
 
 import (
 	"context"
-	"io/ioutil"
+	"io"
 	"os"
 
 	"github.com/aws/aws-sdk-go-v2/credentials"
@@ -57,7 +57,7 @@ func (s *aws) fetch(fd *os.File) error {
 		}
 	}
 
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return err
 	}

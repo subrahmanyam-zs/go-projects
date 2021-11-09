@@ -17,7 +17,6 @@ import (
 )
 
 func TestBrand_Get(t *testing.T) {
-	//nolint:govet  // table tests
 	tests := []struct {
 		desc string
 		id   string

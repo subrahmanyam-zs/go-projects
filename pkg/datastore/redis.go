@@ -96,10 +96,10 @@ func NewRedis(logger log.Logger, config RedisConfig) (Redis, error) {
 	if err := rc.Ping(context.Background()).Err(); err != nil {
 		// Close the redis connection
 		_ = rc.Close()
-		return redisClient{config: config}, err
+		return &redisClient{config: config}, err
 	}
 
-	return redisClient{Client: rc, config: config}, nil
+	return &redisClient{Client: rc, config: config}, nil
 }
 
 // NewRedisFromEnv reads the config from environment variables and connects to redis if the config is correct,
@@ -136,10 +136,10 @@ func NewRedisCluster(clusterOptions *redis.ClusterOptions) (Redis, error) {
 		return nil, err
 	}
 
-	return redisClusterClient{ClusterClient: rcc, config: RedisConfig{HostName: strings.Join(clusterOptions.Addrs, ",")}}, nil
+	return &redisClusterClient{ClusterClient: rcc, config: RedisConfig{HostName: strings.Join(clusterOptions.Addrs, ",")}}, nil
 }
 
-func (r redisClient) HealthCheck() types.Health {
+func (r *redisClient) HealthCheck() types.Health {
 	resp := types.Health{
 		Name:   pkg.Redis,
 		Status: pkg.StatusDown,
@@ -163,7 +163,7 @@ func (r redisClient) HealthCheck() types.Health {
 }
 
 // getInfoInMap runs the INFO command on redis and returns a structured map divided by sections of redis response.
-func (r redisClient) getInfoInMap() map[string]map[string]string {
+func (r *redisClient) getInfoInMap() map[string]map[string]string {
 	info, _ := r.Client.Info(context.Background(), "all").Result()
 
 	result := make(map[string]map[string]string)
@@ -193,7 +193,7 @@ func (r redisClient) getInfoInMap() map[string]map[string]string {
 	return result
 }
 
-func (r redisClusterClient) HealthCheck() types.Health {
+func (r *redisClusterClient) HealthCheck() types.Health {
 	resp := types.Health{
 		Name:   pkg.Redis,
 		Status: pkg.StatusDown,
@@ -215,11 +215,11 @@ func (r redisClusterClient) HealthCheck() types.Health {
 	return resp
 }
 
-func (r redisClient) IsSet() bool {
+func (r *redisClient) IsSet() bool {
 	return r.Client != nil // will return true when client is set
 }
 
-func (r redisClusterClient) IsSet() bool {
+func (r *redisClusterClient) IsSet() bool {
 	return r.ClusterClient != nil // will return true when client is set
 }
 

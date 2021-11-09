@@ -318,7 +318,7 @@ func convertKafkaConfig(config *Config) {
 		config.Config.Producer.Retry.Max = config.MaxRetry
 	}
 
-	if config.DisableAutoCommit == true {
+	if config.DisableAutoCommit {
 		config.Config.Consumer.Offsets.AutoCommit.Enable = false
 	}
 
@@ -504,14 +504,14 @@ func (k *Kafka) subscribeMessage() (*pubsub.Message, error) {
 	headers := make(map[string]string, len(msg.Headers))
 
 	for _, v := range msg.Headers {
-		if string(v.Key) != "" && string(v.Value) != "" {
+		if len(v.Key) != 0 && len(v.Value) != 0 {
 			headers[string(v.Key)] = string(v.Value)
 		}
 	}
 
 	// Mark the message as read for autocommit to work
 	k.Consumer.ConsumerGroupHandler.consumerGroupSession.MarkMessage(msg, "")
-	
+
 	return &pubsub.Message{
 		Topic:     msg.Topic,
 		Partition: int(msg.Partition),
@@ -579,7 +579,7 @@ func (k *Kafka) SubscribeWithCommit(f pubsub.CommitFunc) (*pubsub.Message, error
 				Partition: msg.Partition,
 				Offset:    msg.Offset,
 			})
-		}		
+		}
 
 		if !isContinue {
 			// for successful subscribe
@@ -711,8 +711,9 @@ func (kl kafkaLogger) Println(v ...interface{}) {
 // Consumer.Offsets.AutoCommit
 func (k *Kafka) CommitOffset(offsets pubsub.TopicPartition) {
 	k.Consumer.ConsumerGroupHandler.consumerGroupSession.MarkOffset(
-			offsets.Topic, int32(offsets.Partition), offsets.Offset+1, "")
-	if k.config.DisableAutoCommit == true {
+		offsets.Topic, int32(offsets.Partition), offsets.Offset+1, "")
+
+	if k.config.DisableAutoCommit {
 		k.Consumer.ConsumerGroupHandler.consumerGroupSession.Commit()
 	}
 }

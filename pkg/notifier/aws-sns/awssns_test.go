@@ -2,7 +2,7 @@ package awssns
 
 import (
 	"fmt"
-	"io/ioutil"
+	"io"
 	"testing"
 
 	"github.com/aws/aws-sdk-go/aws"
@@ -66,7 +66,7 @@ func TestSNS_Subscribe(t *testing.T) {
 	}{
 		{
 			desc:   "Success Case",
-			expOut: &notifier.Message{Value: fmt.Sprintf(`{"SubscriptionArn":"%s"}`, svc.cfg.TopicArn)},
+			expOut: &notifier.Message{Value: fmt.Sprintf(`{"SubscriptionArn":"%q"}`, svc.cfg.TopicArn)},
 		},
 		{
 			desc:    "Failure Case",
@@ -104,7 +104,7 @@ func TestSNS_SubscribeWithResponse(t *testing.T) {
 	}{
 		{
 			desc:   "Success Case",
-			expOut: &notifier.Message{Value: fmt.Sprintf(`{"SubscriptionArn":"%s"}`, svc.cfg.TopicArn)},
+			expOut: &notifier.Message{Value: fmt.Sprintf(`{"SubscriptionArn":"%q"}`, svc.cfg.TopicArn)},
 		},
 		{
 			desc:    "Failure Case",
@@ -232,7 +232,7 @@ func TestSNS_HealthCheckDown(t *testing.T) {
 func TestSNS_IsSet(t *testing.T) {
 	var s *SNS
 
-	logger := log.NewMockLogger(ioutil.Discard)
+	logger := log.NewMockLogger(io.Discard)
 	cfg := config.NewGoDotEnvProvider(logger, "../../../configs")
 	conn, _ := New(&Config{
 		AccessKeyID:     cfg.Get("SNS_ACCESS_KEY"),

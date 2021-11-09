@@ -145,7 +145,6 @@ func GetIPAddress(r *http.Request) string {
 	return strings.TrimSpace(ipAddress)
 }
 
-//nolint:gocognit // splitting the code will reduce readability
 func fetchHeaders(omitHeaders map[string]bool, reqHeaders http.Header) map[string]string {
 	headers := make(map[string]string)
 

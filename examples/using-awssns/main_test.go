@@ -21,8 +21,8 @@ func TestIntegration(t *testing.T) {
 		expectedStatusCode int
 		body               []byte
 	}{
-		{http.MethodPost, "publish", http.StatusCreated, []byte(`{"name": "GOFR", "message":  "hi"}`)},
-		{http.MethodGet, "subscribe", http.StatusOK, nil},
+		{http.MethodPost, "http://localhost:8080/publish", http.StatusCreated, []byte(`{"name": "GOFR", "message":  "hi"}`)},
+		{http.MethodGet, "http://localhost:8080/subscribe", http.StatusOK, nil},
 	}
 
 	for i, tc := range tests {

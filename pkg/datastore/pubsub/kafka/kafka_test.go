@@ -120,19 +120,19 @@ func TestNewKafka(t *testing.T) {
 	}{
 		{
 			Config{
-				Brokers:        "localhost:2008,localhost:2009",
-				Topics:         []string{"test-topic"},
-				MaxRetry:       4,
-				RetryFrequency: 300,
+				Brokers:           "localhost:2008,localhost:2009",
+				Topics:            []string{"test-topic"},
+				MaxRetry:          4,
+				RetryFrequency:    300,
 				DisableAutoCommit: true,
 			}, false,
 		},
 		{
 			Config{
-				Brokers:        "localhost:2008,localhost:2009",
-				Topics:         []string{"test-topic"},
-				MaxRetry:       4,
-				RetryFrequency: 300,
+				Brokers:           "localhost:2008,localhost:2009",
+				Topics:            []string{"test-topic"},
+				MaxRetry:          4,
+				RetryFrequency:    300,
 				DisableAutoCommit: false,
 			}, false,
 		},

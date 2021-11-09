@@ -25,7 +25,7 @@ func (s store) Get(ctx *gofr.Context, name string) ([]model.Customer, error) {
 	var body string
 
 	if name != "" {
-		body = fmt.Sprintf(`{"query" : { "match" : {"name":"%s"} }}`, name)
+		body = fmt.Sprintf(`{"query" : { "match" : {"name":"%q"} }}`, name)
 	}
 
 	es := ctx.Elasticsearch
@@ -58,7 +58,7 @@ func (s store) GetByID(ctx *gofr.Context, id string) (model.Customer, error) {
 	res, err := es.Search(
 		es.Search.WithIndex(index),
 		es.Search.WithContext(ctx),
-		es.Search.WithBody(strings.NewReader(fmt.Sprintf(`{"query" : { "match" : {"id":"%s"} }}`, id))),
+		es.Search.WithBody(strings.NewReader(fmt.Sprintf(`{"query" : { "match" : {"id":"%q"} }}`, id))),
 		es.Search.WithPretty(),
 		es.Search.WithSize(1),
 	)

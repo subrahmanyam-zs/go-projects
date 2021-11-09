@@ -2,7 +2,6 @@ package gofr
 
 import (
 	"io"
-	"io/ioutil"
 	"strconv"
 	"testing"
 	"time"
@@ -387,7 +386,7 @@ func Test_elasticSearchRetry(t *testing.T) {
 func Test_AWSSNSRetry(t *testing.T) {
 	var k Gofr
 
-	logger := log.NewMockLogger(ioutil.Discard)
+	logger := log.NewMockLogger(io.Discard)
 	k.Logger = logger
 	c := config.NewGoDotEnvProvider(logger, "../../configs")
 	awsSNSConfig := awsSNSConfigFromEnv(c)

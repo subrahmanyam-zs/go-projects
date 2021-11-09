@@ -642,7 +642,6 @@ func Test_createReq(t *testing.T) {
 
 	h := NewHTTPServiceWithOptions(ts.URL, nil, nil)
 	for _, tc := range testcase {
-
 		req, err := h.createReq(context.Background(), tc.method, tc.target, nil, nil, nil)
 		if err != nil {
 			t.Errorf("DESC: %v Error: %v", tc.desc, err)
@@ -653,5 +652,4 @@ func Test_createReq(t *testing.T) {
 				tc.desc, tc.method, req.Method, tc.expectedURL, req.URL)
 		}
 	}
-
 }
