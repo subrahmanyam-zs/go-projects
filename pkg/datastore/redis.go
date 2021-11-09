@@ -60,6 +60,7 @@ type RedisConfig struct {
 	Options                 *redis.Options
 }
 
+// nolint:gocognit // cannot reduce complexity witout affecting readability.
 // NewRedis connects to Redis if the given config is correct, otherwise returns the error
 func NewRedis(logger log.Logger, config RedisConfig) (Redis, error) {
 	if config.Options != nil {
@@ -74,6 +75,7 @@ func NewRedis(logger log.Logger, config RedisConfig) (Redis, error) {
 
 	config.Options.Password = config.Password
 
+	// nolint:gosec // not en error
 	// If SSL is enabled add TLS Config
 	if config.SSL {
 		config.Options.TLSConfig = &tls.Config{}
