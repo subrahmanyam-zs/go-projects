@@ -108,7 +108,6 @@ func Logging(logger logger, omitHeaders string) func(inner http.Handler) http.Ha
 						l.Type = "ERROR"
 						logger.Error(&l)
 					}
-
 				}
 			}(srw, r)
 
@@ -155,9 +154,6 @@ func fetchHeaders(omitHeaders map[string]bool, reqHeaders http.Header) map[strin
 		if _, ok := omitHeaders[lowerCase]; !ok {
 			if lowerCase == "authorization" {
 				processAuthHeader(headers, h, reqHeaders.Get(h))
-			} else if lowerCase == "ac" || lowerCase == "ak" {
-				// Don't want to log the CSP ac and ak headers.
-				continue
 			} else {
 				headers[h] = reqHeaders.Get(h)
 			}

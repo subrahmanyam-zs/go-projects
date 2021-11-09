@@ -214,13 +214,12 @@ func Test_HeaderValidation_Success(t *testing.T) {
 		}
 
 		sts := w.Header().Get("Strict-Transport-Security")
-		csp := w.Header().Get("Content-Security-Policy")
 		xcto := w.Header().Get("X-Content-Type-Options")
 		xssp := w.Header().Get("X-XSS-Protection")
 
-		if sts != "max-age=86400; includeSubDomains" || csp != "default-src 'self'; script-src 'self'" || xcto != "nosniff" || xssp != "1" {
+		if sts != "max-age=86400; includeSubDomains" || xcto != "nosniff" || xssp != "1" {
 			t.Errorf("invalid set of response headers\n"+
-				"Got: \n%v:%v, \n%v:%v, \n%v:%v, \n%v:%v", "Strict-Transport-Security", sts, "Content-Security-Policy", csp,
+				"Got: \n%v:%v, \n%v:%v, \n%v:%v", "Strict-Transport-Security", sts,
 				"X-Content-Type-Options", xcto, "X-XSS-Protection", xssp)
 		}
 	}

@@ -388,23 +388,3 @@ func TestCookieLogging(t *testing.T) {
 		t.Errorf("Error: Expected no cookie, Got: %v", x)
 	}
 }
-
-// TestCSPHeaderLogging checks CSP headers are getting logged or not.
-func TestCSPHeaderLogging(t *testing.T) {
-	b := new(bytes.Buffer)
-	logger := log.NewMockLogger(b)
-
-	handler := Logging(logger, "")(&MockHandler{})
-
-	req := httptest.NewRequest("GET", "http://dummy", nil)
-	req.Header.Add("ac", "Some-Random-Value")
-	req.Header.Add("ak", "Some-Random-Value")
-
-	handler.ServeHTTP(MockWriteHandler{}, req)
-
-	x := b.String()
-	if strings.Contains(x, "\"ac\":") || strings.Contains(x, "\"Ac\":") ||
-		strings.Contains(x, "\"ak\":") || strings.Contains(x, "\"Ak\":") {
-		t.Errorf("Error: Expected no CSP Header, Got: %v", x)
-	}
-}

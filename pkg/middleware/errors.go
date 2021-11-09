@@ -9,20 +9,13 @@ func (e Error) Error() string {
 }
 
 const (
-	ErrInvalidToken                    = Error("invalid_token")
-	ErrInvalidRequest                  = Error("invalid_request")
-	ErrServiceDown                     = Error("service_unavailable")
-	ErrInvalidHeader                   = Error("invalid_header")
-	ErrMissingHeader                   = Error("missing_header")
-	ErrMissingCSPHeader                = Error("missing_auth_context_header")
-	ErrUnauthorised                    = Error("missing_permission")
-	ErrUnauthenticated                 = Error("failed_auth")
-	ErrInvalidAuthContext              = Error("invalid_csp_auth_context")
-	ErrInvalidAppKey                   = Error("app_key_should_be_more_than_12_bytes")
-	ErrInvalidCSPSecurityType          = Error("invalid_csp_security_type")
-	ErrInvalidCSPSecurityVersion       = Error("invalid_csp_security_version")
-	ErrMissingCSPSecurityTypeHeader    = Error("missing_csp_security_type_header")
-	ErrMissingCSPSecurityVersionHeader = Error("missing_csp_security_version-header")
+	ErrInvalidToken    = Error("invalid_token")
+	ErrInvalidRequest  = Error("invalid_request")
+	ErrServiceDown     = Error("service_unavailable")
+	ErrInvalidHeader   = Error("invalid_header")
+	ErrMissingHeader   = Error("missing_header")
+	ErrUnauthorised    = Error("missing_permission")
+	ErrUnauthenticated = Error("failed_auth")
 )
 
 func GetDescription(err error) (description string, statusCode int) {
@@ -49,12 +42,6 @@ func GetDescription(err error) (description string, statusCode int) {
 		statusCode = http.StatusForbidden
 	case ErrUnauthenticated:
 		description = authErr
-		statusCode = http.StatusUnauthorized
-	case ErrMissingCSPHeader, ErrInvalidAppKey, ErrInvalidAuthContext,
-		ErrInvalidCSPSecurityType, ErrInvalidCSPSecurityVersion,
-		ErrMissingCSPSecurityTypeHeader,
-		ErrMissingCSPSecurityVersionHeader:
-		description = "Request was not Authorized "
 		statusCode = http.StatusUnauthorized
 	}
 
