@@ -7,7 +7,7 @@ import (
 )
 
 //go:embed swagger/*
-var fs embed.FS
+var fs embed.FS //nolint:gochecknoglobals // This has to be declared as global as per embed package implementation
 
 func GetSwaggerFile(fileName string) (data []byte, contentType string, err error) {
 	t := template.Template{}
