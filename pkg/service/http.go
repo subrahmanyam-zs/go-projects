@@ -81,14 +81,6 @@ func (h *httpService) call(ctx context.Context, method, target string, params ma
 
 		headers := make(map[string]string)
 
-		for head := range req.Header {
-			val := req.Header.Get(head)
-			// Don't want to log the CSP headers.
-			if val != "" && !strings.EqualFold(head, "ac") && !strings.EqualFold(head, "ak") {
-				headers[head] = req.Header.Get(head)
-			}
-		}
-
 		// Don't want to log the Cookie.
 		delete(headers, "Cookie")
 
