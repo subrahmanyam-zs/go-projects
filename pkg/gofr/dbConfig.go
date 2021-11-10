@@ -111,6 +111,8 @@ func kafkaConfigFromEnv(c Config) *kafka.Config {
 	if groupName == "" {
 		groupName = c.GetOrDefault("APP_NAME", pkg.DefaultAppName) + "-" + c.GetOrDefault("APP_VERSION", pkg.DefaultAppVersion) + "-consumer"
 	}
+	
+	disableautocommit, _ := strconv.ParseBool(c.GetOrDefault("KAFKA_AUTOCOMMIT_DISABLE", "false"))
 
 	// converting the CSV string to slice of string
 	topics := strings.Split(topic, ",")
@@ -127,6 +129,7 @@ func kafkaConfigFromEnv(c Config) *kafka.Config {
 		ConnRetryDuration: getRetryDuration(c.Get("KAFKA_CONN_RETRY")),
 		InitialOffsets:    kafka.OffsetOldest,
 		GroupID:           groupName,
+		DisableAutoCommit: disableautocommit,
 	}
 
 	offset := c.GetOrDefault("KAFKA_CONSUMER_OFFSET", "OLDEST")

@@ -3,6 +3,7 @@ package handler
 import (
 	"bufio"
 	"bytes"
+	"fmt"
 	"go/build"
 	"os"
 	"os/exec"
@@ -105,12 +106,18 @@ func runMigration(f FSMigrate, method, db string, tagSlc []string) (interface{},
 		return nil, err
 	}
 
-	output, err := exec.Command("go", "run", "main.go").Output()
-	if err != nil {
-		return "", err
+	cmd := exec.Command("go", "run", "main.go")
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = &bytes.Buffer{}
+
+	_ = cmd.Run()
+
+	stderr := cmd.Stderr.(*bytes.Buffer).String()
+	if len(stderr) > 0 {
+		return "", &errors.Response{Reason: fmt.Sprintf("error : %s", stderr)}
 	}
 
-	return string(output), nil
+	return "\nMigration Successful!", nil
 }
 
 func createMain(f FSMigrate, method, db, directory string, tagSlc []string) error {
@@ -153,6 +160,8 @@ func templateCreate(f FSMigrate, projectName, method, dbStr, moduleName string, 
 package main
 
 import (
+	"fmt"
+	"os"
 	"{{.ModuleName}}/migrations"
 	"developer.zopsmart.com/go/gofr/cmd/gofr/migration"
 	"developer.zopsmart.com/go/gofr/cmd/gofr/migration/dbMigration"
@@ -162,10 +171,10 @@ import (
 func main() {
 	k := gofr.New()
 	{{.Database}}	
-
+	
 	err := migration.Migrate("{{.ProjectName}}", db, {{.Migration}}, "{{.Method}}", k.Logger)
 	if err != nil {
-		k.Logger.Error(err)
+		fmt.Fprintf(os.Stderr, "%v", err)
 	}
 }
 `))

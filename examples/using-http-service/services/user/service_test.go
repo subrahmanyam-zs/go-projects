@@ -1,6 +1,9 @@
 package user
 
 import (
+	"bytes"
+	"context"
+	"encoding/json"
 	"net/http"
 	"testing"
 
@@ -10,7 +13,20 @@ import (
 	"developer.zopsmart.com/go/gofr/examples/using-http-service/services"
 	"developer.zopsmart.com/go/gofr/pkg/errors"
 	"developer.zopsmart.com/go/gofr/pkg/gofr"
+	httpService "developer.zopsmart.com/go/gofr/pkg/service"
 )
+
+type mockBind struct{}
+
+func (m mockBind) Bind(resp []byte, i interface{}) error {
+	err := json.NewDecoder(bytes.NewBuffer(resp)).Decode(&i)
+	return err
+}
+
+func (m mockBind) Get(ctx context.Context, api string, params map[string]interface{}) (*httpService.Response, error) {
+	input := []byte(`{"errors":[{"code":"400"}]}`)
+	return &httpService.Response{Body: input, StatusCode: http.StatusBadRequest}, nil
+}
 
 func Test_Get(t *testing.T) {
 	tests := []struct {
@@ -34,5 +50,17 @@ func Test_Get(t *testing.T) {
 		assert.Equal(t, tc.err, err, "TEST[%d], failed.\n%s", i, tc.desc)
 
 		assert.Equal(t, tc.resp, resp, "TEST[%d], failed.\n%s", i, tc.desc)
+	}
+}
+
+func Test_DefaultCase(t *testing.T) {
+	mockBind := mockBind{}
+	h := New(mockBind)
+
+	ctx := gofr.NewContext(nil, nil, gofr.New())
+
+	_, err := h.Get(ctx, "vikash")
+	if err == nil {
+		t.Errorf("failed expected error got nil")
 	}
 }

@@ -93,15 +93,26 @@ func TestEntry_TerminalOutput(t *testing.T) {
 		// fatal error checking if msg and level is logged
 		{entry{Level: Fatal, Message: "fatal error", Time: now},
 			"FATA\u001B[0m [" + formattedNow + "]  fatal error"},
+		// errorMessage
+		{entry{Level: Fatal, Message: "fatal error", Time: now, Data: map[string]interface{}{"errorMessage": "error"}},
+			fmt.Sprintf("\x1b[31mFATA\x1b[0m [%s]  error fatal error\n                \x1b[37m (Memory: <nil> GoRoutines: <nil>) \x1b[0m\n",
+				formattedNow)},
+		// DataQuery
+		{entry{Level: Info, Message: "query field exists", Data: map[string]interface{}{"query": "query"}},
+			"\x1b[36mINFO\x1b[0m [00:00:00]  query field exists query\n                \x1b[37m (Memory: <nil> GoRoutines: <nil>) \x1b[0m\n"},
 		// correlationId
 		{entry{Level: Info, CorrelationID: "test", Message: "hello"}, fmt.Sprintf(
 			"INFO\u001B[0m [00:00:00]  hello\n%15s: %s", "CorrelationId", "test")},
 		// data with message
 		{entry{Level: Warn, Message: "hello", Data: map[string]interface{}{"name": "ZopSmart"}},
 			"WARN\u001B[0m [00:00:00]  hello"},
+		// statusCode
+		{entry{Level: Warn, Message: "hello", Data: map[string]interface{}{"name": "ZopSmart", "responseCode": 200}},
+			"WARN\u001B[0m [00:00:00]  hello"},
 		// test data
 		{entry{Level: Debug, Data: map[string]interface{}{"method": "get", "duration": 10000.0, "uri": "i", "datastore": "cql"}},
-			fmt.Sprintf("DEBU\u001B[0m [00:00:00] %s\u001B[37m %s\u001B[0m %v - %.2fm", "cql", "get", "i", 10.0)},
+			fmt.Sprintf("\x1b[37mDEBU\x1b[0m [00:00:00] %s - %.2fms\n                \x1b[37m (Memory: <nil> GoRoutines: <nil>) \x1b[%vm\n",
+				"cql", 10.0, 0)},
 		// app data
 		{entry{Level: Info, App: appInfo{Data: appData}, Message: "test"}, fmt.Sprintf(
 			"INFO\u001B[0m [00:00:00]  test\n%15s: %v", "a", "b")},
