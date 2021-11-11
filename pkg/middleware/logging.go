@@ -127,6 +127,7 @@ func GetCorrelationID(r *http.Request) string {
 		correlationID = trace.FromContext(r.Context()).SpanContext().TraceID.String()
 	}
 
+	// responder.SetCorrelatioID(&responder.HTTP{}, correlationID)
 	return correlationID
 }
 
