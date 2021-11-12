@@ -12,9 +12,8 @@ import (
 )
 
 type GORM struct {
-	database    *gorm.DB
-	txn         *gorm.DB
-	isTxnActive bool
+	db  *gorm.DB
+	txn *gorm.DB
 }
 
 type gofrMigration struct {
@@ -26,15 +25,11 @@ type gofrMigration struct {
 }
 
 func NewGorm(d *gorm.DB) *GORM {
-	return &GORM{database: d, txn: d.Begin(), isTxnActive: true}
+	return &GORM{db: d}
 }
 
 func (g *GORM) Run(m Migrator, app, name, methods string, logger log.Logger) error {
-	// if DOWN and UP both are required to run at once
-	if !g.isTxnActive {
-		g.txn = g.database.Begin()
-		g.isTxnActive = true
-	}
+	g.txn = g.db.Begin()
 
 	err := g.preRun(app, methods, name)
 	if err != nil {
@@ -45,7 +40,7 @@ func (g *GORM) Run(m Migrator, app, name, methods string, logger log.Logger) err
 		return err
 	}
 
-	ds := &datastore.DataStore{ORM: g.database}
+	ds := &datastore.DataStore{ORM: g.db}
 
 	if methods == UP {
 		err = m.Up(ds, logger)
@@ -64,12 +59,14 @@ func (g *GORM) Run(m Migrator, app, name, methods string, logger log.Logger) err
 		return err
 	}
 
+	g.commit()
+
 	return nil
 }
 
 func (g *GORM) preRun(app, method, name string) error {
-	if !g.database.Migrator().HasTable(&gofrMigration{}) {
-		err := g.database.Migrator().CreateTable(&gofrMigration{}).Error
+	if !g.db.Migrator().HasTable(&gofrMigration{}) {
+		err := g.db.Migrator().CreateTable(&gofrMigration{}).Error
 		if err != nil {
 			return &errors.Response{Reason: "unable to create gofr_migrations table", Detail: err}
 		}
@@ -108,7 +105,7 @@ func (g *GORM) postRun(app, method, name string) error {
 }
 
 func (g *GORM) LastRunVersion(app, method string) (lv int) {
-	row := g.database.Table("gofr_migrations").Where("app = ? AND method = ?", app, method).
+	row := g.db.Table("gofr_migrations").Where("app = ? AND method = ?", app, method).
 		Select("COALESCE(MAX(version),0) as version").Row()
 
 	_ = row.Scan(&lv)
@@ -117,7 +114,7 @@ func (g *GORM) LastRunVersion(app, method string) (lv int) {
 }
 
 func (g *GORM) GetAllMigrations(app string) (upMigration, downMigration []int) {
-	rows, err := g.database.Table("gofr_migrations").Where("app = ?", app).Select("version, method").Rows()
+	rows, err := g.db.Table("gofr_migrations").Where("app = ?", app).Select("version, method").Rows()
 	if err != nil {
 		return nil, nil
 	}
@@ -143,15 +140,15 @@ func (g *GORM) GetAllMigrations(app string) (upMigration, downMigration []int) {
 }
 
 func (g *GORM) FinishMigration() error {
-	if g.isTxnActive {
-		g.isTxnActive = false
-		return g.txn.Commit().Error
-	}
-
+	// this method is no longer needed since individual
+	// migrations are committed instantly after completion
 	return nil
 }
 
 func (g *GORM) rollBack() {
-	g.isTxnActive = false
 	g.txn.Rollback()
+}
+
+func (g *GORM) commit() {
+	g.txn.Commit()
 }

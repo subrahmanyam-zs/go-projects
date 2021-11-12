@@ -17,11 +17,19 @@ import (
 
 // TestNewHTTPServiceWithNilOptions tests the values set in httpService when no options are set
 func TestNewHTTPServiceWithNilOptions(t *testing.T) {
-	resourceURL := "http://sample-service.com"
-	httpService := NewHTTPServiceWithOptions(resourceURL, log.NewMockLogger(io.Discard), nil)
+	testCase := []struct {
+		resourceURL string
+		expectedURL string
+	}{
+		{"http://example.com", "http://example.com"},
+		{"http://zopsmart.com//", "http://zopsmart.com"},
+	}
+	for i := range testCase {
+		httpService := NewHTTPServiceWithOptions(testCase[i].resourceURL, log.NewMockLogger(io.Discard), nil)
 
-	if httpService.url != resourceURL {
-		t.Errorf("resource url is not set")
+		if httpService.url != testCase[i].expectedURL {
+			t.Errorf("Testcase Number: %v Expected: %v\nGot: %v", i, testCase[i].expectedURL, httpService.url)
+		}
 	}
 }
 
@@ -35,6 +43,7 @@ func TestNewHTTPServiceNotNilOptions(t *testing.T) {
 		{"http://example.com", Options{SurgeProtectorOption: &SurgeProtectorOption{Disable: true}}, "http://example.com"},
 		{"", Options{SurgeProtectorOption: &SurgeProtectorOption{Disable: true}}, ""},
 		{"http://example.com", Options{SurgeProtectorOption: &SurgeProtectorOption{Disable: false}}, "http://example.com"},
+		{"http://example.com//", Options{SurgeProtectorOption: &SurgeProtectorOption{Disable: false}}, "http://example.com"},
 	}
 
 	for i := range testCases {

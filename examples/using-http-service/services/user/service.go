@@ -35,7 +35,7 @@ func (s service) Get(ctx *gofr.Context, name string) (models.User, error) {
 			return body.Data, nil
 		}
 	default:
-		var err errors.MultipleErrors
+		err := errors.MultipleErrors{Errors: []error{&errors.Response{}}}
 
 		e := s.svc.Bind(resp.Body, &err)
 		if e == nil {

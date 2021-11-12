@@ -93,7 +93,7 @@ type cspAuthJSON struct {
 }
 
 func (o *CSPOption) generateAuthJSON(method, bodyHash string) []byte {
-	guid, _ := uuid.NewV4()
+	guid := uuid.NewV4()
 	msgUniqueID := cspauth.HexEncode(guid[:])
 
 	// take hash of machineName+requestDate+ip+appKey+sharedKey+httpMethod+guid+clientId+bodyhash
@@ -127,7 +127,7 @@ func encryptData(plaintext, key, iv []byte) []byte {
 }
 
 func getRandomChars() []byte {
-	uu, _ := uuid.NewV4()
+	uu := uuid.NewV4()
 	ux := uu.String()
 
 	return []byte(ux[:lenRandomChars])

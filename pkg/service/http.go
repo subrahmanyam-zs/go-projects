@@ -14,15 +14,15 @@ import (
 	"sync"
 	"time"
 
+	"github.com/prometheus/client_golang/prometheus"
+
+	"github-lvs.corpzone.internalzone.com/mcafee/cnsr-gofr-csp-auth/generator"
+
+	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
+
 	"developer.zopsmart.com/go/gofr/pkg/errors"
 	"developer.zopsmart.com/go/gofr/pkg/log"
 	"developer.zopsmart.com/go/gofr/pkg/middleware"
-
-	"github.com/prometheus/client_golang/prometheus"
-
-	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
-	"go.opentelemetry.io/otel"
-	"go.opentelemetry.io/otel/propagation"
 )
 
 type httpService struct {
@@ -40,8 +40,8 @@ type httpService struct {
 	sp            surgeProtector
 	numOfRetries  int
 	mu            sync.Mutex
-	csp           *csp
 
+	csp   *generator.CSP
 	cache *cachedHTTPService
 }
 
@@ -101,8 +101,6 @@ func (h *httpService) call(ctx context.Context, method, target string, params ma
 			resp       *http.Response
 			statusCode int
 		)
-
-		otel.GetTextMapPropagator().Inject(ctx, propagation.HeaderCarrier(req.Header))
 
 		for i := 0; i <= h.numOfRetries; i++ {
 			resp, err = h.Do(req.WithContext(ctx)) //nolint:bodyclose // body is being closed after call response is logged
@@ -215,6 +213,7 @@ func getAppData(ctx context.Context) map[string]interface{} {
 // the endpoint and the method for the request are defined from the parameters provided to the function
 // nolint:lll,gocognit // cannot reduce the number of lines since there are many parameters.
 func (h *httpService) createReq(ctx context.Context, method, target string, params map[string]interface{}, body []byte, headers map[string]string) (*http.Request, error) {
+	target = strings.TrimLeft(target, "/")
 	uri := h.url + "/" + target
 
 	if target == "" {
@@ -279,16 +278,15 @@ func (h *httpService) setHeadersFromContext(ctx context.Context, req *http.Reque
 		req.Header.Add("Authorization", h.auth)
 	}
 
-	// add headers for csp auth
+	// set csp headers
 	if h.csp != nil {
-		authContext := h.csp.getAuthContext(req)
+		headers := h.csp.GetCSPHeaders(req)
 
-		req.Header.Set("ak", h.csp.options.AppKey)
-		req.Header.Set("cd", h.csp.options.ClientID)
-		req.Header.Set("sv", securityVersion)
-		req.Header.Set("st", securityType)
-		req.Header.Set("ac", authContext)
+		for key, val := range headers {
+			req.Header.Add(key, val)
+		}
 	}
+
 	// add custom headers to the request
 	for i := range h.headerKeys {
 		val, _ := ctx.Value(h.headerKeys[i]).(string)
@@ -419,6 +417,7 @@ func (l *callLog) String() string {
 	line, _ := json.Marshal(l)
 	return string(line)
 }
+
 func (l *errorLog) String() string {
 	line, _ := json.Marshal(l)
 	return string(line)

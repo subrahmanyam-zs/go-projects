@@ -10,7 +10,10 @@ import (
 )
 
 // CSPAuth middleware provides authentication using CSP
+// Deprecated: instead use plugin validator
 func CSPAuth(logger log.Logger, sharedKey string) func(inner http.Handler) http.Handler {
+	logger.Warn("Deprecated CSP security middleware is enabled, use validator plugin.")
+
 	csp := New(sharedKey)
 
 	return func(inner http.Handler) http.Handler {

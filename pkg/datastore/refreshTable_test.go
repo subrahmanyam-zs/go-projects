@@ -94,12 +94,13 @@ func createTestTable(d *DataStore) error {
 }
 
 func createCassandraTestTable(d *DataStore) error {
-	err := d.Cassandra.Session.Query("DROP TABLE IF EXISTS store").Exec()
+	err := d.Cassandra.Session.Query("DROP TABLE IF EXISTS customers").Exec()
 	if err != nil {
 		return err
 	}
 
-	return d.Cassandra.Session.Query(`CREATE TABLE store(id int, "name" varchar, PRIMARY KEY (id))`).Exec()
+	return d.Cassandra.Session.Query(`CREATE TABLE customers(id int, "name" varchar, height double, created_at timestamp,` +
+		`work_hours time,active boolean,PRIMARY KEY (id))`).Exec()
 }
 
 func createTableMSSQL(d *DataStore) {
@@ -396,7 +397,7 @@ func TestSeeder_RefreshCassandra(t *testing.T) {
 	tester := &MockTesting{}
 	path, _ := os.Getwd()
 	s := NewSeeder(&d, path)
-	s.RefreshCassandra(tester, "store")
+	s.RefreshCassandra(tester, "customers")
 	// expecting 0 errors
 	expectedErrors := 0
 	if tester.TotalErrors != expectedErrors {

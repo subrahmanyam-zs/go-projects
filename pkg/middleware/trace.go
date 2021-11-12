@@ -14,13 +14,16 @@ import (
 func Trace(appName, appVersion, tracerExporter string) func(inner http.Handler) http.Handler {
 	return func(inner http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			ctx := otel.GetTextMapPropagator().Extract(r.Context(), propagation.HeaderCarrier(r.Header))
+			ctx := r.Context()
 
-			if r.Header.Get("X-TRACE-ID") == "" {
-				r.Header.Set("X-TRACE-ID", trace.SpanFromContext(ctx).SpanContext().TraceID().String())
+			cID, err := trace.TraceIDFromHex(getCorrelationID(r))
+			if err == nil {
+				ctx = trace.ContextWithSpanContext(ctx, trace.SpanContextFromContext(r.Context()).WithTraceID(cID))
 			}
 
-			tracer := otel.GetTracerProvider().Tracer("gofr", trace.WithInstrumentationVersion(appVersion))
+			ctx = otel.GetTextMapPropagator().Extract(ctx, propagation.HeaderCarrier(r.Header))
+
+			tracer := otel.Tracer("gofr", trace.WithInstrumentationVersion(appVersion))
 
 			ctx, span := tracer.Start(ctx, fmt.Sprintf("%s-Middleware %s %s", appName, r.Method, r.URL.Path),
 				trace.WithSpanKind(trace.SpanKindClient), trace.WithAttributes(semconv.ServiceNameKey.String(appName),
@@ -30,4 +33,16 @@ func Trace(appName, appVersion, tracerExporter string) func(inner http.Handler) 
 			inner.ServeHTTP(w, r.WithContext(ctx))
 		})
 	}
+}
+
+func getCorrelationID(r *http.Request) string {
+	if id := r.Header.Get("X-Correlation-ID"); id != "" {
+		return id
+	}
+
+	if id := r.Header.Get("X-TRACE-Id"); id != "" {
+		return id
+	}
+
+	return r.Header.Get("X-B3-TraceId")
 }

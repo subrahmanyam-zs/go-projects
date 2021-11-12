@@ -229,7 +229,7 @@ func Test_genPutItemQuery(t *testing.T) {
 		TableName: aws.String("test"),
 	}
 
-	expQuery := []string{"PutItem", "Item Fields {id}", "ConditionExpression NOT contains(id, :id)", "on table test"}
+	expQuery := []string{"PutItem", "Item Fields {id}", "ConditionExpression NOT contains(id, :id)", "test"}
 
 	query := genPutItemQuery(input)
 
@@ -243,11 +243,11 @@ func Test_genGetItemQuery(t *testing.T) {
 	}{
 		{
 			nil,
-			[]string{"GetItem", "Key {id}", "on table test"},
+			[]string{"GetItem", "Key {id}", "test"},
 		},
 		{
 			[]*string{aws.String("id"), aws.String("name")},
-			[]string{"GetItem", "AttributesToGet {id, name}", "Key {id}", "on table test"},
+			[]string{"GetItem", "AttributesToGet {id, name}", "Key {id}", "test"},
 		},
 	}
 
@@ -278,7 +278,7 @@ func Test_genDeleteItemQuery(t *testing.T) {
 		TableName: aws.String("test"),
 	}
 
-	expQuery := []string{"DeleteItem", "ConditionExpression NOT contains(email, :e_email)", "Key {id}", "on table test"}
+	expQuery := []string{"DeleteItem", "ConditionExpression NOT contains(email, :e_email)", "Key {id}", "test"}
 
 	query := genDeleteItemQuery(input)
 
@@ -300,7 +300,7 @@ func Test_genUpdateItemQuery(t *testing.T) {
 			nil,
 			nil,
 			nil,
-			[]string{"UpdateItem", "AttributesToUpdate {name}", "Key {id}", "on table test"},
+			[]string{"UpdateItem", "AttributesToUpdate {name}", "Key {id}", "test"},
 		},
 		{
 			map[string]*dynamodb.AttributeValueUpdate{
@@ -309,7 +309,7 @@ func Test_genUpdateItemQuery(t *testing.T) {
 			aws.String("id != :id"),
 			map[string]*dynamodb.AttributeValue{":id": {S: aws.String("1")}},
 			nil,
-			[]string{"UpdateItem", "AttributesToUpdate {name}", "ConditionExpression id != :id", "Key {id}", "on table test"},
+			[]string{"UpdateItem", "AttributesToUpdate {name}", "ConditionExpression id != :id", "Key {id}", "test"},
 		},
 		{
 			map[string]*dynamodb.AttributeValueUpdate{
@@ -320,7 +320,7 @@ func Test_genUpdateItemQuery(t *testing.T) {
 				":e_email": {S: aws.String("test@gmail.com")},
 			},
 			aws.String("SET email = :e_email"),
-			[]string{"UpdateItem", "AttributesToUpdate {name}", "UpdateExpression SET email = :e_email", "Key {id}", "on table test"},
+			[]string{"UpdateItem", "AttributesToUpdate {name}", "UpdateExpression SET email = :e_email", "Key {id}", "test"},
 		},
 	}
 

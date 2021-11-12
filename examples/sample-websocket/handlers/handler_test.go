@@ -21,6 +21,8 @@ func TestWSHandler(t *testing.T) {
 	)
 
 	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		var err error
+
 		conn, err = upgrader.Upgrade(w, r, nil)
 		if err != nil {
 			t.Fatal(err)

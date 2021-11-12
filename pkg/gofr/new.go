@@ -260,8 +260,6 @@ func enableTracing(c Config, logger log.Logger) error {
 		return errors.Error("Tracing not enabled")
 	}
 
-	otel.SetTracerProvider(tp)
-
 	return nil
 }
 
