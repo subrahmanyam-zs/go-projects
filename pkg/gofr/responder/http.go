@@ -51,6 +51,9 @@ func NewContextualResponder(w http.ResponseWriter, r *http.Request) Responder {
 		correlationID: middleware.GetCorrelationID(r),
 	}
 
+	// set correlation id in response
+	w.Header().Set("X-Correlation-ID", responder.correlationID)
+
 	cType := r.Header.Get("Content-type")
 	switch cType {
 	case "text/xml", "application/xml":
@@ -65,9 +68,6 @@ func NewContextualResponder(w http.ResponseWriter, r *http.Request) Responder {
 }
 
 func (h HTTP) Respond(data interface{}, err error) {
-	// update correlation id in response
-	h.w.Header().Set("X-Correlation-ID", h.correlationID)
-
 	// if template is returned then everything is dictated by template
 	if d, ok := data.(template.Template); ok {
 		var b []byte
