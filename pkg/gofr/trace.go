@@ -9,10 +9,12 @@ import (
 	"go.opentelemetry.io/collector/translator/conventions"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/exporters/stdout/stdouttrace"
 	"go.opentelemetry.io/otel/exporters/zipkin"
 	"go.opentelemetry.io/otel/propagation"
 	"go.opentelemetry.io/otel/sdk/resource"
 	"go.opentelemetry.io/otel/sdk/trace"
+	semconv "go.opentelemetry.io/otel/semconv/v1.4.0"
 
 	cloudtrace "github.com/GoogleCloudPlatform/opentelemetry-operations-go/exporter/trace"
 )
@@ -38,6 +40,8 @@ func TraceProvider(appName, exporterName, exporterHost, exporterPort string, log
 		return e.getZipkinExporter(config, logger)
 	case "gcp":
 		return getGCPExporter(config, exporterHost, logger)
+	case "stdout":
+		return stdOutTrace(config, logger)
 	default:
 		return nil
 	}
@@ -72,6 +76,31 @@ func (e *exporter) getZipkinExporter(c Config, logger log.Logger) *trace.TracerP
 	otel.SetTextMapPropagator(propagation.NewCompositeTextMapPropagator(propagation.TraceContext{}, propagation.Baggage{}))
 
 	return tp
+}
+
+func Resource() *resource.Resource {
+	return resource.NewWithAttributes(
+		semconv.SchemaURL,
+		semconv.ServiceNameKey.String("stdout-example"),
+		semconv.ServiceVersionKey.String("0.0.1"),
+	)
+}
+
+func stdOutTrace(c Config, logger log.Logger) *trace.TracerProvider {
+	exporter, err := stdouttrace.New(stdouttrace.WithPrettyPrint())
+	if err != nil {
+		logger.Errorf("creating stdout exporter: %v", err)
+	}
+
+	tracerProvider := trace.NewTracerProvider(
+		trace.WithBatcher(exporter),
+		trace.WithResource(Resource()),
+	)
+
+	otel.SetTracerProvider(tracerProvider)
+	otel.SetTextMapPropagator(propagation.NewCompositeTextMapPropagator(propagation.TraceContext{}, propagation.Baggage{}))
+
+	return tracerProvider
 }
 
 func getGCPExporter(c Config, projectID string, logger log.Logger) *trace.TracerProvider {

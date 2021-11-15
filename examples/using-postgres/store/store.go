@@ -25,6 +25,12 @@ type Store interface {
 }
 
 func (c customer) Get(ctx *gofr.Context) ([]model.Customer, error) {
+	var num int
+	if err := ctx.GORM().WithContext(ctx).Raw("SELECT 42").Scan(&num).Error; err != nil {
+		return nil, errors.DB{Err: err}
+	}
+
+	fmt.Println(num)
 	rows, err := ctx.DB().QueryContext(ctx, "SELECT * FROM customers")
 	if err != nil {
 		return nil, errors.DB{Err: err}

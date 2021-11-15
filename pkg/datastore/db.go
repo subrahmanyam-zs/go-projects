@@ -18,11 +18,13 @@ import (
 	"developer.zopsmart.com/go/gofr/pkg/gofr/types"
 	"developer.zopsmart.com/go/gofr/pkg/log"
 	"developer.zopsmart.com/go/gofr/pkg/middleware"
-	"gorm.io/gorm"
 
-	gormOtel "github.com/go-codes/gorm-opentelemetry"
 	"github.com/jmoiron/sqlx"
+
+	otelgorm "developer.zopsmart.com/go/gofr/gorm-trace"
 	"github.com/prometheus/client_golang/prometheus"
+
+	"gorm.io/gorm"
 )
 
 const (
@@ -135,28 +137,37 @@ func NewORM(config *DBConfig) (GORMClient, error) {
 		return GORMClient{DB: DB, config: config}, err
 
 	case "postgres":
-		DB, err := gorm.Open(postgres.Open(connectionStr), &gorm.Config{})
+		db, err := gorm.Open(postgres.New(postgres.Config{DSN: connectionStr}), &gorm.Config{})
 		if err != nil {
 			return GORMClient{config: config}, err
 		}
 
-		plugin := gormOtel.NewPlugin(gormOtel.WithTracerProvider(otel.GetTracerProvider()))
-		if err = plugin.Initialize(DB); err != nil {
-			return GORMClient{DB: DB, config: config}, err
+		opts := otelgorm.WithTracerProvider(otel.GetTracerProvider())
+		plugin := otelgorm.NewPlugin(opts)
+
+		err = db.Use(plugin)
+		if err != nil {
+			panic("failed configuring plugin")
 		}
 
-		if err := DB.Use(plugin); err != nil {
-			return GORMClient{config: config}, err
-		}
+		// db, err := gormtrace.Open(postgres.New(postgres.Config{DriverName: "postgres", DSN: connectionStr}), &gorm.Config{}, gormtrace.WithAnalytics(true))
+		// if err != nil {
+		// 	return GORMClient{config: config}, err
+		// }
 
-		return GORMClient{DB: DB, config: config}, err
+		return GORMClient{DB: db, config: config}, err
 	case "sqlite":
-		DB, err := gorm.Open(sqlite.Open(connectionStr), &gorm.Config{})
+		// DB, err := gorm.Open(sqlite.Open(connectionStr), &gorm.Config{})
+		db, err := gorm.Open(sqlite.Open("file::memory:?cache=shared"), &gorm.Config{})
 		if err != nil {
 			return GORMClient{config: config}, err
 		}
 
-		return GORMClient{DB: DB, config: config}, err
+		if err := db.Use(otelgorm.NewPlugin()); err != nil {
+			panic(err)
+		}
+
+		return GORMClient{DB: db, config: config}, err
 	}
 
 	if config.Dialect != "sqlserver" {
