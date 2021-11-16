@@ -180,7 +180,7 @@ func TestMySQL_Migration(t *testing.T) {
 		Dialect:  "mysql",
 	})
 
-	defer mysql.DropTable("gofr_migrations")
+	defer mysql.Migrator().DropTable("gofr_migrations")
 
 	testcases := []struct {
 		method     string
@@ -275,7 +275,7 @@ func Test_MigrateCheck(t *testing.T) {
 		Dialect:  "mysql",
 	})
 
-	defer mysql.DropTable("gofr_migrations")
+	defer mysql.Migrator().DropTable("gofr_migrations")
 
 	migrations := map[string]dbmigration.Migrator{"20200324150906": K20200324150906{},
 		"20200324120906": K20200324120906{},
@@ -340,7 +340,7 @@ func Test_DirtyTest(t *testing.T) {
 	_ = cassandra.Session.Query("insert into gofr_migrations (app, version, start_time, method, end_time) " +
 		"values ('testing', 12, dateof(now()), 'UP', '')").Exec()
 
-	mysql.CreateTable(&gofrMigration{})
+	mysql.Migrator().CreateTable(&gofrMigration{})
 	mysql.Create(&gofrMigration{App: "testing", Method: "UP", Version: 20000102121212, StartTime: time.Now()})
 
 	ctx := context.Background()
@@ -352,7 +352,7 @@ func Test_DirtyTest(t *testing.T) {
 	redisMigrator.LastRunVersion("testing", "UP")
 
 	defer func() {
-		_ = mysql.DropTable("gofr_migrations")
+		_ = mysql.Migrator().DropTable("gofr_migrations")
 		_ = cassandra.Session.Query("truncate gofr_migrations").Exec()
 		_ = redis.Del(ctx, "gofr_migrations")
 	}()
