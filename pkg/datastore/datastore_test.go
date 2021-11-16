@@ -51,7 +51,18 @@ func TestDataStore_GORM(t *testing.T) {
 
 	{
 		ds := new(DataStore)
-		ds.SetORM(GORMClient{DB: new(gorm.DB)})
+		c := config.NewGoDotEnvProvider(log.NewMockLogger(io.Discard), "../../configs")
+		cfg := &DBConfig{
+			HostName: c.Get("DB_HOST"),
+			Username: c.Get("DB_USER"),
+			Password: c.Get("DB_PASSWORD"),
+			Database: c.Get("DB_NAME"),
+			Port:     c.Get("DB_PORT"),
+			Dialect:  c.Get("DB_DIALECT"),
+		}
+
+		client, _ := NewORM(cfg)
+		ds.SetORM(client)
 
 		db := ds.GORM()
 		if db == nil {
@@ -122,24 +133,14 @@ func TestDataStore_DB(t *testing.T) {
 
 	{
 		ds := new(DataStore)
-		c := config.NewGoDotEnvProvider(log.NewMockLogger(io.Discard), "../../configs")
-		cfg := &DBConfig{
-			HostName: c.Get("DB_HOST"),
-			Username: c.Get("DB_USER"),
-			Password: c.Get("DB_PASSWORD"),
-			Database: c.Get("DB_NAME"),
-			Port:     c.Get("DB_PORT"),
-			Dialect:  c.Get("DB_DIALECT"),
-		}
-		client, _ := NewORM(cfg)
 
-		ds.SetORM(client)
+		defer func() {
+			if err := recover(); err == nil {
+				t.Errorf("FAILED, Expected panic, Got none")
+			}
+		}()
 
-		db := ds.DB()
-
-		if db.DB != nil {
-			t.Errorf("FAILED, Expected the db object to be nil, Got: %v", db)
-		}
+		ds.SetORM(GORMClient{DB: new(gorm.DB)})
 	}
 
 	{
@@ -160,6 +161,7 @@ func TestDataStore_DB(t *testing.T) {
 			t.Errorf("FAILED, Expected the db object to be nil, Got: %v", db)
 		}
 	}
+
 	{
 		ds := new(DataStore)
 		ds.ORM = new(sql.DB)

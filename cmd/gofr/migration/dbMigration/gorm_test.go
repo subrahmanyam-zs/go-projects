@@ -5,14 +5,15 @@ import (
 	"testing"
 	"time"
 
+	"github.com/go-sql-driver/mysql"
+	"github.com/stretchr/testify/assert"
+
+	"gorm.io/gorm"
+
 	"developer.zopsmart.com/go/gofr/pkg/datastore"
 	"developer.zopsmart.com/go/gofr/pkg/errors"
 	"developer.zopsmart.com/go/gofr/pkg/gofr/config"
 	"developer.zopsmart.com/go/gofr/pkg/log"
-
-	"github.com/go-sql-driver/mysql"
-	"github.com/jinzhu/gorm"
-	"github.com/stretchr/testify/assert"
 )
 
 func initTests() *GORM {
@@ -32,7 +33,7 @@ func initTests() *GORM {
 
 func Test_Run(t *testing.T) {
 	g := initTests()
-	defer g.db.DropTable("gofr_migrations")
+	defer g.db.Migrator().DropTable("gofr_migrations")
 
 	tests := []struct {
 		desc   string
@@ -57,7 +58,7 @@ func Test_preRun(t *testing.T) {
 	g.txn = g.db.Begin()
 
 	createTable(t, g.db)
-	defer g.txn.DropTable("gofr_migrations")
+	defer g.txn.Migrator().DropTable("gofr_migrations")
 
 	insertMigration(t, g.txn, &gofrMigration{App: "gofr-app", Version: int64(20180324120906), StartTime: now, EndTime: now, Method: "UP"})
 
@@ -89,7 +90,7 @@ func Test_isDirty(t *testing.T) {
 	expErr := &errors.Response{Reason: "dirty migration check failed"}
 
 	createTable(t, g.db)
-	defer g.db.DropTable("gofr_migrations")
+	defer g.db.Migrator().DropTable("gofr_migrations")
 
 	insertMigration(t, g.db, &gofrMigration{App: "gofr-app", Version: int64(20180324120906), StartTime: time.Now().UTC(), Method: "UP"})
 
@@ -105,7 +106,7 @@ func Test_LastRunVersion(t *testing.T) {
 	expLastVersion := 20180324120906
 
 	createTable(t, g.db)
-	defer g.db.DropTable("gofr_migrations")
+	defer g.db.Migrator().DropTable("gofr_migrations")
 
 	insertMigration(t, g.db, &gofrMigration{App: "gofr-app", Version: int64(20180324120906), StartTime: now, EndTime: now, Method: "UP"})
 
@@ -121,7 +122,7 @@ func Test_GetAllMigrations(t *testing.T) {
 	desc := "get all migrations"
 
 	createTable(t, g.db)
-	defer g.db.DropTable("gofr_migrations")
+	defer g.db.Migrator().DropTable("gofr_migrations")
 
 	insertMigration(t, g.db, &gofrMigration{App: "gofr-app", Version: int64(20180324120906), StartTime: now, EndTime: now, Method: "UP"})
 	insertMigration(t, g.db, &gofrMigration{App: "gofr-app", Version: int64(20180324120906), StartTime: now, EndTime: now, Method: "DOWN"})
@@ -139,7 +140,7 @@ func Test_GetAllMigrationsError(t *testing.T) {
 	g := initTests()
 
 	createMockTable(t, g.db)
-	defer g.db.DropTable("gofr_migrations")
+	defer g.db.Migrator().DropTable("gofr_migrations")
 
 	up, down := g.GetAllMigrations("gofr-app")
 
@@ -166,7 +167,7 @@ func insertMigration(t *testing.T, g *gorm.DB, mig *gofrMigration) {
 }
 
 func createTable(t *testing.T, g *gorm.DB) {
-	err := g.CreateTable(&gofrMigration{}).Error
+	err := g.Migrator().CreateTable(&gofrMigration{})
 	if err != nil {
 		t.Error(err)
 	}
@@ -177,7 +178,7 @@ func createMockTable(t *testing.T, g *gorm.DB) {
 		App string `gorm:"primary_key"`
 	}
 
-	err := g.CreateTable(&gofrMigration{}).Error
+	err := g.Migrator().CreateTable(&gofrMigration{})
 	if err != nil {
 		t.Error(err)
 	}
