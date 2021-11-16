@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"strings"
 	"sync"
 
 	"github.com/golang-jwt/jwt/v4"
@@ -19,7 +20,10 @@ func New(logger log.Logger, options Options) (oAuth *OAuth) {
 		publicKeys: PublicKeys{},
 		mu:         sync.RWMutex{},
 	}}
-	_ = oAuth.invalidateCache(logger)
+
+	if strings.TrimSpace(options.JWKPath) != "" {
+		_ = oAuth.invalidateCache(logger)
+	}
 
 	return
 }
@@ -29,7 +33,7 @@ func Auth(logger log.Logger, options Options) func(inner http.Handler) http.Hand
 
 	return func(inner http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
-			if middleware.ExemptPath(req) || oAuth.options.JWKPath == "" {
+			if middleware.ExemptPath(req) || strings.TrimSpace(oAuth.options.JWKPath) == "" {
 				inner.ServeHTTP(w, req)
 				return
 			}
