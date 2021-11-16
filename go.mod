@@ -56,6 +56,8 @@ require (
 )
 
 require (
+	github.com/XSAM/otelsql v0.9.0
+	github.com/lib/pq v1.10.4
 	github.com/uptrace/opentelemetry-go-extra/otelplay v0.1.4
 	go.opentelemetry.io/contrib v0.21.0
 	go.opentelemetry.io/otel/exporters/stdout/stdouttrace v1.2.0
@@ -133,7 +135,6 @@ require (
 	github.com/klauspost/compress v1.13.4 // indirect
 	github.com/kr/pretty v0.3.0 // indirect
 	github.com/kr/text v0.2.0 // indirect
-	github.com/lib/pq v1.10.4 // indirect
 	github.com/mailru/easyjson v0.7.7 // indirect
 	github.com/mattn/go-ieproxy v0.0.1 // indirect
 	github.com/mattn/go-sqlite3 v2.0.3+incompatible // indirect

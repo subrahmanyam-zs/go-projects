@@ -30,7 +30,6 @@ func (c customer) Get(ctx *gofr.Context) ([]model.Customer, error) {
 		return nil, errors.DB{Err: err}
 	}
 
-	fmt.Println(num)
 	rows, err := ctx.DB().QueryContext(ctx, "SELECT * FROM customers")
 	if err != nil {
 		return nil, errors.DB{Err: err}

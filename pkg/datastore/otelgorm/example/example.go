@@ -3,7 +3,7 @@ package main
 import (
 	"context"
 
-	otelgorm "developer.zopsmart.com/go/gofr/gorm-trace"
+	"developer.zopsmart.com/go/gofr/pkg/datastore/otelgorm"
 	"github.com/uptrace/opentelemetry-go-extra/otelplay"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"

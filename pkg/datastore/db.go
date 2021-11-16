@@ -7,24 +7,27 @@ import (
 	"strings"
 	"time"
 
-	"developer.zopsmart.com/go/gofr/pkg/errors"
 	"go.opentelemetry.io/otel"
+	semconv "go.opentelemetry.io/otel/semconv/v1.7.0"
+
 	"gorm.io/driver/mysql"
 	"gorm.io/driver/postgres"
 	"gorm.io/driver/sqlite"
 	"gorm.io/driver/sqlserver"
+	"gorm.io/gorm"
+
+	_ "github.com/lib/pq"
+
+	"github.com/XSAM/otelsql"
+	"github.com/jmoiron/sqlx"
+	"github.com/prometheus/client_golang/prometheus"
 
 	"developer.zopsmart.com/go/gofr/pkg"
+	"developer.zopsmart.com/go/gofr/pkg/datastore/otelgorm"
+	"developer.zopsmart.com/go/gofr/pkg/errors"
 	"developer.zopsmart.com/go/gofr/pkg/gofr/types"
 	"developer.zopsmart.com/go/gofr/pkg/log"
 	"developer.zopsmart.com/go/gofr/pkg/middleware"
-
-	"github.com/jmoiron/sqlx"
-
-	otelgorm "developer.zopsmart.com/go/gofr/gorm-trace"
-	"github.com/prometheus/client_golang/prometheus"
-
-	"gorm.io/gorm"
 )
 
 const (
@@ -137,7 +140,12 @@ func NewORM(config *DBConfig) (GORMClient, error) {
 		return GORMClient{DB: DB, config: config}, err
 
 	case "postgres":
-		db, err := gorm.Open(postgres.New(postgres.Config{DSN: connectionStr}), &gorm.Config{})
+		driverName, err := otelsql.Register(config.Dialect, semconv.DBSystemPostgreSQL.Value.AsString())
+		if err != nil {
+			return GORMClient{config: config}, err
+		}
+
+		db, err := gorm.Open(postgres.New(postgres.Config{DriverName: driverName, DSN: connectionStr}), &gorm.Config{})
 		if err != nil {
 			return GORMClient{config: config}, err
 		}
@@ -149,11 +157,6 @@ func NewORM(config *DBConfig) (GORMClient, error) {
 		if err != nil {
 			panic("failed configuring plugin")
 		}
-
-		// db, err := gormtrace.Open(postgres.New(postgres.Config{DriverName: "postgres", DSN: connectionStr}), &gorm.Config{}, gormtrace.WithAnalytics(true))
-		// if err != nil {
-		// 	return GORMClient{config: config}, err
-		// }
 
 		return GORMClient{DB: db, config: config}, err
 	case "sqlite":
