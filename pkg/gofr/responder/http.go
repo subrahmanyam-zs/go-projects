@@ -52,7 +52,7 @@ func NewContextualResponder(w http.ResponseWriter, r *http.Request) Responder {
 	}
 
 	// set correlation id in response
-	w.Header().Set("X-Correlation-ID", responder.correlationID)
+	w.Header().Set("X-Correlation-Id", responder.correlationID)
 
 	cType := r.Header.Get("Content-type")
 	switch cType {

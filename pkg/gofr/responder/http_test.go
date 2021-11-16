@@ -21,9 +21,9 @@ func TestNewContextualResponder(t *testing.T) {
 
 	path := "/dummy"
 	testCases := []struct {
-		contentType string
-		id          string
-		want        *HTTP
+		contentType         string
+		correlationIdHeader string
+		want                *HTTP
 	}{
 		{"", "X-Correlation-ID", &HTTP{w: w, resType: JSON, method: "GET", path: path, correlationID: "dummy-corr-id"}},
 		{"text/xml", "X-B3-TraceId", &HTTP{w: w, resType: XML, method: "GET", path: path, correlationID: "dummy-trace-id"}},
@@ -45,7 +45,7 @@ func TestNewContextualResponder(t *testing.T) {
 		muxRouter.ServeHTTP(w, r)
 
 		r.Header.Set("Content-Type", tc.contentType)
-		r.Header.Set(tc.id, tc.want.correlationID)
+		r.Header.Set(tc.correlationIdHeader, tc.want.correlationID)
 
 		if got := NewContextualResponder(w, r); !reflect.DeepEqual(got, tc.want) {
 			t.Errorf("NewContextualResponder() = %v, want %v", got, tc.want)
