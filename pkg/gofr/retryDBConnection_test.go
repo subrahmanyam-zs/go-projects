@@ -447,3 +447,46 @@ func Test_dynamoRetry(t *testing.T) {
 		t.Errorf("FAILED, expected: DynamoDB initialized successfully, got: DynamoDB initialization failed")
 	}
 }
+
+func Test_dynamoRetry(t *testing.T) {
+	k := New()
+
+	dynamoConfig := datastore.DynamoDBConfig{
+		ConnRetryDuration: 1,
+	}
+
+	go dynamoRetry(dynamoConfig, k)
+
+	for i := 0; i < 5; i++ {
+		time.Sleep(2 * time.Second)
+
+		if k.DynamoDB.DynamoDB != nil {
+			t.Errorf("FAILED, expected: DynamoDB initialization to fail, got: DynamoDB initialized")
+			break
+		}
+	}
+
+	k = NewWithConfig(config.NewGoDotEnvProvider(log.NewMockLogger(io.Discard), "../../configs"))
+
+	dynamoConfig = datastore.DynamoDBConfig{
+		Region:            "ap-south-1",
+		Endpoint:          "http://localhost:8000",
+		SecretAccessKey:   "sample-secret-access-key",
+		AccessKeyID:       "sample-access-key",
+		ConnRetryDuration: 1,
+	}
+
+	go dynamoRetry(dynamoConfig, k)
+
+	for i := 0; i < 5; i++ {
+		time.Sleep(2 * time.Second)
+
+		if k.DynamoDB.DynamoDB != nil {
+			break
+		}
+	}
+
+	if k.DynamoDB.DynamoDB == nil {
+		t.Errorf("FAILED, expected: DynamoDB initialized successfully, got: DynamoDB initialization failed")
+	}
+}
