@@ -66,7 +66,7 @@ func TestSNS_Subscribe(t *testing.T) {
 	}{
 		{
 			desc:   "Success Case",
-			expOut: &notifier.Message{Value: fmt.Sprintf(`{"SubscriptionArn":"%q"}`, svc.cfg.TopicArn)},
+			expOut: &notifier.Message{Value: fmt.Sprintf(`{"SubscriptionArn":"%s"}`, svc.cfg.TopicArn)},
 		},
 		{
 			desc:    "Failure Case",
