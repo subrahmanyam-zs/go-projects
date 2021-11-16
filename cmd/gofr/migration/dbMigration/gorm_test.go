@@ -33,6 +33,8 @@ func initTests() *GORM {
 
 func Test_Run(t *testing.T) {
 	g := initTests()
+
+	createTable(t, g.db)
 	defer g.db.Migrator().DropTable("gofr_migrations")
 
 	tests := []struct {
@@ -167,7 +169,7 @@ func insertMigration(t *testing.T, g *gorm.DB, mig *gofrMigration) {
 }
 
 func createTable(t *testing.T, g *gorm.DB) {
-	err := g.Migrator().CreateTable(&gofrMigration{})
+	err := g.AutoMigrate(&gofrMigration{})
 	if err != nil {
 		t.Error(err)
 	}
