@@ -133,14 +133,12 @@ func TestDataStore_DB(t *testing.T) {
 
 	{
 		ds := new(DataStore)
-
-		defer func() {
-			if err := recover(); err == nil {
-				t.Errorf("FAILED, Expected panic, Got none")
-			}
-		}()
-
 		ds.SetORM(GORMClient{DB: new(gorm.DB)})
+
+		db := ds.GORM()
+		if db == nil {
+			t.Error("FAILED, Expected the db object to be initialized, Got: nil")
+		}
 	}
 
 	{
