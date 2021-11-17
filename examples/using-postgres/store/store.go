@@ -25,11 +25,6 @@ type Store interface {
 }
 
 func (c customer) Get(ctx *gofr.Context) ([]model.Customer, error) {
-	var num int
-	if err := ctx.GORM().WithContext(ctx).Raw("SELECT 42").Scan(&num).Error; err != nil {
-		return nil, errors.DB{Err: err}
-	}
-
 	rows, err := ctx.DB().QueryContext(ctx, "SELECT * FROM customers")
 	if err != nil {
 		return nil, errors.DB{Err: err}
@@ -57,16 +52,7 @@ func (c customer) Get(ctx *gofr.Context) ([]model.Customer, error) {
 }
 
 func (c customer) GetByID(ctx *gofr.Context, id int) (model.Customer, error) {
-	var (
-		resp model.Customer
-		num  int
-	)
-
-	if err := ctx.DB().QueryRowContext(ctx, "SELECT 42").Scan(&num); err != nil {
-		return model.Customer{}, errors.DB{Err: err}
-	}
-
-	fmt.Println(num)
+	var resp model.Customer
 
 	err := ctx.DB().QueryRowContext(ctx, " SELECT * FROM customers where id=$1", id).Scan(&resp.ID, &resp.Name)
 	if err == sql.ErrNoRows {
