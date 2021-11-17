@@ -34,7 +34,6 @@ func initTests() *GORM {
 func Test_Run(t *testing.T) {
 	g := initTests()
 
-	createTable(t, g.db)
 	defer g.db.Migrator().DropTable("gofr_migrations")
 
 	tests := []struct {
