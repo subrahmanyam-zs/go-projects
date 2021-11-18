@@ -80,7 +80,7 @@ func (h *httpService) call(ctx context.Context, method, target string, params ma
 		}
 
 		headers := make(map[string]string)
-		
+
 		for head := range req.Header {
 			val := req.Header.Get(head)
 			if val != "" {
