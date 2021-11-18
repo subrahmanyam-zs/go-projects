@@ -26,11 +26,10 @@ const (
 )
 
 type HTTP struct {
-	path          string
-	method        string
-	w             http.ResponseWriter
-	resType       responseType
-	correlationID string
+	path    string
+	method  string
+	w       http.ResponseWriter
+	resType responseType
 }
 
 // NewContextualResponder creates a HTTP responder which gives JSON/XML response based on context
@@ -45,14 +44,13 @@ func NewContextualResponder(w http.ResponseWriter, r *http.Request) Responder {
 	}
 
 	responder := &HTTP{
-		w:             w,
-		method:        r.Method,
-		path:          path,
-		correlationID: middleware.GetCorrelationID(r),
+		w:      w,
+		method: r.Method,
+		path:   path,
 	}
 
 	// set correlation id in response
-	w.Header().Set("X-Correlation-Id", responder.correlationID)
+	w.Header().Set("X-Correlation-Id", middleware.GetCorrelationID(r))
 
 	cType := r.Header.Get("Content-type")
 	switch cType {
