@@ -55,7 +55,7 @@ require (
 	github.com/go-redis/redis/extra/rediscensus v0.2.0
 	github.com/go-redis/redis/extra/rediscmd v0.2.0 // indirect
 	github.com/go-redis/redis/v8 v8.11.3
-	github.com/go-sql-driver/mysql v1.6.0 // indirect
+	github.com/go-sql-driver/mysql v1.6.0
 	github.com/go-stack/stack v1.8.0 // indirect
 	github.com/gocql/gocql v0.0.0-20210817081954-bc256bbb90de
 	github.com/golang-jwt/jwt/v4 v4.1.0
