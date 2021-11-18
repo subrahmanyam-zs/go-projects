@@ -21,17 +21,17 @@ func TestNewContextualResponder(t *testing.T) {
 
 	path := "/dummy"
 	testCases := []struct {
-		contentType         string
-		correlationIdHeader string
-		correlationId       string
-		want                *HTTP
+		contentType       string
+		correlationHeader string
+		correlationId     string
+		want              Responder
 	}{
 		{"", "X-Correlation-Id", "dummy-corr-id", &HTTP{w: w, resType: JSON, method: "GET", path: path}},
 		{"text/xml", "X-B3-TraceId", "dummy-trace-id", &HTTP{w: w, resType: XML, method: "GET", path: path}},
 		{"application/xml", "", "00000000000000000000000000000000", &HTTP{w: w, resType: XML, method: "GET", path: path}},
 		{"text/json", "X-Correlation-Id", "dummy-corr-id", &HTTP{w: w, resType: JSON, method: "GET", path: path}},
-		{"application/json", "X-Correlation-Id", "dummy-corr-id", &HTTP{w: w, resType: JSON, method: "GET", path: path}},
-		{"text/plain", "X-Correlation-Id", "dummy-corr-id", &HTTP{w: w, resType: TEXT, method: "GET", path: path}},
+		{"application/json", "X-B3-TraceId", "dummy-trace-id", &HTTP{w: w, resType: JSON, method: "GET", path: path}},
+		{"text/plain", "", "00000000000000000000000000000000", &HTTP{w: w, resType: TEXT, method: "GET", path: path}},
 	}
 
 	for _, tc := range testCases {
@@ -46,7 +46,7 @@ func TestNewContextualResponder(t *testing.T) {
 		muxRouter.ServeHTTP(w, r)
 
 		r.Header.Set("Content-Type", tc.contentType)
-		r.Header.Set(tc.correlationIdHeader, tc.correlationId)
+		r.Header.Set(tc.correlationHeader, tc.correlationId)
 
 		if got := NewContextualResponder(w, r); !reflect.DeepEqual(got, tc.want) {
 			t.Errorf("NewContextualResponder() = %v, want %v", got, tc.want)
