@@ -2,13 +2,17 @@ package main
 
 import (
 	"log"
+	"sync"
 	"time"
 
 	"developer.zopsmart.com/go/gofr/pkg/gofr"
 )
 
-//nolint:gochecknoglobals // used in main_test.go
-var n = 0
+// nolint:gochecknoglobals // used in main_test.go
+var (
+	n  = 0
+	mu sync.RWMutex
+)
 
 const minute = 3
 
@@ -29,6 +33,9 @@ func main() {
 }
 
 func count() {
+	mu.Lock()
+	defer mu.Unlock()
+
 	n++
 	log.Println("Count: ", n)
 }
