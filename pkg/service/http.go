@@ -79,7 +79,7 @@ func (h *httpService) call(ctx context.Context, method, target string, params ma
 			return nil, err
 		}
 
-		headers := make(map[string]string)
+		//headers := make(map[string]string)
 
 		// Don't want to log the Cookie.
 		delete(headers, "Cookie")
