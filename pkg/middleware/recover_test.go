@@ -232,7 +232,7 @@ func makeRequestPlanet(t *testing.T, handler http.Handler, wg *sync.WaitGroup, t
 			req := httptest.NewRequest("GET", target, nil)
 			data := &sync.Map{}
 			data.Store("Planet", "Earth")
-			req.Header.Add("X-Correlation-Id", "gofrTest-planet")
+			req.Header.Add("X-Correlation-ID", "gofrTest-planet")
 			ctx := context.WithValue(context.WithValue(context.Background(), CorrelationIDKey, "gofrTest-planet"),
 				LogDataKey("appLogData"), data)
 			req = req.WithContext(ctx)
@@ -250,7 +250,7 @@ func makeRequestGalaxy(t *testing.T, handler http.Handler, wg *sync.WaitGroup, t
 			req := httptest.NewRequest("GET", target, nil)
 			data := &sync.Map{}
 			data.Store("Galaxy", "MilkyWay")
-			req.Header.Add("X-Correlation-Id", "gofrTest-galaxy")
+			req.Header.Add("X-Correlation-ID", "gofrTest-galaxy")
 			req = req.WithContext(context.WithValue(context.WithValue(context.Background(), CorrelationIDKey, "gofrTest-galaxy"),
 				LogDataKey("appLogData"), data))
 			handler.ServeHTTP(&MockWriteHandler{}, req)

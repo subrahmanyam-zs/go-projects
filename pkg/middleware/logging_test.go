@@ -155,7 +155,7 @@ func TestLoggingCorrelationContext(t *testing.T) {
 	correlationID := "12bhu987"
 
 	req := httptest.NewRequest("GET", "/dummy", nil)
-	req.Header.Add("X-Correlation-Id", correlationID)
+	req.Header.Add("X-Correlation-ID", correlationID)
 	handler.ServeHTTP(MockWriteHandler{}, req)
 
 	cID, _ := req.Context().Value(CorrelationIDKey).(string)

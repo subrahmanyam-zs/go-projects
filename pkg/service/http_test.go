@@ -302,7 +302,7 @@ func TestCorrelationIDPropagation(t *testing.T) {
 		ctx := context.WithValue(context.Background(), middleware.CorrelationIDKey, correlationIDs[i])
 		req, _ := h.createReq(ctx, http.MethodGet, "/", nil, nil, nil)
 
-		correlationID := req.Header.Get("X-Correlation-Id")
+		correlationID := req.Header.Get("X-Correlation-ID")
 		if correlationID != correlationIDs[i] {
 			t.Errorf("Failed.Expected %v\tGot %v", correlationIDs[i], correlationID)
 		}
