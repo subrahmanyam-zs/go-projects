@@ -133,7 +133,7 @@ func TestLoggingCorrelationID(t *testing.T) {
 	handler := Logging(logger, "")(&MockHandler{})
 
 	req := httptest.NewRequest("GET", "/dummy", nil)
-	req.Header.Add("X-B3-TraceId", "12bhu987")
+	req.Header.Add("X-B3-TraceID", "12bhu987")
 	handler.ServeHTTP(MockWriteHandler{}, req)
 
 	if len(b.Bytes()) == 0 {

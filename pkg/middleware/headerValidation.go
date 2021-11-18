@@ -137,9 +137,9 @@ func validateAllHeaders(r *http.Request, envHeaders []string) (errs []error) {
 			continue
 		}
 
-		// correlationId can be present in X-B3-TraceId as well
+		// correlationId can be present in X-B3-TraceID as well
 		if k == "X-Correlation-ID" && headerVal == "" {
-			val := reqHeaders.Get("X-B3-TraceId")
+			val := reqHeaders.Get("X-B3-TraceID")
 			if val != "" {
 				r.Header.Set("X-Correlation-ID", val)
 				continue
