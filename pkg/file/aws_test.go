@@ -62,9 +62,12 @@ func TestAws_fetch(t *testing.T) {
 
 	for i, tc := range tests {
 		l := newLocalFile(tc.cfg.fileName, tc.cfg.fileMode)
+
 		_ = l.Open()
+
 		err := tc.cfg.fetch(l.FD)
-		assert.Equal(t, tc.err, err, i)
+
+		assert.IsType(t, tc.err, err, i)
 
 		_ = l.Close()
 	}
@@ -85,7 +88,7 @@ func TestAws_push(t *testing.T) {
 		l := newLocalFile(tc.cfg.fileName, tc.cfg.fileMode)
 		_ = l.Open()
 		err := tc.cfg.push(l.FD)
-		assert.Equal(t, tc.err, err, i)
+		assert.IsType(t, tc.err, err, i)
 
 		_ = l.Close()
 	}
