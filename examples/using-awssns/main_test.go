@@ -1,3 +1,5 @@
+//go:build !integration
+
 package main
 
 import (
@@ -39,7 +41,11 @@ func TestIntegration(t *testing.T) {
 
 			if resp != nil {
 				assert.Equal(t, tc.expectedStatusCode, resp.StatusCode, "Test %v: Failed.\n", i+1)
-				resp.Body.Close()
+
+				err = resp.Body.Close()
+				if err != nil {
+					t.Error(err)
+				}
 			}
 		})
 	}
