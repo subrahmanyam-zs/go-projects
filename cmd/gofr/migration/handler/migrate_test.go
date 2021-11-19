@@ -85,13 +85,6 @@ func Test_createMain(t *testing.T) {
 			mockFS.EXPECT().Chdir(gomock.Any()).Return(nil),
 			mockFS.EXPECT().OpenFile(gomock.Any(), gomock.Any(), gomock.Any()).Return(f2, nil).Times(1),
 		}, false},
-		{"Success case GOPATH", args{"DOWN", "gorm", "/home/appsadm/go/src/gofr"}, []*gomock.Call{
-			mockFS.EXPECT().OpenFile(gomock.Any(), gomock.Any(), gomock.Any()).Return(f, &errors.Response{Reason: "test error"}).Times(1),
-			mockFS.EXPECT().Stat("build").Return(nil, &errors.Response{Reason: "test error"}),
-			mockFS.EXPECT().IsNotExist(gomock.Any()).Return(false),
-			mockFS.EXPECT().Chdir(gomock.Any()).Return(nil).Times(1),
-			mockFS.EXPECT().OpenFile(gomock.Any(), gomock.Any(), gomock.Any()).Return(f2, nil).Times(1),
-		}, false},
 		{"mkdir error", args{"DOWN", "gorm", dir}, []*gomock.Call{
 			mockFS.EXPECT().OpenFile(gomock.Any(), gomock.Any(), gomock.Any()).Return(modFile, nil).Times(1),
 			mockFS.EXPECT().Stat("build").Return(nil, &errors.Response{Reason: "test error"}),
