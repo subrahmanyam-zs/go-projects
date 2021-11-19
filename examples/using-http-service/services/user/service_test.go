@@ -54,8 +54,8 @@ func Test_Get(t *testing.T) {
 }
 
 func Test_DefaultCase(t *testing.T) {
-	mockbind := mockBind{}
-	h := New(mockbind)
+	m := mockBind{}
+	h := New(m)
 
 	ctx := gofr.NewContext(nil, nil, gofr.New())
 

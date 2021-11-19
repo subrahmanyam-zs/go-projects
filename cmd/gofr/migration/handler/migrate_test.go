@@ -12,7 +12,10 @@ import (
 )
 
 func Test_getModulePath(t *testing.T) {
-	_ = os.Chdir("..")
+	err := os.Chdir("..")
+	if err != nil {
+		t.Error(err)
+	}
 
 	f, err := os.Create("go.mod")
 	if err != nil {
