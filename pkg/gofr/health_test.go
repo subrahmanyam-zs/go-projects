@@ -165,7 +165,6 @@ func Test_HealthCheckHandler(t *testing.T) {
 
 	// status should be UP
 	if v, ok := m["status"]; ok {
-		fmt.Println(v)
 		if v != pkg.StatusUp {
 			t.Errorf("status should be UP")
 		}
