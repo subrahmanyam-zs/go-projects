@@ -1,6 +1,7 @@
 package responder
 
 import (
+	"context"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -12,6 +13,7 @@ import (
 	"developer.zopsmart.com/go/gofr/pkg/errors"
 	"developer.zopsmart.com/go/gofr/pkg/gofr/template"
 	"developer.zopsmart.com/go/gofr/pkg/log"
+	"developer.zopsmart.com/go/gofr/pkg/middleware"
 )
 
 func TestNewContextualResponder(t *testing.T) {
@@ -45,6 +47,8 @@ func TestNewContextualResponder(t *testing.T) {
 		muxRouter := mux.NewRouter()
 		muxRouter.NewRoute().Path(r.URL.Path).Methods("GET").Handler(handler)
 		muxRouter.ServeHTTP(w, r)
+
+		*r = *r.WithContext(context.WithValue(r.Context(), middleware.CorrelationIDKey, correlationID))
 
 		r.Header.Set("Content-Type", tc.contentType)
 		r.Header.Set(tc.correlationIDHeader, correlationID)

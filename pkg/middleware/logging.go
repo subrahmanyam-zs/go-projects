@@ -68,7 +68,7 @@ func Logging(logger logger, omitHeaders string) func(inner http.Handler) http.Ha
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			start := time.Now()
 
-			correlationID := GetCorrelationID(r)
+			correlationID := getCorrelationID(r)
 			ctx := context.WithValue(r.Context(), CorrelationIDKey, correlationID)
 			*r = *r.WithContext(ctx)
 
@@ -117,7 +117,7 @@ func Logging(logger logger, omitHeaders string) func(inner http.Handler) http.Ha
 	}
 }
 
-func GetCorrelationID(r *http.Request) string {
+func getCorrelationID(r *http.Request) string {
 	correlationID := r.Header.Get("X-Correlation-Id")
 	if correlationID == "" {
 		correlationID = r.Header.Get("X-B3-TraceId")

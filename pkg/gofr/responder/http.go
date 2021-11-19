@@ -44,11 +44,18 @@ func NewContextualResponder(w http.ResponseWriter, r *http.Request) Responder {
 		path = strings.TrimSuffix(path, "/")
 	}
 
+	var correlationID string
+
+	val := r.Context().Value(middleware.CorrelationIDKey)
+	if val != nil {
+		correlationID = val.(string)
+	}
+
 	responder := &HTTP{
 		w:             w,
 		method:        r.Method,
 		path:          path,
-		correlationID: middleware.GetCorrelationID(r),
+		correlationID: correlationID,
 	}
 
 	cType := r.Header.Get("Content-type")
