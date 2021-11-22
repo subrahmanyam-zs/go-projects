@@ -50,12 +50,12 @@ func Test_Migrate(t *testing.T) {
 
 	currDir, _ := os.Getwd()
 	_ = os.Chdir(currDir)
-	_ = os.Mkdir("migrateCreateTest", migration.RWXMode)
-	_ = os.Chdir("migrateCreateTest")
+	path, _ := os.MkdirTemp(currDir, "migrateCreateTest")
+	_ = os.Chdir(path)
 
 	defer func() {
 		_ = os.Chdir(currDir)
-		_ = os.RemoveAll("migrateCreateTest")
+		_ = os.RemoveAll(path)
 	}()
 
 	assert.CMDOutputContains(t, main, "gofr migrate create", "provide a name for migration")
