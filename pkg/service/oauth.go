@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/url"
-	"sync"
 	"time"
 
 	"developer.zopsmart.com/go/gofr/pkg"
@@ -30,8 +29,6 @@ func (h *httpService) setClientOauthHeader(option *OAuthOption) {
 	}
 
 	basicAuth := "Basic " + base64.StdEncoding.EncodeToString([]byte(option.ClientID+":"+option.ClientSecret))
-
-	mu := sync.Mutex{}
 
 	if option.MaxSleep <= 0 {
 		option.MaxSleep = pkg.OAuthMaxSleep
@@ -61,9 +58,9 @@ func (h *httpService) setClientOauthHeader(option *OAuthOption) {
 		}
 	}
 
-	mu.Lock()
+	h.mu.Lock()
 	h.auth = token
-	mu.Unlock()
+	h.mu.Unlock()
 
 	// refresh token 5 seconds before the token expires
 	if expTime > pkg.OAuthExpiryBeforeTime {
