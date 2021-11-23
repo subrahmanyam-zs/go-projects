@@ -67,27 +67,27 @@ func Test_Migrate(t *testing.T) {
 
 	_ = os.Chdir(currDir + "/migrateCreateTest")
 
-	assert.CMDOutputContains(t, main, "gofr migrate -method=UP -database=gorm", "error")
+	assert.CMDOutputContains(t, main, "gofr migrate -method=UP -database=gorm", "migrations do not exists")
 
 	_ = os.Chdir(currDir + "/migrateCreateTest")
 
-	assert.CMDOutputContains(t, main, "gofr migrate -method=DOWN -database=gorm", "error")
+	assert.CMDOutputContains(t, main, "gofr migrate -method=DOWN -database=gorm", "migrations do not exists")
 
 	_ = os.Chdir(currDir + "/migrateCreateTest")
 
-	assert.CMDOutputContains(t, main, "gofr migrate -method=DOWN -database=mongo", "error")
+	assert.CMDOutputContains(t, main, "gofr migrate -method=DOWN -database=mongo", "migrations do not exists")
 
 	_ = os.Chdir(currDir + "/migrateCreateTest")
 
-	assert.CMDOutputContains(t, main, "gofr migrate -method=DOWN -database=cassandra", "error")
+	assert.CMDOutputContains(t, main, "gofr migrate -method=DOWN -database=cassandra", "migrations do not exists")
 
 	_ = os.Chdir(currDir + "/migrateCreateTest")
 
-	assert.CMDOutputContains(t, main, "gofr migrate -method=DOWN -database=ycql", "error")
+	assert.CMDOutputContains(t, main, "gofr migrate -method=DOWN -database=ycql", "migrations do not exists")
 
 	_ = os.Chdir(currDir + "/migrateCreateTest")
 
-	assert.CMDOutputContains(t, main, "gofr migrate -method=DOWN -database=redis -tag=20200123143215", "error")
+	assert.CMDOutputContains(t, main, "gofr migrate -method=DOWN -database=redis -tag=20200123143215", "migrations do not exists")
 }
 
 func Test_CreateMigration(t *testing.T) {
