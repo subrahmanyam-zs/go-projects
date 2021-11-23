@@ -3,9 +3,9 @@ package datastore
 import (
 	"database/sql"
 	"time"
-	
+
 	"github.com/jmoiron/sqlx"
-	
+
 	"gorm.io/gorm"
 
 	"developer.zopsmart.com/go/gofr/pkg/datastore/pubsub"
@@ -40,6 +40,8 @@ type QueryLogger struct {
 }
 
 func (ds *DataStore) GORM() *gorm.DB {
+	var err error
+
 	if ds.gorm.DB != nil {
 		return ds.gorm.DB
 	}
@@ -47,7 +49,10 @@ func (ds *DataStore) GORM() *gorm.DB {
 	if db, ok := ds.ORM.(GORMClient); ok {
 		ds.gorm = db
 		if db.DB != nil {
-			ds.rdb.DB, _ = db.DB.DB()
+			ds.rdb.DB, err = db.DB.DB()
+			if err != nil {
+				return nil
+			}
 		}
 
 		return db.DB
@@ -87,7 +92,11 @@ func (ds *DataStore) DB() *SQLClient {
 	}
 
 	if db := ds.GORM(); db != nil {
-		dbg, _ := ds.GORM().DB()
+		dbg, err := ds.GORM().DB()
+		if err != nil {
+			return nil
+		}
+
 		return &SQLClient{DB: dbg, config: ds.gorm.config, logger: ds.Logger}
 	}
 

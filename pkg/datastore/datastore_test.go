@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/jmoiron/sqlx"
+
 	"gorm.io/gorm"
 
 	"developer.zopsmart.com/go/gofr/pkg"

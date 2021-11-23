@@ -16,6 +16,7 @@ import (
 	"gorm.io/driver/sqlserver"
 	"gorm.io/gorm"
 
+	// used for concrete implementation of the database driver.
 	_ "github.com/lib/pq"
 
 	"github.com/XSAM/otelsql"
@@ -116,7 +117,6 @@ func pushConnMetrics(database, hostname string, db *sql.DB) {
 
 // NewORM returns a new ORM object if the config is correct, otherwise it returns the error thrown
 func NewORM(config *DBConfig) (GORMClient, error) {
-
 	validDialects := map[string]bool{
 		"mysql":    true,
 		"mssql":    true,
@@ -161,7 +161,7 @@ func NewORM(config *DBConfig) (GORMClient, error) {
 		return GORMClient{DB: db, config: config}, err
 	case "sqlite":
 		// DB, err := gorm.Open(sqlite.Open(connectionStr), &gorm.Config{})
-		db, err := gorm.Open(sqlite.Open("file::memory:?cache=shared"), &gorm.Config{})
+		db, err := gorm.Open(sqlite.Open(connectionStr), &gorm.Config{})
 		if err != nil {
 			return GORMClient{config: config}, err
 		}
