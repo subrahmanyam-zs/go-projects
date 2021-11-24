@@ -6,6 +6,7 @@ import (
 
 	"developer.zopsmart.com/go/gofr/pkg/log"
 
+	cloudtrace "github.com/GoogleCloudPlatform/opentelemetry-operations-go/exporter/trace"
 	"go.opentelemetry.io/collector/translator/conventions"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
@@ -14,9 +15,6 @@ import (
 	"go.opentelemetry.io/otel/propagation"
 	"go.opentelemetry.io/otel/sdk/resource"
 	"go.opentelemetry.io/otel/sdk/trace"
-	semconv "go.opentelemetry.io/otel/semconv/v1.4.0"
-
-	cloudtrace "github.com/GoogleCloudPlatform/opentelemetry-operations-go/exporter/trace"
 )
 
 type exporter struct {
@@ -58,13 +56,7 @@ func (e *exporter) getZipkinExporter(c Config, logger log.Logger) *trace.TracerP
 
 	batcher := trace.NewBatchSpanProcessor(exporter)
 
-	attributes := []attribute.KeyValue{
-		attribute.String(conventions.AttributeTelemetrySDKLanguage, "go"),
-		attribute.String(conventions.AttributeTelemetrySDKVersion, c.GetOrDefault("APP_VERSION", "Dev")),
-		attribute.String(conventions.AttributeServiceName, c.GetOrDefault("APP_NAME", "Gofr-App")),
-	}
-
-	r, err := resource.New(context.Background(), resource.WithAttributes(attributes...))
+	r, err := getResource(c)
 	if err != nil {
 		logger.Errorf("error in creating the resource")
 		return nil
@@ -78,23 +70,21 @@ func (e *exporter) getZipkinExporter(c Config, logger log.Logger) *trace.TracerP
 	return tp
 }
 
-func Resource() *resource.Resource {
-	return resource.NewWithAttributes(
-		semconv.SchemaURL,
-		semconv.ServiceNameKey.String("stdout-example"),
-		semconv.ServiceVersionKey.String("0.0.1"),
-	)
-}
-
 func stdOutTrace(c Config, logger log.Logger) *trace.TracerProvider {
 	exporter, err := stdouttrace.New(stdouttrace.WithPrettyPrint())
 	if err != nil {
 		logger.Errorf("creating stdout exporter: %v", err)
 	}
 
+	r, err := getResource(c)
+	if err != nil {
+		logger.Errorf("error in creating the resource")
+		return nil
+	}
+
 	tracerProvider := trace.NewTracerProvider(
 		trace.WithBatcher(exporter),
-		trace.WithResource(Resource()),
+		trace.WithResource(r),
 	)
 
 	otel.SetTracerProvider(tracerProvider)
@@ -110,15 +100,9 @@ func getGCPExporter(c Config, projectID string, logger log.Logger) *trace.Tracer
 		return nil
 	}
 
-	attributes := []attribute.KeyValue{
-		attribute.String(conventions.AttributeTelemetrySDKLanguage, "go"),
-		attribute.String(conventions.AttributeTelemetrySDKVersion, c.GetOrDefault("APP_VERSION", "Dev")),
-		attribute.String(conventions.AttributeServiceName, c.GetOrDefault("APP_NAME", "Gofr-App")),
-	}
-
-	r, err := resource.New(context.Background(), resource.WithAttributes(attributes...))
+	r, err := getResource(c)
 	if err != nil {
-		logger.Errorf("error creating resource")
+		logger.Errorf("error in creating the resource")
 		return nil
 	}
 
@@ -133,4 +117,14 @@ func getGCPExporter(c Config, projectID string, logger log.Logger) *trace.Tracer
 	otel.SetTextMapPropagator(propagation.NewCompositeTextMapPropagator(propagation.TraceContext{}, propagation.Baggage{}))
 
 	return tp
+}
+
+func getResource(c Config) (*resource.Resource, error) {
+	attributes := []attribute.KeyValue{
+		attribute.String(conventions.AttributeTelemetrySDKLanguage, "go"),
+		attribute.String(conventions.AttributeTelemetrySDKVersion, c.GetOrDefault("APP_VERSION", "Dev")),
+		attribute.String(conventions.AttributeServiceName, c.GetOrDefault("APP_NAME", "Gofr-App")),
+	}
+
+	return resource.New(context.Background(), resource.WithAttributes(attributes...))
 }
