@@ -48,15 +48,11 @@ func Test_Migrate(t *testing.T) {
 	assert.CMDOutputContains(t, main, "gofr migrate -method=UP -database=gorm", "migrations do not exist")
 	assert.CMDOutputContains(t, main, "gofr migrate -method=UP -database=", "invalid flag: database")
 
-	currDir, _ := os.Getwd()
+	currDir := t.TempDir()
 	_ = os.Chdir(currDir)
+
 	path, _ := os.MkdirTemp(currDir, "migrateCreateTest")
 	_ = os.Chdir(path)
-
-	defer func() {
-		_ = os.Chdir(currDir)
-		_ = os.RemoveAll(path)
-	}()
 
 	assert.CMDOutputContains(t, main, "gofr migrate create", "provide a name for migration")
 	assert.CMDOutputContains(t, main, "gofr migrate create -name=testMigration", "Migration created")
