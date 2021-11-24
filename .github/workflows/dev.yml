@@ -1,0 +1,35 @@
+name: Build and Publish Docker Image
+
+"on":
+  push:
+    branches:
+      - master
+      - development
+    tags:
+      - "*"
+  pull_request:
+    branches:
+      - "*"
+
+jobs:
+  build-and-publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Set up  Go 1.x
+        uses: actions/setup-go@v2
+        with:
+          go-version: 1.16
+        id: Go
+      ## checks out our project source code
+      - uses: actions/checkout@v2
+      - name: Copy binary to build
+        run: |
+          export CGO_ENABLED=0
+          cd examples/sample-api
+          mkdir build
+          go build -o main
+          sudo cp main build/
+
+      ## Builds our docker image!
+      - name: Build the Docker image
+        run: docker build -f examples/sample-api/Dockerfile -t sample-api .
