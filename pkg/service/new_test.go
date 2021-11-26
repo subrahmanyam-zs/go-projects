@@ -262,10 +262,11 @@ func TestNewHTTPServiceWithOptions_Oauth(t *testing.T) {
 	}
 
 	time.Sleep(time.Duration(5) * time.Second)
-
+	svc.mu.Lock()
 	if expectedSvc.auth != svc.auth {
 		t.Errorf("Expected: %v \nGot: %v", expectedSvc, svc)
 	}
+	svc.mu.Unlock()
 }
 
 func TestHttpServiceWithOptions_CSP(t *testing.T) {

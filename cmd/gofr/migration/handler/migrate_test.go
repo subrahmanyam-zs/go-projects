@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"go/build"
 	"os"
 	"reflect"
 	"testing"
@@ -12,7 +13,7 @@ import (
 )
 
 func Test_getModulePath(t *testing.T) {
-	os.Chdir("..")
+	_ = os.Chdir("..")
 
 	f, err := os.Create("go.mod")
 	if err != nil {
@@ -52,7 +53,9 @@ func Test_createMain(t *testing.T) {
 	}()
 
 	mockFS := NewMockFSMigrate(ctrl)
+
 	dir := t.TempDir()
+
 	_ = os.Chdir(dir)
 	f, _ := os.Create("test.txt")
 	f2, _ := os.Create("main.go")
@@ -83,13 +86,6 @@ func Test_createMain(t *testing.T) {
 			mockFS.EXPECT().IsNotExist(gomock.Any()).Return(true),
 			mockFS.EXPECT().Mkdir(gomock.Any(), gomock.Any()).Return(nil).Times(1),
 			mockFS.EXPECT().Chdir(gomock.Any()).Return(nil),
-			mockFS.EXPECT().OpenFile(gomock.Any(), gomock.Any(), gomock.Any()).Return(f2, nil).Times(1),
-		}, false},
-		{"Success case GOPATH", args{"DOWN", "gorm", "/home/appsadm/go/src/gofr"}, []*gomock.Call{
-			mockFS.EXPECT().OpenFile(gomock.Any(), gomock.Any(), gomock.Any()).Return(f, &errors.Response{Reason: "test error"}).Times(1),
-			mockFS.EXPECT().Stat("build").Return(nil, &errors.Response{Reason: "test error"}),
-			mockFS.EXPECT().IsNotExist(gomock.Any()).Return(false),
-			mockFS.EXPECT().Chdir(gomock.Any()).Return(nil).Times(1),
 			mockFS.EXPECT().OpenFile(gomock.Any(), gomock.Any(), gomock.Any()).Return(f2, nil).Times(1),
 		}, false},
 		{"mkdir error", args{"DOWN", "gorm", dir}, []*gomock.Call{
@@ -125,6 +121,46 @@ func Test_createMain(t *testing.T) {
 		if err := createMain(mockFS, tt.args.method, tt.args.db, tt.args.directory, nil); (err != nil) != tt.wantErr {
 			t.Errorf("TestCase %v: createMain() error = %v, wantErr %v", tt.name, err, tt.wantErr)
 		}
+	}
+}
+
+func Test_createMain_goPath_success(t *testing.T) {
+	currDir, _ := os.Getwd()
+
+	ctrl := gomock.NewController(t)
+	defer func() {
+		ctrl.Finish()
+
+		_ = os.Chdir(currDir)
+	}()
+
+	mockFS := NewMockFSMigrate(ctrl)
+	dir := t.TempDir()
+
+	t.Setenv("GOPATH", dir)
+
+	build.Default.GOPATH = dir
+
+	_, _ = os.MkdirTemp("src", dir)
+
+	dir += "/src"
+	_ = os.Chdir(dir)
+
+	_, _ = os.MkdirTemp("gofr", dir)
+
+	dir += "/gofr"
+
+	f, _ := os.CreateTemp("test.txt", dir)
+	f2, _ := os.Create("main.go")
+
+	mockFS.EXPECT().OpenFile(gomock.Any(), gomock.Any(), gomock.Any()).Return(f, &errors.Response{Reason: "test error"})
+	mockFS.EXPECT().Stat("build").Return(nil, &errors.Response{Reason: "test error"})
+	mockFS.EXPECT().IsNotExist(gomock.Any()).Return(false)
+	mockFS.EXPECT().Chdir(gomock.Any()).Return(nil)
+	mockFS.EXPECT().OpenFile(gomock.Any(), gomock.Any(), gomock.Any()).Return(f2, nil)
+
+	if err := createMain(mockFS, "DOWN", "GORM", dir, nil); (err != nil) != false {
+		t.Errorf("FAILED: Success case GOPATH  : createMain() error = %v, wantErr false", err)
 	}
 }
 

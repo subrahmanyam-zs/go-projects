@@ -510,8 +510,10 @@ func (k *Kafka) subscribeMessage() (*pubsub.Message, error) {
 	}
 
 	// Mark the message as read for autocommit to work
+	k.Consumer.ConsumerGroupHandler.mu.Lock()
 	k.Consumer.ConsumerGroupHandler.consumerGroupSession.MarkMessage(msg, "")
-	
+	k.Consumer.ConsumerGroupHandler.mu.Unlock()
+
 	return &pubsub.Message{
 		Topic:     msg.Topic,
 		Partition: int(msg.Partition),
@@ -579,7 +581,7 @@ func (k *Kafka) SubscribeWithCommit(f pubsub.CommitFunc) (*pubsub.Message, error
 				Partition: msg.Partition,
 				Offset:    msg.Offset,
 			})
-		}		
+		}
 
 		if !isContinue {
 			// for successful subscribe
@@ -634,6 +636,7 @@ type ConsumerHandler struct {
 	consumerGroupSession sarama.ConsumerGroupSession
 	offsets              []pubsub.TopicPartition
 	initialiseOffset     sync.Once
+	mu                   sync.Mutex
 }
 
 // setOffset set the starting offset of all the partition in the topic.
@@ -678,7 +681,9 @@ func (consumer *ConsumerHandler) ConsumeClaim(
 	for {
 		select {
 		case message := <-claim.Messages():
+			consumer.mu.Lock()
 			consumer.consumerGroupSession = session
+			consumer.mu.Unlock()
 			consumer.msg <- message
 
 		case <-session.Context().Done():
@@ -710,11 +715,13 @@ func (kl kafkaLogger) Println(v ...interface{}) {
 // The commits are performed asynchronously at intervals specified in Sarama
 // Consumer.Offsets.AutoCommit
 func (k *Kafka) CommitOffset(offsets pubsub.TopicPartition) {
+	k.Consumer.ConsumerGroupHandler.mu.Lock()
 	k.Consumer.ConsumerGroupHandler.consumerGroupSession.MarkOffset(
-			offsets.Topic, int32(offsets.Partition), offsets.Offset+1, "")
+		offsets.Topic, int32(offsets.Partition), offsets.Offset+1, "")
 	if k.config.DisableAutoCommit == true {
 		k.Consumer.ConsumerGroupHandler.consumerGroupSession.Commit()
 	}
+	k.Consumer.ConsumerGroupHandler.mu.Unlock()
 }
 
 func (k *Kafka) HealthCheck() types.Health {
