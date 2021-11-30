@@ -98,7 +98,7 @@ func TestGetIPAddress(t *testing.T) {
 	{
 		// 1. When RemoteAddr is set
 		addr := "0.0.0.0:8080"
-		req, err := http.NewRequest("GET", "http://dummy", nil)
+		req, err := http.NewRequest("GET", "http://dummy", http.NoBody)
 		if err != nil {
 			t.Errorf("FAILED, got error creating req object: %v", err)
 		}
@@ -113,7 +113,8 @@ func TestGetIPAddress(t *testing.T) {
 	{
 		// 2. When `X-Forwarded-For` header is set
 		addr := "192.168.0.1:8080"
-		req, err := http.NewRequest("GET", "http://dummy", nil)
+
+		req, err := http.NewRequest("GET", "http://dummy", http.NoBody)
 		if err != nil {
 			t.Errorf("FAILED, got error creating req object: %v", err)
 		}
