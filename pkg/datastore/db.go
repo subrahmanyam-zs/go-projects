@@ -3,6 +3,7 @@ package datastore
 import (
 	"database/sql"
 	"fmt"
+	"gorm.io/gorm/logger"
 	"os"
 	"strings"
 	"time"
@@ -132,12 +133,13 @@ func NewORM(config *DBConfig) (GORMClient, error) {
 
 	switch config.Dialect {
 	case "mysql":
-		DB, err := gorm.Open(mysql.Open(connectionStr), &gorm.Config{})
+		// adding &gorm.Config{Logger: logger.Default.LogMode(logger.Silent)} will Silent the default gorm logger.
+		db, err := gorm.Open(mysql.Open(connectionStr), &gorm.Config{Logger: logger.Default.LogMode(logger.Silent)})
 		if err != nil {
 			return GORMClient{config: config}, err
 		}
 
-		return GORMClient{DB: DB, config: config}, err
+		return GORMClient{DB: db, config: config}, err
 
 	case "postgres":
 		driverName, err := otelsql.Register(config.Dialect, semconv.DBSystemPostgreSQL.Value.AsString())
@@ -145,7 +147,7 @@ func NewORM(config *DBConfig) (GORMClient, error) {
 			return GORMClient{config: config}, err
 		}
 
-		db, err := gorm.Open(postgres.New(postgres.Config{DriverName: driverName, DSN: connectionStr}), &gorm.Config{})
+		db, err := gorm.Open(postgres.New(postgres.Config{DriverName: driverName, DSN: connectionStr}), &gorm.Config{Logger: logger.Default.LogMode(logger.Silent)})
 		if err != nil {
 			return GORMClient{config: config}, err
 		}
@@ -160,8 +162,7 @@ func NewORM(config *DBConfig) (GORMClient, error) {
 
 		return GORMClient{DB: db, config: config}, err
 	case "sqlite":
-		// DB, err := gorm.Open(sqlite.Open(connectionStr), &gorm.Config{})
-		db, err := gorm.Open(sqlite.Open(connectionStr), &gorm.Config{})
+		db, err := gorm.Open(sqlite.Open(connectionStr), &gorm.Config{Logger: logger.Default.LogMode(logger.Silent)})
 		if err != nil {
 			return GORMClient{config: config}, err
 		}
@@ -177,16 +178,16 @@ func NewORM(config *DBConfig) (GORMClient, error) {
 		return GORMClient{config: config}, errors.DB{}
 	}
 
-	DB, err := gorm.Open(sqlserver.Open(connectionStr), &gorm.Config{})
+	db, err := gorm.Open(sqlserver.Open(connectionStr), &gorm.Config{Logger: logger.Default.LogMode(logger.Silent)})
 	if err != nil {
 		return GORMClient{config: config}, err
 	}
 
-	sqlDB, _ := DB.DB()
+	sqlDB, _ := db.DB()
 
 	go pushConnMetrics(config.Database, config.HostName, sqlDB)
 
-	return GORMClient{DB: DB, config: config}, err
+	return GORMClient{DB: db, config: config}, err
 }
 
 // NewORMFromEnv fetches the config from environment variables and returns a new ORM object if the config was
