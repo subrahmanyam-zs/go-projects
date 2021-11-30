@@ -523,7 +523,7 @@ func PublishMessage(t *testing.T, k *Kafka) {
 func Test_PubSubWithOffset(t *testing.T) {
 	topic := "test-custom-offset"
 	logger := log.NewLogger()
-	c := config.NewGoDotEnvProvider(logger, "../../../configs")
+	c := config.NewGoDotEnvProvider(logger, "../../../../configs")
 	// prereqisite
 	k, err := New(&Config{
 		Brokers:        c.Get("KAFKA_HOSTS"),
@@ -683,7 +683,7 @@ func Test_Println(t *testing.T) {
 
 func TestKafka_SubscribeNilMessage(t *testing.T) {
 	logger := log.NewMockLogger(io.Discard)
-	c := config.NewGoDotEnvProvider(logger, "../../../configs")
+	c := config.NewGoDotEnvProvider(logger, "../../../../configs")
 
 	topic := "test-topic"
 	conn, _ := New(&Config{Brokers: c.Get("KAFKA_HOSTS"), Topics: strings.Split(topic, ",")}, logger)

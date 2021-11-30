@@ -6,6 +6,7 @@ require (
 	cloud.google.com/go/storage v1.16.1
 	contrib.go.opencensus.io/exporter/stackdriver v0.13.8
 	contrib.go.opencensus.io/exporter/zipkin v0.1.2
+	github-lvs.corpzone.internalzone.com/mcafee/cnsr-gofr-csp-auth v0.1.0
 	github.com/Azure/azure-amqp-common-go/v3 v3.2.0
 	github.com/Azure/azure-event-hubs-go/v3 v3.3.13
 	github.com/Azure/azure-storage-blob-go v0.14.0
@@ -36,6 +37,7 @@ require (
 	github.com/newrelic/go-agent v3.15.0+incompatible
 	github.com/openzipkin/zipkin-go v0.2.5
 	github.com/prometheus/client_golang v1.11.0
+	github.com/satori/go.uuid v1.2.0
 	github.com/stretchr/testify v1.7.0
 	github.com/xdg/scram v1.0.3
 	github.com/yugabyte/gocql v0.0.0-20200602185649-ef3952a45ff4

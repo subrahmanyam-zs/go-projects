@@ -100,8 +100,12 @@ func TestRemoteLevelLogging(t *testing.T) {
 
 	time.Sleep(15 * time.Second)
 
-	if rls.level != Warn {
-		t.Errorf("expected WARN\tGot %v", rls.level)
+	mu.Lock()
+	lvl := rls.level
+	mu.Unlock()
+
+	if lvl != Warn {
+		t.Errorf("expected WARN\tGot %v", lvl)
 	}
 
 	if rls.app != "gofr-app" {

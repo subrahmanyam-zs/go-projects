@@ -6,6 +6,7 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"sync"
 	"time"
 )
 
@@ -19,12 +20,24 @@ type levelService struct {
 }
 
 // nolint
-var rls levelService          // TODO - remove this
+var (
+	rls levelService // TODO - remove this
+	mu  sync.RWMutex
+)
+
 const LevelFetchInterval = 10 // In seconds
 
 func newLevelService(l Logger, appName string) *levelService {
 	if !rls.init {
-		rls.level = getLevel(os.Getenv("LOG_LEVEL"))
+
+		lvl := getLevel(os.Getenv("LOG_LEVEL"))
+
+		mu.Lock()
+
+		rls.level = lvl
+
+		mu.Unlock()
+
 		rls.url = os.Getenv("LOG_SERVICE_URL")
 		rls.app = appName
 		rls.logger = l
