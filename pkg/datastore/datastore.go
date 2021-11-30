@@ -123,13 +123,6 @@ func (ds *DataStore) SetORM(client interface{}) {
 		ds.gorm = v
 
 		if v.DB != nil {
-			// recover panic if gorm.DB is nil
-			defer func() {
-				if err := recover(); err != nil {
-					return
-				}
-			}()
-
 			sqlDB, err := v.DB.DB()
 			if err != nil {
 				return

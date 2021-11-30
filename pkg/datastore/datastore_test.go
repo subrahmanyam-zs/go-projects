@@ -2,11 +2,13 @@ package datastore
 
 import (
 	"database/sql"
+	"gorm.io/gorm/logger"
 	"io"
 	"testing"
 
 	"github.com/jmoiron/sqlx"
 
+	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 
 	"developer.zopsmart.com/go/gofr/pkg"
@@ -121,6 +123,9 @@ func TestDataStore_SQLX(t *testing.T) {
 	}
 }
 
+// TestDataStore_DB tests the behaviour of ds.DB() when DB connection is not established.
+// It tests, whether it will panic or throw error. For example when /.well-known/health-check api pings DB for its status
+// it shouldn't panic if the DB connection is not established.
 func TestDataStore_DB(t *testing.T) {
 	{
 		ds := new(DataStore)
@@ -134,7 +139,14 @@ func TestDataStore_DB(t *testing.T) {
 
 	{
 		ds := new(DataStore)
-		ds.SetORM(GORMClient{DB: new(gorm.DB)})
+
+		// passing incorrect dsn will not establish a db connection. But gorm.ConnPool will not be nil.
+		// passing new(gorm.DB) panics, as gorm.ConnPool will be nil.
+		dsn := "incorrect DSN"
+
+		gdb, _ := gorm.Open(mysql.Open(dsn), &gorm.Config{Logger: logger.Default.LogMode(logger.Silent)})
+
+		ds.SetORM(GORMClient{DB: gdb})
 
 		db := ds.GORM()
 		if db == nil {
