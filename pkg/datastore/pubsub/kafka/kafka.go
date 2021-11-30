@@ -718,9 +718,11 @@ func (k *Kafka) CommitOffset(offsets pubsub.TopicPartition) {
 	k.Consumer.ConsumerGroupHandler.mu.Lock()
 	k.Consumer.ConsumerGroupHandler.consumerGroupSession.MarkOffset(
 		offsets.Topic, int32(offsets.Partition), offsets.Offset+1, "")
+
 	if k.config.DisableAutoCommit {
 		k.Consumer.ConsumerGroupHandler.consumerGroupSession.Commit()
 	}
+
 	k.Consumer.ConsumerGroupHandler.mu.Unlock()
 }
 

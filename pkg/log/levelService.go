@@ -29,7 +29,6 @@ const LevelFetchInterval = 10 // In seconds
 
 func newLevelService(l Logger, appName string) *levelService {
 	if !rls.init {
-
 		lvl := getLevel(os.Getenv("LOG_LEVEL"))
 
 		mu.Lock()
