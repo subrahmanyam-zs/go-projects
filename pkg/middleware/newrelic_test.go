@@ -13,7 +13,7 @@ func (m *mockHandlerForNewRelic) ServeHTTP(w http.ResponseWriter, req *http.Requ
 
 func TestNewRelic(t *testing.T) {
 	handler := NewRelic("gofr", "6378b0a5bf929e7eb36d480d4e3cd914b74eNRAL")(&mockHandlerForNewRelic{})
-	req, _ := http.NewRequest("GET", "/hello", nil)
+	req, _ := http.NewRequest("GET", "/hello", http.NoBody)
 	w := httptest.NewRecorder()
 	handler.ServeHTTP(w, req)
 
