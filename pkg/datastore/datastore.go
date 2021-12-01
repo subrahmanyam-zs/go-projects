@@ -141,38 +141,57 @@ func (ds *DataStore) SetORM(client interface{}) {
 	}
 }
 
+// SQLHealthCheck pings the sql instance. If the ping does not return an error, the healthCheck status will be set to UP,
+// else the healthCheck status will be DOWN
 func (ds *DataStore) SQLHealthCheck() types.Health {
 	return ds.gorm.HealthCheck()
 }
+
+// SQLXHealthCheck pings the sqlx instance. If the ping does not return an error, the healthCheck status will be set to UP,
+// else the healthCheck status will be DOWN.
 
 func (ds *DataStore) SQLXHealthCheck() types.Health {
 	return ds.sqlx.HealthCheck()
 }
 
+// CQLHealthCheck performs a query operation on the cql instance. If the operation does not return an error, the healthCheck
+//status will be set to UP, else the healthCheck status will be DOWN.
 func (ds *DataStore) CQLHealthCheck() types.Health {
 	return ds.Cassandra.HealthCheck()
 }
 
+// YCQLHealthCheck performs a query operation on the cql instance. If the operation does not return an error, the healthCheck
+//status will be set to UP, else the healthCheck status will be DOWN.
 func (ds *DataStore) YCQLHealthCheck() types.Health {
 	return ds.YCQL.HealthCheck()
 }
 
+// ElasticsearchHealthCheck pings the Elasticsearch instance. If the ping does not return an error,
+//the healthCheck status will be set to UP, else the healthCheck status will be DOWN
 func (ds *DataStore) ElasticsearchHealthCheck() types.Health {
 	return ds.Elasticsearch.HealthCheck()
 }
 
+// MongoHealthCheck executes a given command against the database, if the error returned is not nil, the healthCheck status
+// is set to DOWN, else healthCheck status will be set to UP.
 func (ds *DataStore) MongoHealthCheck() types.Health {
 	return ds.MongoDB.HealthCheck()
 }
 
+// RedisHealthCheck pings the redis instance. If the ping does not return an error,
+// the healthCheck status will be set to UP, else the healthCheck status will be DOWN
 func (ds *DataStore) RedisHealthCheck() types.Health {
 	return ds.Redis.HealthCheck()
 }
 
+// PubSubHealthCheck pings the pubsub instance. If the ping does not return an error,
+// the healthCheck status will be set to UP, else the healthCheck status will be DOWN
 func (ds *DataStore) PubSubHealthCheck() types.Health {
 	return ds.PubSub.HealthCheck()
 }
 
+// DynamoDBHealthCheck executes a ListTable API operation. If the returned error is not nil,
+// the healthCheck status will be set to DOWN, else the healthCheck status will be UP
 func (ds *DataStore) DynamoDBHealthCheck() types.Health {
 	return ds.DynamoDB.HealthCheck()
 }
