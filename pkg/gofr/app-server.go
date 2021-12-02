@@ -51,7 +51,7 @@ type HTTP struct {
 const (
 	defaultMetricsPort      = 2121
 	defaultMetricsRoute     = "/metrics"
-	defaultHealthCheckPort  = 9191
+	defaultHealthCheckPort  = 8086
 	defaultHealthCheckRoute = "/.well-known/health-check"
 )
 

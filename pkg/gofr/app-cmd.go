@@ -78,22 +78,22 @@ func (app *cmdApp) healthCheckHandler(logger log.Logger, port int, route string)
 			_, err := w.Write(data)
 			if err != nil {
 				logger.Error(err)
+
 				return
 			}
 		} else {
 			data, _ := json.Marshal(healthResp)
+
 			_, err := w.Write(data)
 			if err != nil {
 				logger.Error(err)
+
 				return
 			}
 		}
 	})
 
-	var srv = &http.Server{
-		Addr:    ":" + strconv.Itoa(port),
-		Handler: mux,
-	}
+	var srv = &http.Server{Addr: ":" + strconv.Itoa(port), Handler: mux}
 
 	logger.Infof("Starting health-check server at :%v", port)
 
