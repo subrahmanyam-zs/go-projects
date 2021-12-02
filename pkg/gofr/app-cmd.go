@@ -69,6 +69,7 @@ func (app *cmdApp) healthCheckHandler(logger log.Logger, port int, route string)
 
 	mux.HandleFunc(route, func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
+
 		if err != nil {
 			logger.Error(err)
 
@@ -79,13 +80,13 @@ func (app *cmdApp) healthCheckHandler(logger log.Logger, port int, route string)
 				logger.Error(err)
 				return
 			}
-		}
-
-		data, _ := json.Marshal(healthResp)
-		_, err := w.Write(data)
-		if err != nil {
-			logger.Error(err)
-			return
+		} else {
+			data, _ := json.Marshal(healthResp)
+			_, err := w.Write(data)
+			if err != nil {
+				logger.Error(err)
+				return
+			}
 		}
 	})
 
