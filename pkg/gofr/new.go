@@ -195,7 +195,8 @@ func NewCMD() *Gofr {
 	c := config.NewGoDotEnvProvider(log.NewLogger(), configFolder)
 	// Here we do things based on what is provided by Config, eg LOG_LEVEL etc.
 	logger := log.NewLogger()
-	cmdApp := &cmdApp{Router: NewCMDRouter(), metricSvr: &metricServer{route: defaultMetricsRoute}}
+	cmdApp := &cmdApp{Router: NewCMDRouter(), metricSvr: &metricServer{route: defaultMetricsRoute},
+		healthCheckSvr: &healthCheckServer{route: defaultHealthCheckRoute}}
 	gofr := &Gofr{
 		Logger: logger,
 		cmd:    cmdApp,
@@ -210,8 +211,17 @@ func NewCMD() *Gofr {
 		logger.Warnf("APP_NAME is not set.'%v' will be used in logs", pkg.DefaultAppName)
 	}
 
+	if cmdApp.healthCheckSvr.port, err = strconv.Atoi(c.Get("HEALTH_CHECK_PORT")); err != nil {
+		cmdApp.healthCheckSvr.port = defaultHealthCheckPort
+	}
+
 	if cmdApp.metricSvr.port, err = strconv.Atoi(c.Get("METRIC_PORT")); err != nil {
 		cmdApp.metricSvr.port = defaultMetricsPort
+	}
+
+	if route := c.Get("HEALTH_CHECK_ROUTE"); route != "" {
+		route = strings.TrimPrefix(route, "/")
+		cmdApp.healthCheckSvr.route = "/" + route
 	}
 
 	if route := c.Get("METRIC_ROUTE"); route != "" {

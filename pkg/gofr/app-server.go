@@ -49,8 +49,10 @@ type HTTP struct {
 }
 
 const (
-	defaultMetricsPort  = 2121
-	defaultMetricsRoute = "/metrics"
+	defaultMetricsPort      = 2121
+	defaultMetricsRoute     = "/metrics"
+	defaultHealthCheckPort  = 9191
+	defaultHealthCheckRoute = "/.well-known/health-check"
 )
 
 //nolint:revive // We do not want anyone using the struct without initialization steps.
