@@ -23,6 +23,16 @@ import (
 	awssns "developer.zopsmart.com/go/gofr/pkg/notifier/aws-sns"
 )
 
+// nolint:gochecknoglobals // adding global variables to register NewGaugeVec
+var (
+	frameworkInfo = prometheus.NewGaugeVec(prometheus.GaugeOpts{
+		Name: "zs_info",
+		Help: "Gauge to count the pods running for each service and framework version",
+	}, []string{"app", "framework"})
+
+	_ = prometheus.Register(frameworkInfo)
+)
+
 func New() (k *Gofr) {
 	var (
 		logger       = log.NewLogger()
@@ -67,11 +77,6 @@ func NewWithConfig(c Config) (k *Gofr) {
 		logger.Warnf("APP_NAME is not set.'%v' will be used in logs", pkg.DefaultAppName)
 	}
 
-	frameworkInfo := prometheus.NewGaugeVec(prometheus.GaugeOpts{
-		Name: "zs_info",
-		Help: "Gauge to count the pods running for each service and framework version",
-	}, []string{"app", "framework"})
-	_ = prometheus.Register(frameworkInfo)
 	frameworkInfo.WithLabelValues(appName+"-"+appVers, "gofr-"+log.GofrVersion).Set(1)
 
 	s := NewServer(c, gofr)
@@ -212,11 +217,6 @@ func NewCMD() *Gofr {
 		logger.Warnf("APP_NAME is not set.'%v' will be used in logs", pkg.DefaultAppName)
 	}
 
-	frameworkInfo := prometheus.NewGaugeVec(prometheus.GaugeOpts{
-		Name: "zs_info",
-		Help: "Gauge to count the pods running for each service and framework version",
-	}, []string{"app", "framework"})
-	_ = prometheus.Register(frameworkInfo)
 	frameworkInfo.WithLabelValues(appName+"-"+appVers, "gofr-"+log.GofrVersion).Set(1)
 
 	if cmdApp.metricSvr.port, err = strconv.Atoi(c.Get("METRIC_PORT")); err != nil {

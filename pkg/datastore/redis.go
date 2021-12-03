@@ -75,7 +75,7 @@ func NewRedis(logger log.Logger, config RedisConfig) (Redis, error) {
 
 	config.Options.Password = config.Password
 
-	// nolint:gosec // not en error
+	// nolint:gosec //  using TLS 1.0
 	// If SSL is enabled add TLS Config
 	if config.SSL {
 		config.Options.TLSConfig = &tls.Config{}

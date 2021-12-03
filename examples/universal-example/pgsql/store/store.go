@@ -25,10 +25,14 @@ func (e employee) Get(c *gofr.Context) ([]entity.Employee, error) {
 	employees := make([]entity.Employee, 0)
 
 	rows, err := c.DB().Query("SELECT * FROM employees")
-	if err != nil && rows.Err() != nil {
+	if err != nil {
 		return nil, errors.DB{Err: err}
 	}
-	defer rows.Close()
+
+	defer func() {
+		_ = rows.Err()
+		_ = rows.Close()
+	}()
 
 	for rows.Next() {
 		var employee entity.Employee

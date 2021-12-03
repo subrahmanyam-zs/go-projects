@@ -13,7 +13,6 @@ import (
 
 func TestRedirectHttps(t *testing.T) {
 	req, err := http.NewRequest(http.MethodGet, "/hello", http.NoBody)
-
 	if err != nil {
 		t.Fatal(err)
 	}

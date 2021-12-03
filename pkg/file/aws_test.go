@@ -87,7 +87,9 @@ func TestAws_push(t *testing.T) {
 	for i, tc := range tests {
 		l := newLocalFile(tc.cfg.fileName, tc.cfg.fileMode)
 		_ = l.Open()
+
 		err := tc.cfg.push(l.FD)
+
 		assert.IsType(t, tc.err, err, i)
 
 		_ = l.Close()

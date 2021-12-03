@@ -23,15 +23,15 @@ func TestIntegration(t *testing.T) {
 		expectedStatusCode int
 		body               []byte
 	}{
-		{http.MethodPost, "http://localhost:8080/publish", http.StatusCreated, []byte(`{"name": "GOFR", "message":  "hi"}`)},
-		{http.MethodGet, "http://localhost:8080/subscribe", http.StatusOK, nil},
+		{http.MethodPost, "publish", http.StatusCreated, []byte(`{"name": "GOFR", "message":  "hi"}`)},
+		{http.MethodGet, "subscribe", http.StatusOK, nil},
 	}
 
 	for i, tc := range tests {
 		tc := tc
 		i := i
 		t.Run(fmt.Sprintf("Test %v", i+1), func(t *testing.T) {
-			req, _ := request.NewMock(tc.method, tc.endpoint, nil)
+			req, _ := request.NewMock(tc.method, "http://localhost:8080/"+tc.endpoint, nil)
 			c := http.Client{}
 
 			resp, err := c.Do(req)
