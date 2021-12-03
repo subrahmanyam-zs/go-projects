@@ -1,10 +1,8 @@
 package gofr
 
 import (
-	"encoding/json"
 	"net/http"
 	"os"
-	"strconv"
 
 	"go.opencensus.io/trace"
 
@@ -45,7 +43,7 @@ func (app *cmdApp) Start(logger log.Logger) {
 	app.metricSvr.server = metricsServer(logger, app.metricSvr.port, app.metricSvr.route)
 
 	// start the health-check server
-	app.healthCheckSvr.server = app.healthCheckHandler(logger, app.healthCheckSvr.port, app.healthCheckSvr.route)
+	app.healthCheckSvr.server = healthCheckHandlerServer(app.context, app.healthCheckSvr.port, app.healthCheckSvr.route)
 
 	h := app.Router.handler(command)
 	if h == nil {
@@ -61,48 +59,4 @@ func (app *cmdApp) Start(logger log.Logger) {
 	}
 
 	app.tracingSpan.End()
-}
-
-func (app *cmdApp) healthCheckHandler(logger log.Logger, port int, route string) *http.Server {
-	mux := http.NewServeMux()
-	healthResp, err := HealthHandler(app.context)
-
-	mux.HandleFunc(route, func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application/json")
-
-		if err != nil {
-			logger.Error(err)
-
-			data, _ := json.Marshal(err)
-
-			_, err := w.Write(data)
-			if err != nil {
-				logger.Error(err)
-
-				return
-			}
-		} else {
-			data, _ := json.Marshal(healthResp)
-
-			_, err := w.Write(data)
-			if err != nil {
-				logger.Error(err)
-
-				return
-			}
-		}
-	})
-
-	var srv = &http.Server{Addr: ":" + strconv.Itoa(port), Handler: mux}
-
-	logger.Infof("Starting health-check server at :%v", port)
-
-	go func() {
-		err := srv.ListenAndServe()
-		if err != nil {
-			logger.Errorf("error in health-check server %v", err)
-		}
-	}()
-
-	return srv
 }
