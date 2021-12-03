@@ -71,25 +71,25 @@ func (app *cmdApp) healthCheckHandler(logger log.Logger, port int, route string)
 		w.Header().Set("Content-Type", "application/json")
 
 		if err != nil {
-			logger.Error(err)
+			logger.Debug(err)
 
-			data, _ := json.Marshal(err)
-
-			_, err := w.Write(data)
+			data, err := json.Marshal(err)
 			if err != nil {
-				logger.Error(err)
+				logger.Debug(err)
 
 				return
 			}
+
+			_, _ = w.Write(data)
 		} else {
-			data, _ := json.Marshal(healthResp)
-
-			_, err := w.Write(data)
+			data, err := json.Marshal(healthResp)
 			if err != nil {
-				logger.Error(err)
+				logger.Debug(err)
 
 				return
 			}
+
+			_, _ = w.Write(data)
 		}
 	})
 
