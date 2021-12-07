@@ -17,15 +17,15 @@ import (
 	"gorm.io/driver/sqlserver"
 	"gorm.io/gorm"
 
-	// used for concrete implementation of the database driver.
-	_ "github.com/lib/pq"
-
 	"github.com/XSAM/otelsql"
 	"github.com/jmoiron/sqlx"
 	"github.com/prometheus/client_golang/prometheus"
+	otelgorm "github.com/zopsmart/gorm-opentelemetry"
+
+	// used for concrete implementation of the database driver.
+	_ "github.com/lib/pq"
 
 	"developer.zopsmart.com/go/gofr/pkg"
-	"developer.zopsmart.com/go/gofr/pkg/datastore/otelgorm"
 	"developer.zopsmart.com/go/gofr/pkg/errors"
 	"developer.zopsmart.com/go/gofr/pkg/gofr/types"
 	"developer.zopsmart.com/go/gofr/pkg/log"
