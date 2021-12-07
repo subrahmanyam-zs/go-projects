@@ -8,17 +8,16 @@ import (
 	"strings"
 	"time"
 
+	"go.opencensus.io/trace"
+
+	"github.com/go-redis/redis/extra/rediscensus"
+	"github.com/go-redis/redis/v8"
 	"github.com/prometheus/client_golang/prometheus"
 
 	"developer.zopsmart.com/go/gofr/pkg"
 	"developer.zopsmart.com/go/gofr/pkg/gofr/types"
 	"developer.zopsmart.com/go/gofr/pkg/log"
 	"developer.zopsmart.com/go/gofr/pkg/middleware"
-	"go.opencensus.io/trace"
-
-	"github.com/go-redis/redis/extra/rediscensus"
-
-	"github.com/go-redis/redis/v8"
 )
 
 // Redis is an abstraction that embeds the UniversalClient from go-redis/redis
