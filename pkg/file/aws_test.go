@@ -75,8 +75,8 @@ func TestAws_push(t *testing.T) {
 		cfg *aws
 		err error
 	}{
-		{&aws{fileName: "aws.txt", fileMode: READWRITE, client: m, bucketName: "random-bucket"}, 
-		 &errors.Response{StatusCode: http.StatusInternalServerError, Code: "S3_ERROR", Reason: "Incorrect value for parameter: bucket"}},
+		{&aws{fileName: "aws.txt", fileMode: READWRITE, client: m, bucketName: "random-bucket"},
+			&errors.Response{StatusCode: http.StatusInternalServerError, Code: "S3_ERROR", Reason: "Incorrect value for parameter: bucket"}},
 		{&aws{fileName: "awstest.txt", fileMode: READ, client: m, bucketName: "test-bucket-zs"}, nil},
 	}
 

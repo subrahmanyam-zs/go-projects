@@ -2,7 +2,6 @@ package datastore
 
 import (
 	"database/sql"
-	"gorm.io/gorm/logger"
 	"io"
 	"testing"
 
@@ -10,6 +9,7 @@ import (
 
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
+	"gorm.io/gorm/logger"
 
 	"developer.zopsmart.com/go/gofr/pkg"
 	"developer.zopsmart.com/go/gofr/pkg/gofr/config"

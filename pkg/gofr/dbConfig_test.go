@@ -118,10 +118,10 @@ func Test_kafkaConfigFromEnv(t *testing.T) {
 	}
 	kafkaConfig := kafkaConfigFromEnv(&config.MockConfig{
 		Data: map[string]string{
-			"KAFKA_HOSTS": "Host:2008,Host:2009",
-			"KAFKA_TOPIC": "test-topics",
-			"APP_NAME":    "testing",
-			"APP_VERSION": "dev",
+			"KAFKA_HOSTS":              "Host:2008,Host:2009",
+			"KAFKA_TOPIC":              "test-topics",
+			"APP_NAME":                 "testing",
+			"APP_VERSION":              "dev",
 			"KAFKA_AUTOCOMMIT_DISABLE": "false",
 		},
 	})

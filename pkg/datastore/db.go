@@ -254,6 +254,8 @@ func formConnectionStr(config *DBConfig) string {
 	}
 }
 
+// HealthCheck pings the sql instance in gorm. If the ping does not return an error, the healthCheck status will be set to UP,
+// else the healthCheck status will be DOWN
 func (c GORMClient) HealthCheck() types.Health {
 	resp := types.Health{
 		Name:     pkg.SQL,
@@ -267,18 +269,18 @@ func (c GORMClient) HealthCheck() types.Health {
 		return resp
 	}
 
-	d, err := c.DB.DB()
+	sqlDB, err := c.DB.DB()
 	if err != nil {
 		return resp
 	}
 
-	err = d.Ping()
+	err = sqlDB.Ping()
 	if err != nil {
 		return resp
 	}
 
 	resp.Status = pkg.StatusUp
-	resp.Details = d.Stats()
+	resp.Details = sqlDB.Stats()
 
 	return resp
 }
