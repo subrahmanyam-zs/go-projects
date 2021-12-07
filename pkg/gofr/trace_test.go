@@ -4,10 +4,10 @@ import (
 	"io"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
+
 	"developer.zopsmart.com/go/gofr/pkg/gofr/config"
 	"developer.zopsmart.com/go/gofr/pkg/log"
-
-	"github.com/stretchr/testify/assert"
 )
 
 func TestTraceExporterSuccess(t *testing.T) {

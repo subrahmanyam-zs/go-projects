@@ -51,6 +51,7 @@ func (ds *DataStore) GORM() *gorm.DB {
 		if db.DB != nil {
 			ds.rdb.DB, err = db.DB.DB()
 			if err != nil {
+				ds.Logger.Warn(err)
 				return nil
 			}
 		}
@@ -94,6 +95,7 @@ func (ds *DataStore) DB() *SQLClient {
 	if db := ds.GORM(); db != nil {
 		dbg, err := ds.GORM().DB()
 		if err != nil {
+			ds.Logger.Warn(err)
 			return nil
 		}
 
@@ -125,6 +127,7 @@ func (ds *DataStore) SetORM(client interface{}) {
 		if v.DB != nil {
 			sqlDB, err := v.DB.DB()
 			if err != nil {
+				ds.Logger.Warn(err)
 				return
 			}
 

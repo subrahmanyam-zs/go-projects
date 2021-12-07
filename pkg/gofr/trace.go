@@ -4,9 +4,8 @@ import (
 	"context"
 	"strings"
 
-	"developer.zopsmart.com/go/gofr/pkg/log"
-
 	cloudtrace "github.com/GoogleCloudPlatform/opentelemetry-operations-go/exporter/trace"
+
 	"go.opentelemetry.io/collector/translator/conventions"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
@@ -15,6 +14,8 @@ import (
 	"go.opentelemetry.io/otel/propagation"
 	"go.opentelemetry.io/otel/sdk/resource"
 	"go.opentelemetry.io/otel/sdk/trace"
+
+	"developer.zopsmart.com/go/gofr/pkg/log"
 )
 
 type exporter struct {

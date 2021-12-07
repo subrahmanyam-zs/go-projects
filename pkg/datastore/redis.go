@@ -8,16 +8,16 @@ import (
 	"strings"
 	"time"
 
-	"developer.zopsmart.com/go/gofr/pkg"
-	"developer.zopsmart.com/go/gofr/pkg/gofr/types"
-	"developer.zopsmart.com/go/gofr/pkg/log"
-	"developer.zopsmart.com/go/gofr/pkg/middleware"
-
 	"github.com/go-redis/redis/extra/redisotel"
 	"github.com/go-redis/redis/v8"
 	"github.com/prometheus/client_golang/prometheus"
 
 	"go.opentelemetry.io/otel/trace"
+
+	"developer.zopsmart.com/go/gofr/pkg"
+	"developer.zopsmart.com/go/gofr/pkg/gofr/types"
+	"developer.zopsmart.com/go/gofr/pkg/log"
+	"developer.zopsmart.com/go/gofr/pkg/middleware"
 )
 
 // Redis is an abstraction that embeds the UniversalClient from go-redis/redis

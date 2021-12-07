@@ -57,6 +57,7 @@ func (c *Context) reset(w responder.Responder, r request.Request) {
 func (c *Context) Trace(name string) trace.Span {
 	tr := trace.SpanFromContext(c).TracerProvider().Tracer("gofr-context")
 	_, span := tr.Start(c.Context, name)
+
 	return span
 }
 
