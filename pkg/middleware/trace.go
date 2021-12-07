@@ -16,7 +16,7 @@ func Trace(appName, appVersion, tracerExporter string) func(inner http.Handler) 
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			ctx := r.Context()
 
-			cID, err := trace.TraceIDFromHex(getCorrelationID(r))
+			cID, err := trace.TraceIDFromHex(getCorr(r))
 			if err == nil {
 				ctx = trace.ContextWithSpanContext(ctx, trace.SpanContextFromContext(r.Context()).WithTraceID(cID))
 			}
@@ -35,12 +35,9 @@ func Trace(appName, appVersion, tracerExporter string) func(inner http.Handler) 
 	}
 }
 
-func getCorrelationID(r *http.Request) string {
+// getCorr is used to fetch the correlationID from request header.
+func getCorr(r *http.Request) string {
 	if id := r.Header.Get("X-Correlation-ID"); id != "" {
-		return id
-	}
-
-	if id := r.Header.Get("X-TRACE-Id"); id != "" {
 		return id
 	}
 

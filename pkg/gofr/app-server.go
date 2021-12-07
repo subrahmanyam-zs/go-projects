@@ -13,6 +13,8 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"golang.org/x/net/context"
 
+	"go.opentelemetry.io/otel/trace"
+
 	"developer.zopsmart.com/go/gofr/pkg/errors"
 	"developer.zopsmart.com/go/gofr/pkg/gofr/request"
 	"developer.zopsmart.com/go/gofr/pkg/gofr/responder"
@@ -233,8 +235,9 @@ func (s *server) contextInjector(inner http.Handler) http.Handler {
 		if correlationID == "" {
 			correlationID = r.Header.Get("X-B3-TraceID")
 		}
+
 		if correlationID == "" {
-			correlationID = trace.FromContext(r.Context()).SpanContext().TraceID.String()
+			correlationID = trace.SpanFromContext(r.Context()).SpanContext().TraceID().String()
 		}
 
 		c.Logger = log.NewCorrelationLogger(correlationID)
