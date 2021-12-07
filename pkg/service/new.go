@@ -167,7 +167,11 @@ func NewHTTPServiceWithOptions(resourceAddr string, logger log.Logger, options *
 }
 
 func (h *httpService) HealthCheck() types.Health {
-	if h.isHealthy {
+	h.mu.Lock()
+	isHealthy := h.isHealthy
+	h.mu.Unlock()
+	
+	if isHealthy {
 		return types.Health{
 			Name:   h.url,
 			Status: pkg.StatusUp,

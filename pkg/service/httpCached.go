@@ -130,7 +130,7 @@ func (c cachedHTTPService) getHeaders(ctx context.Context, headers map[string]st
 
 	if val := ctx.Value(middleware.CorrelationIDKey); val != nil {
 		correlationID, _ := val.(string)
-		headers["X-Correlation-Id"] = correlationID
+		headers["X-Correlation-ID"] = correlationID
 	}
 
 	if val := ctx.Value(middleware.ClientIPKey); val != nil {

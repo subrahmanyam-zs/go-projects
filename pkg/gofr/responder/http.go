@@ -36,6 +36,7 @@ type HTTP struct {
 // NewContextualResponder creates a HTTP responder which gives JSON/XML response based on context
 func NewContextualResponder(w http.ResponseWriter, r *http.Request) Responder {
 	route := mux.CurrentRoute(r)
+
 	var path string
 	if route != nil {
 		path, _ = route.GetPathTemplate()
@@ -43,7 +44,13 @@ func NewContextualResponder(w http.ResponseWriter, r *http.Request) Responder {
 		path = strings.TrimSuffix(path, "/")
 	}
 
-	correlationID := middleware.GetCorrelationID(r)
+	var correlationID string
+
+	val := r.Context().Value(middleware.CorrelationIDKey)
+	if val != nil {
+		correlationID = val.(string)
+	}
+
 	responder := &HTTP{
 		w:             w,
 		method:        r.Method,
@@ -65,7 +72,9 @@ func NewContextualResponder(w http.ResponseWriter, r *http.Request) Responder {
 }
 
 func (h HTTP) Respond(data interface{}, err error) {
-	h.w.Header().Set("X-Correlation-Id", h.correlationID)
+	// set correlation id in response
+	h.w.Header().Set("X-Correlation-ID", h.correlationID)
+
 	// if template is returned then everything is dictated by template
 	if d, ok := data.(template.Template); ok {
 		var b []byte

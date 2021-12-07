@@ -145,7 +145,7 @@ paths:
             type: string
             format: uuid
           example: 'good4more'
-        - name: x-correlation-ID
+        - name: X-Correlation-ID
           in: header
           schema:
             type: string
@@ -191,7 +191,7 @@ paths:
             type: string
             format: uuid
           example: 'good4more'
-        - name: x-correlation-ID
+        - name: X-Correlation-ID
           in: header
           schema:
             type: string

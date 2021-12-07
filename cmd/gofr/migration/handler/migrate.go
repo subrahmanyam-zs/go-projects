@@ -162,16 +162,18 @@ package main
 import (
 	"fmt"
 	"os"
-	"{{.ModuleName}}/migrations"
+
 	"developer.zopsmart.com/go/gofr/cmd/gofr/migration"
 	"developer.zopsmart.com/go/gofr/cmd/gofr/migration/dbMigration"
 	"developer.zopsmart.com/go/gofr/pkg/gofr"
+
+	"{{.ModuleName}}/migrations"
 )
 
 func main() {
 	k := gofr.New()
 	{{.Database}}	
-	
+
 	err := migration.Migrate("{{.ProjectName}}", db, {{.Migration}}, "{{.Method}}", k.Logger)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "%v", err)
