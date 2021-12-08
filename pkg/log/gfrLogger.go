@@ -46,6 +46,7 @@ func (a *appInfo) getAppData() appInfo {
 	return res
 }
 
+// nolint:gocognit // reducing the function length reduces readability
 // log does the actual logging. This function creates the entry message and outputs it in color format
 // in terminal context and gives out json in non terminal context. Also, sends to echo if client is present.
 func (k *logger) log(level level, format string, args ...interface{}) {

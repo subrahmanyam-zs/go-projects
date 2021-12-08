@@ -97,7 +97,8 @@ func (g *GORM) isDirty(app string) bool {
 
 func (g *GORM) postRun(app, method, name string) error {
 	// finish the migration
-	err := g.txn.Table("gofr_migrations").Where("app = ? AND version = ? AND method = ?", app, name, method).Update(`end_time`, time.Now()).Error
+	err := g.txn.Table("gofr_migrations").Where("app = ? AND version = ? AND method = ?", app,
+		name, method).Update(`end_time`, time.Now()).Error
 
 	return err
 }

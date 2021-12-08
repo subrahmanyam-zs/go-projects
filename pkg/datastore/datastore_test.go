@@ -123,7 +123,7 @@ func TestDataStore_SQLX(t *testing.T) {
 	}
 }
 
-// TestDataStore_DB tests the behaviour of ds.DB() when DB connection is not established.
+// TestDataStore_DB tests the behavior of ds.DB() when DB connection is not established.
 // It tests, whether it will panic or throw error. For example when /.well-known/health-check api pings DB for its status
 // it shouldn't panic if the DB connection is not established.
 func TestDataStore_DB(t *testing.T) {

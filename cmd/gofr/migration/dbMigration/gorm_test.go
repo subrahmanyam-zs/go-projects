@@ -34,7 +34,9 @@ func initTests() *GORM {
 func Test_Run(t *testing.T) {
 	g := initTests()
 
-	defer g.db.Migrator().DropTable("gofr_migrations")
+	defer func() {
+		_ = g.db.Migrator().DropTable("gofr_migrations")
+	}()
 
 	tests := []struct {
 		desc   string
@@ -59,7 +61,10 @@ func Test_preRun(t *testing.T) {
 	g.txn = g.db.Begin()
 
 	createTable(t, g.db)
-	defer g.txn.Migrator().DropTable("gofr_migrations")
+
+	defer func() {
+		_ = g.txn.Migrator().DropTable("gofr_migrations")
+	}()
 
 	insertMigration(t, g.txn, &gofrMigration{App: "gofr-app", Version: int64(20180324120906), StartTime: now, EndTime: now, Method: "UP"})
 
@@ -91,7 +96,10 @@ func Test_isDirty(t *testing.T) {
 	expErr := &errors.Response{Reason: "dirty migration check failed"}
 
 	createTable(t, g.db)
-	defer g.db.Migrator().DropTable("gofr_migrations")
+
+	defer func() {
+		_ = g.db.Migrator().DropTable("gofr_migrations")
+	}()
 
 	insertMigration(t, g.db, &gofrMigration{App: "gofr-app", Version: int64(20180324120906), StartTime: time.Now().UTC(), Method: "UP"})
 
@@ -107,7 +115,10 @@ func Test_LastRunVersion(t *testing.T) {
 	expLastVersion := 20180324120906
 
 	createTable(t, g.db)
-	defer g.db.Migrator().DropTable("gofr_migrations")
+
+	defer func() {
+		_ = g.db.Migrator().DropTable("gofr_migrations")
+	}()
 
 	insertMigration(t, g.db, &gofrMigration{App: "gofr-app", Version: int64(20180324120906), StartTime: now, EndTime: now, Method: "UP"})
 
@@ -123,7 +134,10 @@ func Test_GetAllMigrations(t *testing.T) {
 	desc := "get all migrations"
 
 	createTable(t, g.db)
-	defer g.db.Migrator().DropTable("gofr_migrations")
+
+	defer func() {
+		_ = g.db.Migrator().DropTable("gofr_migrations")
+	}()
 
 	insertMigration(t, g.db, &gofrMigration{App: "gofr-app", Version: int64(20180324120906), StartTime: now, EndTime: now, Method: "UP"})
 	insertMigration(t, g.db, &gofrMigration{App: "gofr-app", Version: int64(20180324120906), StartTime: now, EndTime: now, Method: "DOWN"})
@@ -141,7 +155,10 @@ func Test_GetAllMigrationsError(t *testing.T) {
 	g := initTests()
 
 	createMockTable(t, g.db)
-	defer g.db.Migrator().DropTable("gofr_migrations")
+
+	defer func() {
+		_ = g.db.Migrator().DropTable("gofr_migrations")
+	}()
 
 	up, down := g.GetAllMigrations("gofr-app")
 

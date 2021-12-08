@@ -158,19 +158,19 @@ func (ds *DataStore) SQLXHealthCheck() types.Health {
 }
 
 // CQLHealthCheck performs a query operation on the cql instance. If the operation does not return an error, the healthCheck
-//status will be set to UP, else the healthCheck status will be DOWN.
+// status will be set to UP, else the healthCheck status will be DOWN.
 func (ds *DataStore) CQLHealthCheck() types.Health {
 	return ds.Cassandra.HealthCheck()
 }
 
 // YCQLHealthCheck performs a query operation on the cql instance. If the operation does not return an error, the healthCheck
-//status will be set to UP, else the healthCheck status will be DOWN.
+// status will be set to UP, else the healthCheck status will be DOWN.
 func (ds *DataStore) YCQLHealthCheck() types.Health {
 	return ds.YCQL.HealthCheck()
 }
 
 // ElasticsearchHealthCheck pings the Elasticsearch instance. If the ping does not return an error,
-//the healthCheck status will be set to UP, else the healthCheck status will be DOWN
+// the healthCheck status will be set to UP, else the healthCheck status will be DOWN
 func (ds *DataStore) ElasticsearchHealthCheck() types.Health {
 	return ds.Elasticsearch.HealthCheck()
 }

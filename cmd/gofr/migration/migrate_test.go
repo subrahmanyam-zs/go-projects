@@ -180,7 +180,9 @@ func TestMySQL_Migration(t *testing.T) {
 		Dialect:  "mysql",
 	})
 
-	defer mysql.Migrator().DropTable("gofr_migrations")
+	defer func() {
+		_ = mysql.Migrator().DropTable("gofr_migrations")
+	}()
 
 	testcases := []struct {
 		method     string
@@ -275,7 +277,9 @@ func Test_MigrateCheck(t *testing.T) {
 		Dialect:  "mysql",
 	})
 
-	defer mysql.Migrator().DropTable("gofr_migrations")
+	defer func() {
+		_ = mysql.Migrator().DropTable("gofr_migrations")
+	}()
 
 	migrations := map[string]dbmigration.Migrator{"20200324150906": K20200324150906{},
 		"20200324120906": K20200324120906{},
@@ -339,8 +343,8 @@ func Test_DirtyTest(t *testing.T) {
 	_ = cassandra.Session.Query(migrationTableSchema).Exec()
 	_ = cassandra.Session.Query("insert into gofr_migrations (app, version, start_time, method, end_time) " +
 		"values ('testing', 12, dateof(now()), 'UP', '')").Exec()
+	_ = mysql.Migrator().CreateTable(&gofrMigration{})
 
-	mysql.Migrator().CreateTable(&gofrMigration{})
 	mysql.Create(&gofrMigration{App: "testing", Method: "UP", Version: 20000102121212, StartTime: time.Now()})
 
 	ctx := context.Background()

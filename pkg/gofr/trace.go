@@ -20,8 +20,6 @@ import (
 
 type exporter struct {
 	name    string
-	host    string
-	port    string
 	url     string
 	appName string
 }
