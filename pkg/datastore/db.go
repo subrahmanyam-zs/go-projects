@@ -3,7 +3,6 @@ package datastore
 import (
 	"database/sql"
 	"fmt"
-	"gorm.io/gorm/logger"
 	"os"
 	"strings"
 	"time"
@@ -16,6 +15,7 @@ import (
 	"gorm.io/driver/sqlite"
 	"gorm.io/driver/sqlserver"
 	"gorm.io/gorm"
+	"gorm.io/gorm/logger"
 
 	"github.com/XSAM/otelsql"
 	"github.com/jmoiron/sqlx"
@@ -131,56 +131,47 @@ func NewORM(config *DBConfig) (GORMClient, error) {
 
 	connectionStr := formConnectionStr(config)
 
+	var (
+		db  *gorm.DB
+		err error
+	)
+
+	driverName := getDriverName(config.Dialect)
+
 	switch config.Dialect {
-	case "mysql":
-		// adding &gorm.Config{Logger: logger.Default.LogMode(logger.Silent)} will Silent the default gorm logger.
-		db, err := gorm.Open(mysql.Open(connectionStr), &gorm.Config{Logger: logger.Default.LogMode(logger.Silent)})
+	case mySQL:
+		dialector := mysql.New(mysql.Config{DriverName: driverName, DSN: connectionStr})
+
+		db, err = dbConnection(dialector)
 		if err != nil {
 			return GORMClient{config: config}, err
 		}
 
-		return GORMClient{DB: db, config: config}, err
+	case pgSQL:
+		dialector := postgres.New(postgres.Config{DriverName: driverName, DSN: connectionStr})
 
-	case "postgres":
-		driverName, err := otelsql.Register(config.Dialect, semconv.DBSystemPostgreSQL.Value.AsString())
+		db, err = dbConnection(dialector)
 		if err != nil {
 			return GORMClient{config: config}, err
 		}
 
-		db, err := gorm.Open(postgres.New(postgres.Config{DriverName: driverName, DSN: connectionStr}), &gorm.Config{Logger: logger.Default.LogMode(logger.Silent)})
-		if err != nil {
-			return GORMClient{config: config}, err
-		}
-
-		opts := otelgorm.WithTracerProvider(otel.GetTracerProvider())
-		plugin := otelgorm.NewPlugin(opts)
-
-		err = db.Use(plugin)
-		if err != nil {
-			panic("failed configuring plugin")
-		}
-
-		return GORMClient{DB: db, config: config}, err
 	case "sqlite":
-		db, err := gorm.Open(sqlite.Open(connectionStr), &gorm.Config{Logger: logger.Default.LogMode(logger.Silent)})
+		dialector := sqlite.Dialector{DriverName: driverName, DSN: connectionStr}
+
+		db, err = dbConnection(dialector)
 		if err != nil {
 			return GORMClient{config: config}, err
 		}
 
-		if err := db.Use(otelgorm.NewPlugin()); err != nil {
-			panic(err)
+	case msSQL:
+		dialector := sqlserver.New(sqlserver.Config{DriverName: driverName, DSN: connectionStr})
+
+		db, err = dbConnection(dialector)
+		if err != nil {
+			return GORMClient{config: config}, err
 		}
-
-		return GORMClient{DB: db, config: config}, err
-	}
-
-	if config.Dialect != "sqlserver" {
+	default:
 		return GORMClient{config: config}, errors.DB{}
-	}
-
-	db, err := gorm.Open(sqlserver.Open(connectionStr), &gorm.Config{Logger: logger.Default.LogMode(logger.Silent)})
-	if err != nil {
-		return GORMClient{config: config}, err
 	}
 
 	sqlDB, _ := db.DB()
@@ -284,6 +275,7 @@ func (c GORMClient) HealthCheck() types.Health {
 
 	return resp
 }
+
 func (c SQLXClient) HealthCheck() types.Health {
 	resp := types.Health{
 		Name:     pkg.SQL,
@@ -303,5 +295,33 @@ func (c SQLXClient) HealthCheck() types.Health {
 
 	resp.Status = pkg.StatusUp
 	resp.Details = c.DB.Stats()
+
 	return resp
+}
+
+// dbConnection will establish a dbConnection based on the gorm.Dialector passed and returns a gorm.DB instance
+func dbConnection(dialector gorm.Dialector) (db *gorm.DB, err error) {
+	// adding &gorm.Config{Logger: logger.Default.LogMode(logger.Silent)} will Silent the default gorm logger.
+	db, err = gorm.Open(dialector, &gorm.Config{Logger: logger.Default.LogMode(logger.Silent)})
+	if err != nil {
+		return
+	}
+
+	opts := otelgorm.WithTracerProvider(otel.GetTracerProvider())
+	plugin := otelgorm.NewPlugin(opts)
+
+	_ = db.Use(plugin)
+
+	return
+}
+
+// getDriverName returns driverName based on the db Dialect.
+func getDriverName(dialect string) (driverName string) {
+	if dialect == pgSQL {
+		driverName, _ = otelsql.Register(dialect, semconv.DBSystemPostgreSQL.Value.AsString())
+	} else {
+		driverName, _ = otelsql.Register(dialect, dialect)
+	}
+
+	return
 }
