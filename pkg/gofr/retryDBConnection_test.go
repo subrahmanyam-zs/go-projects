@@ -147,7 +147,9 @@ func Test_ormRetry(t *testing.T) {
 
 	ormRetry(&dc, &k)
 
-	if k.GORM() == nil || (k.GORM() != nil && k.GORM().DB().Ping() != nil) {
+	sqlDB, _ := k.GORM().DB()
+
+	if k.GORM() == nil || (k.GORM() != nil && sqlDB.Ping() != nil) {
 		t.Errorf("FAILED, expected: Orm initialized successfully, got: orm initialization failed")
 	}
 }
