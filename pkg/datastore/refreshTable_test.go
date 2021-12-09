@@ -9,6 +9,7 @@ import (
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/dynamodb"
+	"github.com/stretchr/testify/assert"
 
 	"developer.zopsmart.com/go/gofr/pkg/gofr/config"
 	"developer.zopsmart.com/go/gofr/pkg/log"
@@ -299,17 +300,37 @@ func TestForeignKey(t *testing.T) {
 		c.Get("MSSQL_PASSWORD"), c.Get("MSSQL_DB_NAME"),
 		c.Get("MSSQL_PORT"), "mssql", "", "", "", "", 30}
 
-	db, _ := NewORM(&msSQLConf)
-
-	_ = db.Exec("DROP TABLE IF EXISTS store_employee")
-	_ = db.Exec("CREATE table store_employee (store_id int, employee_id int, CONSTRAINT store_employee_1 FOREIGN KEY " +
-		"(store_id) REFERENCES store	(id), CONSTRAINT store_employee_2 FOREIGN KEY (employee_id) REFERENCES employee	(id) )")
-
-	defer func() {
-		_ = db.Exec("DROP TABLE IF EXISTS store_employee")
-	}()
+	db, err := NewORM(&msSQLConf)
+	assert.NoError(t, err)
 
 	d := DataStore{ORM: db}
+
+	// table with Primary Key
+	_, err = d.DB().Exec("DROP TABLE IF EXISTS store")
+	assert.NoError(t, err)
+
+	_, err = d.DB().Exec("CREATE TABLE store(id int not null PRIMARY KEY, name varchar(20))")
+	assert.NoError(t, err)
+
+	_, err = d.DB().Exec("DROP TABLE IF EXISTS employee")
+	assert.NoError(t, err)
+
+	// table with Identity Column
+	_, err = d.DB().Exec("CREATE TABLE employee(id int PRIMARY KEY IDENTITY, name varchar(20))")
+	assert.NoError(t, err)
+
+	err = db.Exec("DROP TABLE IF EXISTS store_employee").Error
+	assert.NoError(t, err)
+
+	err = db.Exec("CREATE table store_employee (store_id int, employee_id int, CONSTRAINT store_employee_1 FOREIGN KEY " +
+		"(store_id) REFERENCES store (id), CONSTRAINT store_employee_2 FOREIGN KEY (employee_id) REFERENCES employee (id) )").Error
+	assert.NoError(t, err)
+
+	defer func() {
+		_ = db.Exec("DROP TABLE IF EXISTS store")
+		_ = db.Exec("DROP TABLE IF EXISTS employee")
+		_ = db.Exec("DROP TABLE IF EXISTS store_employee")
+	}()
 
 	path, _ := os.Getwd()
 	s := NewSeeder(&d, path)
@@ -321,7 +342,7 @@ func TestForeignKey(t *testing.T) {
 
 	// expecting 0 errors
 	if tester.TotalErrors != 0 {
-		t.Error("Test Data seeding failed")
+		t.Errorf("Test Data seeding failed. Got %v, expected 0", tester.TotalErrors)
 	}
 }
 

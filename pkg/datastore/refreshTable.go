@@ -80,7 +80,7 @@ func (d *Seeder) populateTable(t tester, tableName string, records [][]string) {
 	// this indicates if a table has identity column or not
 	identityInsert := false
 
-	if d.dialect == msSQL {
+	if d.dialect == "sqlserver" {
 		identityInsert, err = getIdentityInsert(txn, tableName)
 		if err != nil {
 			_ = txn.Rollback()
@@ -153,9 +153,10 @@ func (d *Seeder) resetIdentitySequence(t tester, tableName string, beforeTransac
 // values to the identity columns
 func getIdentityInsert(txn *gorm.DB, tableName string) (bool, error) {
 	var name string
+
 	// query the information schema to identify if the tables has an identity
 	_ = txn.Raw(`SELECT TABLE_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE 
-		COLUMNPROPERTY(object_id(TABLE_SCHEMA+'.'+TABLE_NAME), COLUMN_NAME, 'IsIdentity') = 1 AND TABLE_NAME = ?`, tableName).Scan(&name)
+		COLUMNPROPERTY(object_id(TABLE_SCHEMA+'.'+TABLE_NAME), COLUMN_NAME, 'IsIdentity') = 1 ORDER BY TABLE_NAME`).Scan(&name)
 
 	identityInsert := false
 
