@@ -11,15 +11,17 @@ import (
 )
 
 func TestTraceExporterSuccess(t *testing.T) {
+	logger := log.NewMockLogger(io.Discard)
+	cfg := config.NewGoDotEnvProvider(logger, "../../configs")
 	testcases := struct {
 		// exporter input
-		name    string
-		host    string
-		port    string
-		appName string
-	}{"zipkin", "localhost", "2005", "gofr"}
+		exporter string
+		host     string
+		port     string
+		appName  string
+	}{cfg.Get("TRACER_EXPORTER"), cfg.Get("TRACER_HOST"), cfg.Get("TRACER_PORT"), "gofr"}
 
-	tp := TraceProvider(testcases.appName, testcases.name, testcases.host, testcases.port, log.NewMockLogger(io.Discard), &config.MockConfig{})
+	tp := TraceProvider(testcases.appName, testcases.exporter, testcases.host, testcases.port, logger, cfg)
 
 	assert.NotNil(t, tp, "Failed.\tExpected NotNil Got Nil")
 }
@@ -27,10 +29,10 @@ func TestTraceExporterSuccess(t *testing.T) {
 func TestTraceExporterFailure(t *testing.T) {
 	testcases := []struct {
 		// exporter input
-		name    string
-		host    string
-		port    string
-		appName string
+		exporter string
+		host     string
+		port     string
+		appName  string
 	}{
 		{"not zipkin", "localhost", "2005", "gofr"},
 		{"zipkin", "localhost", "asd", "gofr"},
@@ -38,7 +40,7 @@ func TestTraceExporterFailure(t *testing.T) {
 	}
 
 	for _, v := range testcases {
-		tp := TraceProvider(v.appName, v.name, v.host, v.port, log.NewMockLogger(io.Discard), &config.MockConfig{})
+		tp := TraceProvider(v.appName, v.exporter, v.host, v.port, log.NewMockLogger(io.Discard), &config.MockConfig{})
 
 		assert.Nil(t, tp, "Failed.\tExpected Nil Got NotNil")
 	}
