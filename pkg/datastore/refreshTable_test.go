@@ -78,7 +78,7 @@ func createTestTable(d *DataStore) error {
 	var createTableQuery string
 
 	switch d.GORM().Dialector.Name() {
-	case msSQL:
+	case "sqlserver":
 		createTableMSSQL(d)
 	case pgSQL:
 		createTableQuery = "CREATE TABLE store(id SERIAL PRIMARY KEY, name varchar(20))"
@@ -131,16 +131,16 @@ func Test_RefreshTablesAndVersionCheck(t *testing.T) {
 		rows      int
 	}{
 		{"store", "wrong",
-			DBConfig{os.Getenv("DB_HOST"), os.Getenv("DB_USER"),
-				os.Getenv("DB_PASSWORD"), os.Getenv("DB_NAME"), os.Getenv("DB_PORT"),
+			DBConfig{c.Get("DB_HOST"), c.Get("DB_USER"),
+				c.Get("DB_PASSWORD"), c.Get("DB_NAME"), c.Get("DB_PORT"),
 				"mysql", "", "", "", "", 30}, 5,
 		},
 		{"store", "incorrect", msSQLConf, 5},
 		{"student", "incorrect", msSQLConf, 2},
 		{"employee", "incorrect", msSQLConf, 3},
 		{"store", "incorrect",
-			DBConfig{os.Getenv("PGSQL_HOST"), os.Getenv("PGSQL_USER"),
-				os.Getenv("PGSQL_PASSWORD"), os.Getenv("PGSQL_DB_NAME"), os.Getenv("PGSQL_PORT"),
+			DBConfig{c.Get("PGSQL_HOST"), c.Get("PGSQL_USER"),
+				c.Get("PGSQL_PASSWORD"), c.Get("PGSQL_DB_NAME"), c.Get("PGSQL_PORT"),
 				"postgres", "", "", "", "", 30}, 5,
 		},
 	}
@@ -641,7 +641,7 @@ func TestSeeder_resetIdentitySequence(t *testing.T) {
 			Password: c.Get("MSSQL_PASSWORD"),
 			Database: c.Get("MSSQL_DB_NAME"),
 			Port:     c.Get("MSSQL_PORT"),
-			Dialect:  msSQL,
+			Dialect:  "mssql",
 		}, `IF NOT EXISTS
 	(  SELECT [name]
 		FROM sys.tables

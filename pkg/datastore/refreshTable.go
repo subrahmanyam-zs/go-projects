@@ -19,7 +19,7 @@ import (
 )
 
 const (
-	msSQL = "mssql"
+	msSQL = "sqlserver"
 	mySQL = "mysql"
 	pgSQL = "postgres"
 )
@@ -80,7 +80,7 @@ func (d *Seeder) populateTable(t tester, tableName string, records [][]string) {
 	// this indicates if a table has identity column or not
 	identityInsert := false
 
-	if d.dialect == "sqlserver" {
+	if d.dialect == msSQL {
 		identityInsert, err = getIdentityInsert(txn, tableName)
 		if err != nil {
 			_ = txn.Rollback()

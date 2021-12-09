@@ -163,7 +163,7 @@ func NewORM(config *DBConfig) (GORMClient, error) {
 			return GORMClient{config: config}, err
 		}
 
-	case msSQL:
+	case "mssql":
 		dialector := sqlserver.New(sqlserver.Config{DriverName: driverName, DSN: connectionStr})
 
 		db, err = dbConnection(dialector)
