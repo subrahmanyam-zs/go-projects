@@ -78,7 +78,7 @@ func createTestTable(d *DataStore) error {
 	var createTableQuery string
 
 	switch d.GORM().Dialector.Name() {
-	case "sqlserver":
+	case msSQL:
 		createTableMSSQL(d)
 	case pgSQL:
 		createTableQuery = "CREATE TABLE store(id SERIAL PRIMARY KEY, name varchar(20))"

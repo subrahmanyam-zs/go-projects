@@ -12,6 +12,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/assert"
+
 	dbmigration "developer.zopsmart.com/go/gofr/cmd/gofr/migration/dbMigration"
 	"developer.zopsmart.com/go/gofr/pkg/datastore"
 	"developer.zopsmart.com/go/gofr/pkg/errors"
@@ -302,7 +304,7 @@ func Test_MigrateCheck(t *testing.T) {
 type gofrMigration struct {
 	App       string    `gorm:"primary_key"`
 	Version   int64     `gorm:"primary_key;auto_increment:false"`
-	StartTime time.Time `gorm:"default:CURRENT_TIMESTAMP"`
+	StartTime time.Time `gorm:"type:DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP"`
 	EndTime   time.Time `gorm:"default:NULL"`
 	Method    string    `gorm:"primary_key"`
 }
@@ -343,7 +345,9 @@ func Test_DirtyTest(t *testing.T) {
 	_ = cassandra.Session.Query(migrationTableSchema).Exec()
 	_ = cassandra.Session.Query("insert into gofr_migrations (app, version, start_time, method, end_time) " +
 		"values ('testing', 12, dateof(now()), 'UP', '')").Exec()
-	_ = mysql.Migrator().CreateTable(&gofrMigration{})
+
+	err := mysql.Migrator().CreateTable(&gofrMigration{})
+	assert.NoError(t, err)
 
 	mysql.Create(&gofrMigration{App: "testing", Method: "UP", Version: 20000102121212, StartTime: time.Now()})
 
