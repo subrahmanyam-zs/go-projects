@@ -247,7 +247,7 @@ func (h *httpService) setHeadersFromContext(ctx context.Context, req *http.Reque
 	// add all the mandatory headers to the request
 	if val := ctx.Value(middleware.CorrelationIDKey); val != nil {
 		correlationID, _ := val.(string)
-		req.Header.Add("X-Correlation-Id", correlationID)
+		req.Header.Add("X-Correlation-ID", correlationID)
 	}
 
 	if val := ctx.Value(middleware.ClientIPKey); val != nil {

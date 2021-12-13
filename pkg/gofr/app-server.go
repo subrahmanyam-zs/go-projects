@@ -222,9 +222,9 @@ func (s *server) contextInjector(inner http.Handler) http.Handler {
 		c.Context = r.Context()
 		*r = *r.WithContext(ctx.WithValue(c.Context, gofrContextkey, c))
 
-		correlationID := r.Header.Get("X-Correlation-Id")
+		correlationID := r.Header.Get("X-Correlation-ID")
 		if correlationID == "" {
-			correlationID = r.Header.Get("X-B3-TraceId")
+			correlationID = r.Header.Get("X-B3-TraceID")
 		}
 		if correlationID == "" {
 			correlationID = trace.FromContext(r.Context()).SpanContext().TraceID.String()

@@ -93,12 +93,7 @@ func PrometheusMiddleware(next http.Handler) http.Handler {
 		}(srw, r)
 
 		// set system stats
-		s := getSystemStats()
-		goRoutines.WithLabelValues().Set(s.numGoRoutines)
-		alloc.WithLabelValues().Set(s.alloc)
-		totalAlloc.WithLabelValues().Set(s.totalAlloc)
-		sys.WithLabelValues().Set(s.sys)
-		numGC.WithLabelValues().Set(s.numGC)
+		PushSystemStats()
 
 		next.ServeHTTP(srw, r)
 	})
@@ -128,6 +123,17 @@ func getSystemStats() systemStats {
 	s.sys = float64(m.Sys)
 
 	return s
+}
+
+// PushSystemStats push metrics for system stats
+func PushSystemStats() {
+	s := getSystemStats()
+
+	goRoutines.WithLabelValues().Set(s.numGoRoutines)
+	alloc.WithLabelValues().Set(s.alloc)
+	totalAlloc.WithLabelValues().Set(s.totalAlloc)
+	sys.WithLabelValues().Set(s.sys)
+	numGC.WithLabelValues().Set(s.numGC)
 }
 
 func PushDeprecatedFeature(featureName string) {

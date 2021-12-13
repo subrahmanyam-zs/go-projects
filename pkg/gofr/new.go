@@ -6,6 +6,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"time"
 
 	"go.opencensus.io/trace"
 
@@ -20,10 +21,11 @@ import (
 	"developer.zopsmart.com/go/gofr/pkg/gofr/request"
 	"developer.zopsmart.com/go/gofr/pkg/gofr/responder"
 	"developer.zopsmart.com/go/gofr/pkg/log"
+	"developer.zopsmart.com/go/gofr/pkg/middleware"
 	awssns "developer.zopsmart.com/go/gofr/pkg/notifier/aws-sns"
 )
 
-// nolint:gochecknoglobals // adding global variables to register NewGaugeVec
+// nolint:gochecknoglobals // need to declare global variable to push metrics
 var (
 	frameworkInfo = prometheus.NewGaugeVec(prometheus.GaugeOpts{
 		Name: "zs_info",
@@ -218,6 +220,16 @@ func NewCMD() *Gofr {
 	}
 
 	frameworkInfo.WithLabelValues(appName+"-"+appVers, "gofr-"+log.GofrVersion).Set(1)
+
+	go func() {
+		const pushDuration = 10
+
+		for {
+			middleware.PushSystemStats()
+
+			time.Sleep(time.Second * pushDuration)
+		}
+	}()
 
 	if cmdApp.metricSvr.port, err = strconv.Atoi(c.Get("METRIC_PORT")); err != nil {
 		cmdApp.metricSvr.port = defaultMetricsPort

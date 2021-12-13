@@ -118,9 +118,9 @@ func Logging(logger logger, omitHeaders string) func(inner http.Handler) http.Ha
 }
 
 func getCorrelationID(r *http.Request) string {
-	correlationID := r.Header.Get("X-Correlation-Id")
+	correlationID := r.Header.Get("X-Correlation-ID")
 	if correlationID == "" {
-		correlationID = r.Header.Get("X-B3-TraceId")
+		correlationID = r.Header.Get("X-B3-TraceID")
 	}
 
 	if correlationID == "" {

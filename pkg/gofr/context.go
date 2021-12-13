@@ -33,7 +33,7 @@ type Context struct {
 func NewContext(w responder.Responder, r request.Request, k *Gofr) *Context {
 	var cID string
 	if r != nil {
-		cID = r.Header("X-Correlation-Id")
+		cID = r.Header("X-Correlation-ID")
 	}
 
 	return &Context{
