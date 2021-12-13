@@ -107,7 +107,8 @@ jobs:
 
       - name: Set up MySQL
         run: |
-          sudo /etc/init.d/mysql start
+          sudo apt-get install mysql-server
+          service mysql start
           mysql -e 'CREATE DATABASE test;' -uroot -proot
 
       - name: Load Schema of YCQL
