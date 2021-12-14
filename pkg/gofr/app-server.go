@@ -150,6 +150,16 @@ func (s *server) Start(logger log.Logger) {
 	s.Router.Use(s.contextInjector)
 	// Catch all route to ensure middleware are run for 404 routes - limitation of gorilla mux router
 	s.Router.CatchAllRoute(func(c *Context) (i interface{}, err error) {
+		// adding extra space to find exact route from routes string.
+		path := fmt.Sprintf("%s ", c.Request().URL.Path)
+		if strings.Contains(fmt.Sprint(s.Router), path) {
+			return nil, &errors.Response{
+				StatusCode: http.StatusMethodNotAllowed,
+				Code:       "Invalid Method",
+				Reason:     fmt.Sprintf("%v method not allowed for Route %v", c.Request().Method, c.req),
+			}
+		}
+
 		return nil, &errors.Response{StatusCode: http.StatusNotFound, Code: "Invalid Route", Reason: fmt.Sprintf("Route %v not found", c.req)}
 	})
 
