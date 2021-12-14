@@ -114,9 +114,14 @@ func (g *GORM) LastRunVersion(app, method string) (lv int) {
 
 func (g *GORM) GetAllMigrations(app string) (upMigration, downMigration []int) {
 	rows, err := g.db.Table("gofr_migrations").Where("app = ?", app).Select("version, method").Rows()
-	if err != nil || rows.Err() != nil {
+	if err != nil {
 		return nil, nil
 	}
+
+	defer func() {
+		_ = rows.Err()
+		_ = rows.Close()
+	}()
 
 	defer rows.Close()
 
