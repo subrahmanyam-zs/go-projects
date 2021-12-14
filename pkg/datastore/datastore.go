@@ -152,7 +152,6 @@ func (ds *DataStore) SQLHealthCheck() types.Health {
 
 // SQLXHealthCheck pings the sqlx instance. If the ping does not return an error, the healthCheck status will be set to UP,
 // else the healthCheck status will be DOWN.
-
 func (ds *DataStore) SQLXHealthCheck() types.Health {
 	return ds.sqlx.HealthCheck()
 }

@@ -2,7 +2,6 @@ package gofr
 
 import (
 	"io"
-	"io/ioutil"
 	"strconv"
 	"testing"
 
@@ -147,10 +146,13 @@ func Test_ormRetry(t *testing.T) {
 
 	ormRetry(&dc, &k)
 
-	sqlDB, _ := k.GORM().DB()
+	sqlDB, err := k.GORM().DB()
 
-	if k.GORM() == nil || (k.GORM() != nil && sqlDB.Ping() != nil) {
-		t.Errorf("FAILED, expected: Orm initialized successfully, got: orm initialization failed")
+	assert.NoError(t, err, "FAILED, expected: Orm initialized successfully, got: orm initialization failed")
+
+	err = sqlDB.Ping()
+	if err != nil {
+		assert.NoError(t, err, "FAILED, expected: Orm initialized successfully, got: orm initialization failed")
 	}
 }
 
@@ -222,7 +224,7 @@ func Test_AWSSNSRetry(t *testing.T) {
 
 	var k Gofr
 
-	logger := log.NewMockLogger(ioutil.Discard)
+	logger := log.NewMockLogger(io.Discard)
 	c := config.NewGoDotEnvProvider(logger, "../../configs")
 	awsSNSConfig := awsSNSConfigFromEnv(c)
 

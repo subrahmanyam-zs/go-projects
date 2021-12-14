@@ -5,7 +5,6 @@ import (
 	"encoding/csv"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"strconv"
 	"strings"
@@ -151,11 +150,11 @@ func (d *Seeder) resetIdentitySequence(t tester, tableName string, beforeTransac
 
 // getIdentityInsert checks if the MSSQL table has an identity column, if yes, it will turn IDENTITY_INSERT to ON in order to insert
 // values to the identity columns
-func getIdentityInsert(txn *gorm.DB, tableName string) (bool, error) {
+func getIdentityInsert(db *gorm.DB, tableName string) (bool, error) {
 	var name string
 
 	// query the information schema to identify if the tables has an identity
-	_ = txn.Raw(`SELECT TABLE_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE 
+	_ = db.Raw(`SELECT TABLE_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE 
 		COLUMNPROPERTY(object_id(TABLE_SCHEMA+'.'+TABLE_NAME), COLUMN_NAME, 'IsIdentity') = 1 ORDER BY TABLE_NAME`).Scan(&name)
 
 	identityInsert := false
@@ -165,7 +164,7 @@ func getIdentityInsert(txn *gorm.DB, tableName string) (bool, error) {
 	}
 
 	if identityInsert {
-		err := txn.Exec(`SET` + ` IDENTITY_INSERT ` + tableName + ` ON`).Error
+		err := db.Exec(`SET` + ` IDENTITY_INSERT ` + tableName + ` ON`).Error
 
 		if err != nil {
 			return identityInsert, err
@@ -558,7 +557,7 @@ func (d *Seeder) RefreshDynamoDB(t tester, tableNames ...string) {
 	for _, tableName := range tableNames {
 		fileLoc := fmt.Sprintf("%s/%s.json", d.path, tableName)
 
-		raw, err := ioutil.ReadFile(fileLoc)
+		raw, err := os.ReadFile(fileLoc)
 		if err != nil {
 			t.Errorf("Got error reading file: %s", err)
 

@@ -7,6 +7,14 @@ import (
 	"strings"
 	"time"
 
+	"github.com/XSAM/otelsql"
+	"github.com/jmoiron/sqlx"
+	"github.com/prometheus/client_golang/prometheus"
+	otelgorm "github.com/zopsmart/gorm-opentelemetry"
+
+	// used for concrete implementation of the database driver.
+	_ "github.com/lib/pq"
+
 	"go.opentelemetry.io/otel"
 	semconv "go.opentelemetry.io/otel/semconv/v1.7.0"
 
@@ -16,14 +24,6 @@ import (
 	"gorm.io/driver/sqlserver"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
-
-	"github.com/XSAM/otelsql"
-	"github.com/jmoiron/sqlx"
-	"github.com/prometheus/client_golang/prometheus"
-	otelgorm "github.com/zopsmart/gorm-opentelemetry"
-
-	// used for concrete implementation of the database driver.
-	_ "github.com/lib/pq"
 
 	"developer.zopsmart.com/go/gofr/pkg"
 	"developer.zopsmart.com/go/gofr/pkg/errors"
@@ -301,7 +301,7 @@ func (c SQLXClient) HealthCheck() types.Health {
 
 // dbConnection will establish a dbConnection based on the gorm.Dialector passed and returns a gorm.DB instance
 func dbConnection(dialector gorm.Dialector) (db *gorm.DB, err error) {
-	// adding &gorm.Config{Logger: logger.Default.LogMode(logger.Silent)} will Silent the default gorm logger.
+	// Silent the default gorm logger. Else redundant error logs will be logged.
 	db, err = gorm.Open(dialector, &gorm.Config{Logger: logger.Default.LogMode(logger.Silent)})
 	if err != nil {
 		return
