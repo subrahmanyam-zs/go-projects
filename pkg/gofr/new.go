@@ -9,13 +9,13 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 
 	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/propagation"
 
 	"developer.zopsmart.com/go/gofr/pkg"
 	"developer.zopsmart.com/go/gofr/pkg/datastore"
 	"developer.zopsmart.com/go/gofr/pkg/datastore/pubsub/avro"
 	"developer.zopsmart.com/go/gofr/pkg/datastore/pubsub/eventhub"
 	"developer.zopsmart.com/go/gofr/pkg/datastore/pubsub/kafka"
-	"developer.zopsmart.com/go/gofr/pkg/errors"
 	"developer.zopsmart.com/go/gofr/pkg/gofr/config"
 	"developer.zopsmart.com/go/gofr/pkg/gofr/request"
 	"developer.zopsmart.com/go/gofr/pkg/gofr/responder"
@@ -108,12 +108,7 @@ func NewWithConfig(c Config) (k *Gofr) {
 	s.initializeMetricServerConfig(c)
 
 	// If Tracing is set, Set tracing
-	err = enableTracing(c, logger)
-	if err != nil {
-		logger.Error(err)
-	} else {
-		gofr.Logger.Logf("tracing is enabled on, %v:%v", c.Get("TRACER_HOST"), c.Get("TRACER_PORT"))
-	}
+	enableTracing(c, logger)
 
 	initializeDataStores(c, gofr)
 
@@ -232,12 +227,7 @@ func NewCMD() *Gofr {
 	cmdApp.tracingSpan = &span
 
 	// If Tracing is set, Set tracing
-	err = enableTracing(c, logger)
-	if err != nil {
-		logger.Error(err)
-	} else {
-		gofr.Logger.Logf("tracing is enabled on, %v %v:%v", c.Get("TRACER_EXPORTER"), c.Get("TRACER_HOST"), c.Get("TRACER_PORT"))
-	}
+	enableTracing(c, logger)
 
 	initializeDataStores(c, gofr)
 
@@ -246,21 +236,17 @@ func NewCMD() *Gofr {
 	return gofr
 }
 
-func enableTracing(c Config, logger log.Logger) error {
+func enableTracing(c Config, logger log.Logger) {
 	// If Tracing is set, initialize tracing
-	tp := TraceProvider(
-		c.GetOrDefault("APP_NAME", "gofr"),
-		c.Get("TRACER_EXPORTER"),
-		c.Get("TRACER_HOST"),
-		c.Get("TRACER_PORT"),
-		logger,
-		c,
-	)
-	if tp == nil {
-		return errors.Error("Tracing not enabled")
+	tp, err := tracerProvider(c)
+	if err != nil {
+		logger.Errorf("Tracing not enabled. Error %v", err)
 	}
 
-	return nil
+	otel.SetTracerProvider(tp)
+	otel.SetTextMapPropagator(propagation.NewCompositeTextMapPropagator(propagation.TraceContext{}, propagation.Baggage{}))
+
+	logger.Infof("tracing is enabled on, %v:%v", c.Get("TRACER_HOST"), c.Get("TRACER_PORT"))
 }
 
 // initializeDataStores initializes the Gofr struct with all the data stores for which

@@ -7,15 +7,13 @@ import (
 	cloudtrace "github.com/GoogleCloudPlatform/opentelemetry-operations-go/exporter/trace"
 
 	"go.opentelemetry.io/collector/translator/conventions"
-	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/exporters/stdout/stdouttrace"
 	"go.opentelemetry.io/otel/exporters/zipkin"
-	"go.opentelemetry.io/otel/propagation"
 	"go.opentelemetry.io/otel/sdk/resource"
 	"go.opentelemetry.io/otel/sdk/trace"
 
-	"developer.zopsmart.com/go/gofr/pkg/log"
+	"developer.zopsmart.com/go/gofr/pkg/errors"
 )
 
 type exporter struct {
@@ -24,8 +22,11 @@ type exporter struct {
 	appName string
 }
 
-func TraceProvider(appName, exporterName, exporterHost, exporterPort string, logger log.Logger, config Config) *trace.TracerProvider {
-	exporterName = strings.ToLower(exporterName)
+func tracerProvider(config Config) (*trace.TracerProvider, error) {
+	appName := config.GetOrDefault("APP_NAME", "gofr")
+	exporterName := strings.ToLower(config.Get("TRACER_EXPORTER"))
+	exporterHost := config.Get("TRACER_HOST")
+
 	e := exporter{
 		name:    exporterName,
 		url:     config.Get("TRACER_URL"),
@@ -34,88 +35,69 @@ func TraceProvider(appName, exporterName, exporterHost, exporterPort string, log
 
 	switch exporterName {
 	case "zipkin":
-		return e.getZipkinExporter(config, logger)
+		return e.getZipkinExporter(config)
 	case "gcp":
-		return getGCPExporter(config, exporterHost, logger)
+		return getGCPExporter(config, exporterHost)
 	case "stdout":
-		return stdOutTrace(config, logger)
+		return stdOutTrace(config)
 	default:
-		return nil
+		return nil, errors.Error("invalid exporter")
 	}
 }
 
-func (e *exporter) getZipkinExporter(c Config, logger log.Logger) *trace.TracerProvider {
+func (e *exporter) getZipkinExporter(c Config) (*trace.TracerProvider, error) {
 	url := e.url + "/api/v2/spans"
 
 	exporter, err := zipkin.New(url)
 	if err != nil {
-		logger.Errorf("failed to initialize zipkinExporter export pipeline: %v", err)
-		return nil
+		return nil, err
 	}
 
 	batcher := trace.NewBatchSpanProcessor(exporter)
 
 	r, err := getResource(c)
 	if err != nil {
-		logger.Errorf("error in creating the resource")
-		return nil
+		return nil, err
 	}
 
 	tp := trace.NewTracerProvider(trace.WithSampler(trace.AlwaysSample()), trace.WithSpanProcessor(batcher), trace.WithResource(r))
 
-	otel.SetTracerProvider(tp)
-	otel.SetTextMapPropagator(propagation.NewCompositeTextMapPropagator(propagation.TraceContext{}, propagation.Baggage{}))
-
-	return tp
+	return tp, nil
 }
 
-func stdOutTrace(c Config, logger log.Logger) *trace.TracerProvider {
+func stdOutTrace(c Config) (*trace.TracerProvider, error) {
 	exporter, err := stdouttrace.New(stdouttrace.WithPrettyPrint())
 	if err != nil {
-		logger.Errorf("creating stdout exporter: %v", err)
+		return nil, err
 	}
 
 	r, err := getResource(c)
 	if err != nil {
-		logger.Errorf("error in creating the resource")
-		return nil
+		return nil, err
 	}
 
-	tracerProvider := trace.NewTracerProvider(
-		trace.WithBatcher(exporter),
-		trace.WithResource(r),
-	)
+	tp := trace.NewTracerProvider(trace.WithBatcher(exporter), trace.WithResource(r))
 
-	otel.SetTracerProvider(tracerProvider)
-	otel.SetTextMapPropagator(propagation.NewCompositeTextMapPropagator(propagation.TraceContext{}, propagation.Baggage{}))
-
-	return tracerProvider
+	return tp, nil
 }
 
-func getGCPExporter(c Config, projectID string, logger log.Logger) *trace.TracerProvider {
+func getGCPExporter(c Config, projectID string) (*trace.TracerProvider, error) {
 	exporter, err := cloudtrace.New(cloudtrace.WithProjectID(projectID))
 	if err != nil {
-		logger.Errorf("%v", err)
-		return nil
+		return nil, err
 	}
 
 	r, err := getResource(c)
 	if err != nil {
-		logger.Errorf("error in creating the resource")
-		return nil
+		return nil, err
 	}
 
 	tp := trace.NewTracerProvider(
-		// For this example code we use sdktrace.AlwaysSample sampler to sample all traces.
-		// In a production application, use sdktrace.ProbabilitySampler with a desired probability.
 		trace.WithSampler(trace.AlwaysSample()),
 		trace.WithBatcher(exporter),
 		trace.WithResource(r))
 
-	otel.SetTracerProvider(tp)
-	otel.SetTextMapPropagator(propagation.NewCompositeTextMapPropagator(propagation.TraceContext{}, propagation.Baggage{}))
-
-	return tp
+	return tp, nil
 }
 
 func getResource(c Config) (*resource.Resource, error) {

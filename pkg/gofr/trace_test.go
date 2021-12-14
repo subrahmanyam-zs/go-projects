@@ -1,6 +1,7 @@
 package gofr
 
 import (
+	"fmt"
 	"io"
 	"testing"
 
@@ -11,17 +12,8 @@ import (
 )
 
 func TestTraceExporterSuccess(t *testing.T) {
-	logger := log.NewMockLogger(io.Discard)
-	cfg := config.NewGoDotEnvProvider(logger, "../../configs")
-	testcases := struct {
-		// exporter input
-		exporter string
-		host     string
-		port     string
-		appName  string
-	}{cfg.Get("TRACER_EXPORTER"), cfg.Get("TRACER_HOST"), cfg.Get("TRACER_PORT"), "gofr"}
-
-	tp := TraceProvider(testcases.appName, testcases.exporter, testcases.host, testcases.port, logger, cfg)
+	cfg := config.NewGoDotEnvProvider(log.NewMockLogger(io.Discard), "../../configs")
+	tp, _ := tracerProvider(cfg)
 
 	assert.NotNil(t, tp, "Failed.\tExpected NotNil Got Nil")
 }
@@ -34,13 +26,20 @@ func TestTraceExporterFailure(t *testing.T) {
 		port     string
 		appName  string
 	}{
-		{"not zipkin", "localhost", "2005", "gofr"},
+		{"not zipkin", "localhost", "9411", "gofr"},
 		{"zipkin", "localhost", "asd", "gofr"},
 		{"gcp", "fakeproject", "0", "sample-api"},
 	}
 
 	for _, v := range testcases {
-		tp := TraceProvider(v.appName, v.exporter, v.host, v.port, log.NewMockLogger(io.Discard), &config.MockConfig{})
+		tracerUrl := fmt.Sprintf("http://%v:%v", v.host, v.port)
+		cfg := &config.MockConfig{Data: map[string]string{
+			"TRACER_EXPORTER": v.exporter,
+			"TRACER_HOST":     v.host,
+			"TRACER_PORT":     v.port,
+			"TRACER_URL":      tracerUrl,
+		}}
+		tp, _ := tracerProvider(cfg)
 
 		assert.Nil(t, tp, "Failed.\tExpected Nil Got NotNil")
 	}
