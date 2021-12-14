@@ -240,7 +240,7 @@ func enableTracing(c Config, logger log.Logger) {
 	// If Tracing is set, initialize tracing
 	tp, err := tracerProvider(c)
 	if err != nil {
-		logger.Errorf("Tracing not enabled. Error %v", err)
+		logger.Errorf("tracing is not enabled. Error %v", err)
 	}
 
 	otel.SetTracerProvider(tp)
