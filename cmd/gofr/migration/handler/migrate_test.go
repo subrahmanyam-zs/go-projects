@@ -1,9 +1,13 @@
 package handler
 
 import (
+	"bufio"
+	"fmt"
 	"go/build"
 	"os"
 	"reflect"
+	"sort"
+	"strings"
 	"testing"
 
 	"github.com/golang/mock/gomock"
@@ -213,4 +217,80 @@ func Test_runMigration(t *testing.T) {
 			}
 		})
 	}
+}
+
+type mockFSMigrate struct {
+	*MockFSMigrate
+}
+
+func (m mockFSMigrate) OpenFile(name string, flag int, perm os.FileMode) (*os.File, error) {
+	return os.OpenFile(name, flag, perm)
+}
+
+// Test_importOrder tests if the imports are sorted in migration template
+func Test_importOrder(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	mockFS := mockFSMigrate{MockFSMigrate: NewMockFSMigrate(ctrl)}
+
+	mockFS.EXPECT().Stat("build").Return(nil, nil)
+	mockFS.EXPECT().IsNotExist(nil).Return(false)
+	mockFS.EXPECT().Chdir("build").Return(nil)
+
+	err := templateCreate(mockFS, "sample-api", "UP", "db := dbmigration.NewGorm(k.GORM())", "example.com/sample-api", nil)
+	if err != nil {
+		t.Errorf("expected no error, got:\n%v", err)
+	}
+
+	defer os.Remove("main.go")
+
+	file, err := os.Open("main.go")
+	if err != nil {
+		t.Errorf("error in opening main.go file: %v", err)
+	}
+
+	defer file.Close()
+
+	err = checkImportOrder(file)
+	if err != nil {
+		t.Errorf("expected no error, got:\n%v", err)
+	}
+}
+
+// checkImportOrder returns error if the grouped imports are not sorted.
+// nolint:gocognit // cannot be optimized without hampering the readability
+func checkImportOrder(file *os.File) error {
+	var (
+		imports      = make([]string, 0)
+		scanner      = bufio.NewScanner(file)
+		appendImport = false
+	)
+
+	for scanner.Scan() {
+		line := scanner.Text()
+
+		if line == "import (" {
+			appendImport = true
+			continue
+		}
+
+		if appendImport {
+			if line == "" || line == ")" {
+				if !sort.StringsAreSorted(imports) {
+					return errors.Error(fmt.Sprintf("unsorted imports in migration template\n%v", strings.Join(imports, "\n")))
+				}
+
+				imports = nil
+
+				if line == ")" {
+					break
+				}
+
+				continue
+			}
+
+			imports = append(imports, line)
+		}
+	}
+
+	return nil
 }

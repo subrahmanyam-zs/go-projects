@@ -28,7 +28,6 @@ func initializeHandlersTest(t *testing.T) (*stores.MockCustomer, handler, *gofr.
 	return store, h, app
 }
 
-//nolint:govet //in table driven tests we don't add the key in the struct
 func TestHandler_Get(t *testing.T) {
 	tests := []struct {
 		desc        string

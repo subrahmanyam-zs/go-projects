@@ -142,7 +142,7 @@ func (h HTTP) processResponse(statusCode int, response interface{}) {
 		h.w.WriteHeader(statusCode)
 
 		if response != nil {
-			_, _ = h.w.Write([]byte(fmt.Sprintf("%s", response)))
+			_, _ = fmt.Fprintf(h.w, "%s", response)
 		}
 	}
 }

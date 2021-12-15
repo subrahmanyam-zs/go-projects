@@ -6,6 +6,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"time"
 
 	"go.opencensus.io/trace"
 
@@ -20,7 +21,18 @@ import (
 	"developer.zopsmart.com/go/gofr/pkg/gofr/request"
 	"developer.zopsmart.com/go/gofr/pkg/gofr/responder"
 	"developer.zopsmart.com/go/gofr/pkg/log"
+	"developer.zopsmart.com/go/gofr/pkg/middleware"
 	awssns "developer.zopsmart.com/go/gofr/pkg/notifier/aws-sns"
+)
+
+// nolint:gochecknoglobals // need to declare global variable to push metrics
+var (
+	frameworkInfo = prometheus.NewGaugeVec(prometheus.GaugeOpts{
+		Name: "zs_info",
+		Help: "Gauge to count the pods running for each service and framework version",
+	}, []string{"app", "framework"})
+
+	_ = prometheus.Register(frameworkInfo)
 )
 
 func New() (k *Gofr) {
@@ -67,11 +79,6 @@ func NewWithConfig(c Config) (k *Gofr) {
 		logger.Warnf("APP_NAME is not set.'%v' will be used in logs", pkg.DefaultAppName)
 	}
 
-	frameworkInfo := prometheus.NewGaugeVec(prometheus.GaugeOpts{
-		Name: "zs_info",
-		Help: "Gauge to count the pods running for each service and framework version",
-	}, []string{"app", "framework"})
-	_ = prometheus.Register(frameworkInfo)
 	frameworkInfo.WithLabelValues(appName+"-"+appVers, "gofr-"+log.GofrVersion).Set(1)
 
 	s := NewServer(c, gofr)
@@ -203,17 +210,31 @@ func NewCMD() *Gofr {
 		Config: c, // need to be set for using gofr.Config.Get() method
 	}
 
-	if appVers := c.Get("APP_VERSION"); appVers == "" {
+	appVers := c.Get("APP_VERSION")
+	if appVers == "" {
 		logger.Warnf("APP_VERSION is not set. '%v' will be used in logs", pkg.DefaultAppVersion)
 	}
 
-	if appName := c.Get("APP_NAME"); appName == "" {
+	appName := c.Get("APP_NAME")
+	if appName == "" {
 		logger.Warnf("APP_NAME is not set.'%v' will be used in logs", pkg.DefaultAppName)
 	}
 
 	if cmdApp.healthCheckSvr.port, err = strconv.Atoi(c.Get("HEALTH_CHECK_PORT")); err != nil {
 		cmdApp.healthCheckSvr.port = defaultHealthCheckPort
 	}
+
+	frameworkInfo.WithLabelValues(appName+"-"+appVers, "gofr-"+log.GofrVersion).Set(1)
+
+	go func() {
+		const pushDuration = 10
+
+		for {
+			middleware.PushSystemStats()
+
+			time.Sleep(time.Second * pushDuration)
+		}
+	}()
 
 	if cmdApp.metricSvr.port, err = strconv.Atoi(c.Get("METRIC_PORT")); err != nil {
 		cmdApp.metricSvr.port = defaultMetricsPort

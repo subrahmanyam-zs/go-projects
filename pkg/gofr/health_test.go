@@ -67,7 +67,7 @@ func Test_HeartBeatIntegration(t *testing.T) {
 	resp.Body.Close()
 
 	url = "http://localhost:3339/.well-known/health-check"
-	req, _ = http.NewRequest(http.MethodGet, url, nil)
+	req, _ = http.NewRequest(http.MethodGet, url, http.NoBody)
 	resp, err = client.Do(req)
 
 	if err != nil {

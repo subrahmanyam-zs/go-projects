@@ -7,7 +7,7 @@ import (
 	"crypto/sha256"
 	"encoding/base64"
 	"encoding/hex"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"strings"
 
@@ -28,8 +28,8 @@ func GetBodyHash(r *http.Request) string {
 		return ""
 	}
 
-	bodyBytes, _ := ioutil.ReadAll(r.Body)
-	r.Body = ioutil.NopCloser(bytes.NewBuffer(bodyBytes))
+	bodyBytes, _ := io.ReadAll(r.Body)
+	r.Body = io.NopCloser(bytes.NewBuffer(bodyBytes))
 
 	lenBody := len(bodyBytes)
 	if lenBody == 0 {

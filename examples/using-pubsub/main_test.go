@@ -13,7 +13,7 @@ import (
 	"developer.zopsmart.com/go/gofr/pkg/gofr/request"
 )
 
-//nolint:gocognit,gocyclo // need to wait for topic to be created so retry logic is to be added
+//nolint:gocognit // need to wait for topic to be created so retry logic is to be added
 func TestServerRun(t *testing.T) {
 	t.Setenv("KAFKA_TOPIC", "kafka-pubsub")
 

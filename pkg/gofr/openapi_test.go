@@ -231,7 +231,7 @@ func TestOpenAPIHandler(t *testing.T) {
 	defer deleteSampleOpenAPI()
 
 	url := "http://localhost:3395/.well-known/openapi.json"
-	req, _ := http.NewRequest(http.MethodGet, url, nil)
+	req, _ := http.NewRequest(http.MethodGet, url, http.NoBody)
 
 	w := httptest.NewRecorder()
 
@@ -253,7 +253,7 @@ func TestOpenAPIHandlerError(t *testing.T) {
 	k.GET("/.well-known/openapi.json", OpenAPIHandler)
 
 	url := "http://localhost:3396/.well-known/openapi.json"
-	req, _ := http.NewRequest(http.MethodGet, url, nil)
+	req, _ := http.NewRequest(http.MethodGet, url, http.NoBody)
 	w := httptest.NewRecorder()
 
 	k.Server.Router.ServeHTTP(w, req)
@@ -299,7 +299,7 @@ func TestSwaggerUIHandler(t *testing.T) {
 
 	for _, resource := range resourceList {
 		url := "http://localhost:3395/" + resource.resource
-		req, _ := http.NewRequest(http.MethodGet, url, nil)
+		req, _ := http.NewRequest(http.MethodGet, url, http.NoBody)
 
 		w := httptest.NewRecorder()
 

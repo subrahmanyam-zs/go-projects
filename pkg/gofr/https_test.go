@@ -12,7 +12,7 @@ import (
 )
 
 func TestRedirectHttps(t *testing.T) {
-	req, err := http.NewRequest(http.MethodGet, "/hello", nil)
+	req, err := http.NewRequest(http.MethodGet, "/hello", http.NoBody)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -71,7 +71,7 @@ func TestHTTPSFail(t *testing.T) {
 	}
 	httpsServer.StartServer(k.Logger, k.Server.Router)
 
-	req, _ := http.NewRequest(http.MethodGet, "https://localhost:9011/", nil)
+	req, _ := http.NewRequest(http.MethodGet, "https://localhost:9011/", http.NoBody)
 	client := http.Client{}
 
 	//nolint:bodyclose // no response body to close
