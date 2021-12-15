@@ -1,11 +1,12 @@
 package gofr
 
 import (
-	"github.com/stretchr/testify/assert"
 	"net/http"
 	"net/http/httptest"
 	"strconv"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestHealthCheckHandlerServer(t *testing.T) {
