@@ -23,17 +23,6 @@ import (
 	"developer.zopsmart.com/go/gofr/pkg/middleware"
 )
 
-func testServer() *httptest.Server {
-	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		re := map[string]interface{}{"name": "gofr"}
-		reBytes, _ := json.Marshal(re)
-		w.Header().Set("Content-type", "application/json")
-		_, _ = w.Write(reBytes)
-	}))
-
-	return ts
-}
-
 func TestService_Request(t *testing.T) {
 	ts := testServer()
 	defer ts.Close()
@@ -113,6 +102,29 @@ func TestService_Get(t *testing.T) {
 		if (err != nil) != tt.wantErr {
 			t.Errorf("Test %v:\t  error = %v, wantErr %v", tt.name, err, tt.wantErr)
 		}
+	}
+}
+
+func TestService_Customfunc(t *testing.T) {
+	ts := retryTestServer()
+	defer ts.Close()
+
+	b := new(bytes.Buffer)
+	logger := log.NewMockLogger(b)
+	svc := NewHTTPServiceWithOptions(ts.URL, logger, &Options{NumOfRetries: 1})
+
+	svc.RetryCheck = func(logger log.Logger, err error, statusCode, attemptCount int) bool {
+		if statusCode == http.StatusBadRequest {
+			logger.Logf("got error %v on attempt %v", err, attemptCount)
+			return true
+		}
+
+		return false
+	}
+
+	resp, err := svc.Get(context.Background(), "dummy", nil)
+	if err != nil || resp.StatusCode != http.StatusOK {
+		t.Errorf("got unexpected error %v", err)
 	}
 }
 
@@ -684,4 +696,33 @@ func Test_createReq(t *testing.T) {
 		}
 	}
 
+}
+
+func testServer() *httptest.Server {
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		re := map[string]interface{}{"name": "gofr"}
+		reBytes, _ := json.Marshal(re)
+		w.Header().Set("Content-type", "application/json")
+		_, _ = w.Write(reBytes)
+	}))
+
+	return ts
+}
+
+func retryTestServer() *httptest.Server {
+	var cnt int
+
+	// returns http.StatusBadRequest for first retry and http.StatusOK for second retry
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if cnt == 0 {
+			w.WriteHeader(http.StatusBadRequest)
+			cnt++
+
+			return
+		}
+
+		w.WriteHeader(http.StatusOK)
+	}))
+
+	return ts
 }
