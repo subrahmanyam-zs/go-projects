@@ -9,7 +9,6 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 
 	"go.opentelemetry.io/otel"
-	"go.opentelemetry.io/otel/propagation"
 
 	"developer.zopsmart.com/go/gofr/pkg"
 	"developer.zopsmart.com/go/gofr/pkg/datastore"
@@ -238,13 +237,10 @@ func NewCMD() *Gofr {
 
 func enableTracing(c Config, logger log.Logger) {
 	// If Tracing is set, initialize tracing
-	tp, err := tracerProvider(c)
+	err := tracerProvider(c)
 	if err != nil {
 		logger.Errorf("tracing is not enabled. Error %v", err)
 	}
-
-	otel.SetTracerProvider(tp)
-	otel.SetTextMapPropagator(propagation.NewCompositeTextMapPropagator(propagation.TraceContext{}, propagation.Baggage{}))
 
 	logger.Infof("tracing is enabled on, %v:%v", c.Get("TRACER_HOST"), c.Get("TRACER_PORT"))
 }

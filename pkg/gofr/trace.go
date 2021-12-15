@@ -7,9 +7,11 @@ import (
 	cloudtrace "github.com/GoogleCloudPlatform/opentelemetry-operations-go/exporter/trace"
 
 	"go.opentelemetry.io/collector/translator/conventions"
+	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/exporters/stdout/stdouttrace"
 	"go.opentelemetry.io/otel/exporters/zipkin"
+	"go.opentelemetry.io/otel/propagation"
 	"go.opentelemetry.io/otel/sdk/resource"
 	"go.opentelemetry.io/otel/sdk/trace"
 
@@ -22,7 +24,7 @@ type exporter struct {
 	appName string
 }
 
-func tracerProvider(config Config) (*trace.TracerProvider, error) {
+func tracerProvider(config Config) (err error) {
 	appName := config.GetOrDefault("APP_NAME", "gofr")
 	exporterName := strings.ToLower(config.Get("TRACER_EXPORTER"))
 	exporterHost := config.Get("TRACER_HOST")
@@ -33,16 +35,27 @@ func tracerProvider(config Config) (*trace.TracerProvider, error) {
 		appName: appName,
 	}
 
+	var tp *trace.TracerProvider
+
 	switch exporterName {
 	case "zipkin":
-		return e.getZipkinExporter(config)
+		tp, err = e.getZipkinExporter(config)
 	case "gcp":
-		return getGCPExporter(config, exporterHost)
+		tp, err = getGCPExporter(config, exporterHost)
 	case "stdout":
-		return stdOutTrace(config)
+		tp, err = stdOutTrace(config)
 	default:
-		return nil, errors.Error("invalid exporter")
+		return errors.Error("invalid exporter")
 	}
+
+	if err != nil {
+		return
+	}
+
+	otel.SetTracerProvider(tp)
+	otel.SetTextMapPropagator(propagation.NewCompositeTextMapPropagator(propagation.TraceContext{}, propagation.Baggage{}))
+
+	return
 }
 
 func (e *exporter) getZipkinExporter(c Config) (*trace.TracerProvider, error) {

@@ -13,9 +13,9 @@ import (
 
 func TestTraceExporterSuccess(t *testing.T) {
 	cfg := config.NewGoDotEnvProvider(log.NewMockLogger(io.Discard), "../../configs")
-	tp, _ := tracerProvider(cfg)
+	err := tracerProvider(cfg)
 
-	assert.NotNil(t, tp, "Failed.\tExpected NotNil Got Nil")
+	assert.Nil(t, err, "Failed.\tExpected NotNil Got Nil")
 }
 
 func TestTraceExporterFailure(t *testing.T) {
@@ -39,8 +39,9 @@ func TestTraceExporterFailure(t *testing.T) {
 			"TRACER_PORT":     v.port,
 			"TRACER_URL":      tracerUrl,
 		}}
-		tp, _ := tracerProvider(cfg)
 
-		assert.Nil(t, tp, "Failed.\tExpected Nil Got NotNil")
+		err := tracerProvider(cfg)
+
+		assert.NotNil(t, err, "Failed.\tExpected Nil Got NotNil")
 	}
 }
