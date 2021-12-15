@@ -6,11 +6,11 @@ import (
 	"strconv"
 )
 
-func healthCheckHandlerServer(ctx *Context, port int, route string) *http.Server {
+func healthCheckHandlerServer(ctx *Context, port int) *http.Server {
 	mux := http.NewServeMux()
 	healthResp, err := HealthHandler(ctx)
 
-	mux.HandleFunc(route, func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc(defaultHealthCheckRoute, func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 
 		if err != nil {
