@@ -24,15 +24,17 @@ func healthCheckHandlerServer(ctx *Context, port int, route string) *http.Server
 
 				return
 			}
-		} else {
-			data, _ := json.Marshal(healthResp)
 
-			_, err := w.Write(data)
-			if err != nil {
-				ctx.Logger.Error(err)
+			return
+		}
 
-				return
-			}
+		data, _ := json.Marshal(healthResp)
+
+		_, err := w.Write(data)
+		if err != nil {
+			ctx.Logger.Error(err)
+
+			return
 		}
 	})
 

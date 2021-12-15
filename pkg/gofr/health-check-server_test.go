@@ -12,7 +12,7 @@ func TestHealthCheckHandlerServer(t *testing.T) {
 	k := New()
 	ctx := NewContext(nil, nil, k)
 
-	const port, route = 8086, "/.well-known/health-check"
+	const port, route = 8000, "/.well-known/health-check"
 
 	srv := healthCheckHandlerServer(ctx, port, route)
 	serverURL := "http://localhost:" + strconv.Itoa(port)

@@ -219,11 +219,6 @@ func NewCMD() *Gofr {
 		cmdApp.metricSvr.port = defaultMetricsPort
 	}
 
-	if route := c.Get("HEALTH_CHECK_ROUTE"); route != "" {
-		route = strings.TrimPrefix(route, "/")
-		cmdApp.healthCheckSvr.route = "/" + route
-	}
-
 	if route := c.Get("METRIC_ROUTE"); route != "" {
 		route = strings.TrimPrefix(route, "/")
 		cmdApp.metricSvr.route = "/" + route
