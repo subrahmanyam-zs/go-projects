@@ -202,8 +202,7 @@ func NewCMD() *Gofr {
 	c := config.NewGoDotEnvProvider(log.NewLogger(), configFolder)
 	// Here we do things based on what is provided by Config, eg LOG_LEVEL etc.
 	logger := log.NewLogger()
-	cmdApp := &cmdApp{Router: NewCMDRouter(), metricSvr: &metricServer{route: defaultMetricsRoute},
-		healthCheckSvr: &healthCheckServer{route: defaultHealthCheckRoute}}
+	cmdApp := &cmdApp{Router: NewCMDRouter(), metricSvr: &metricServer{route: defaultMetricsRoute}}
 	gofr := &Gofr{
 		Logger: logger,
 		cmd:    cmdApp,
@@ -257,7 +256,7 @@ func NewCMD() *Gofr {
 		gofr.Logger.Logf("tracing is enabled on, %v %v:%v", c.Get("TRACER_EXPORTER"), c.Get("TRACER_HOST"), c.Get("TRACER_PORT"))
 	}
 
-	cmdApp.healthCheckSvr.server = healthCheckHandlerServer(cmdApp.context, cmdApp.healthCheckSvr.port, cmdApp.healthCheckSvr.route)
+	cmdApp.healthCheckSvr.server = healthCheckHandlerServer(cmdApp.context, cmdApp.healthCheckSvr.port, defaultHealthCheckRoute)
 
 	initializeDataStores(c, gofr)
 

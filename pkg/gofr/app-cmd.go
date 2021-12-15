@@ -26,7 +26,6 @@ type metricServer struct {
 type healthCheckServer struct {
 	server *http.Server
 	port   int
-	route  string
 }
 
 func (app *cmdApp) Start(logger log.Logger) {
