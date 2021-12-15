@@ -29,7 +29,7 @@ func TestIntegration(t *testing.T) {
 		tc := tc
 		i := i
 		t.Run(fmt.Sprintf("Test %v", i+1), func(t *testing.T) {
-			req, _ := request.NewMock(tc.method, tc.endpoint, nil)
+			req, _ := request.NewMock(tc.method, "http://localhost:8080/"+tc.endpoint, nil)
 			c := http.Client{}
 
 			resp, err := c.Do(req)

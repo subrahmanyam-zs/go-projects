@@ -98,8 +98,9 @@ func testDataStores(t *testing.T) {
 	}
 	for _, tc := range testcases {
 		req, _ := request.NewMock(tc.method, "http://localhost:9095"+tc.endpoint, bytes.NewBuffer(tc.body))
-		cl := http.Client{}
-		resp, err := cl.Do(req)
+		client := http.Client{}
+
+		resp, err := client.Do(req)
 		if err != nil {
 			t.Errorf("TestCase[%v] \t FAILED \nGot Error: %v", tc.testID, err)
 			return

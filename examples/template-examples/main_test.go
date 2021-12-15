@@ -24,7 +24,7 @@ func TestServerIntegration(t *testing.T) {
 		{"get test success", http.MethodGet, "test", http.StatusOK, nil, "text/html"},
 		{"get invalid route", http.MethodGet, "test2", http.StatusNotFound, nil, "application/json"},
 		{"get image success", http.MethodGet, "image", http.StatusOK, nil, "image/png"},
-		{"unregistered update route", http.MethodPut, "unkown", http.StatusNotFound, []byte(`{}`), "application/json"},
+		{"unregistered update route", http.MethodPut, "unknown", http.StatusNotFound, []byte(`{}`), "application/json"},
 	}
 
 	for i, tc := range tests {

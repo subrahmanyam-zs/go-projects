@@ -24,6 +24,7 @@ func (k *Response) Error() string {
 	if e, ok := k.Detail.(error); ok {
 		return fmt.Sprintf("%v : %v ", k.Reason, e)
 	}
+
 	return k.Reason
 }
 

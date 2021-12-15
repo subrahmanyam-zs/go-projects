@@ -6,7 +6,6 @@ import (
 	"encoding/csv"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"strconv"
 	"strings"
@@ -556,7 +555,7 @@ func (d *Seeder) RefreshDynamoDB(t tester, tableNames ...string) {
 	for _, tableName := range tableNames {
 		fileLoc := fmt.Sprintf("%s/%s.json", d.path, tableName)
 
-		raw, err := ioutil.ReadFile(fileLoc)
+		raw, err := os.ReadFile(fileLoc)
 		if err != nil {
 			t.Errorf("Got error reading file: %s", err)
 

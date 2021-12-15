@@ -45,7 +45,7 @@ func Test_NewRedis(t *testing.T) {
 			return
 		}
 
-		r.Close()
+		_ = r.Close()
 	}
 
 	{
@@ -58,7 +58,7 @@ func Test_NewRedis(t *testing.T) {
 			return
 		}
 
-		r.Close()
+		_ = r.Close()
 	}
 
 	{
@@ -71,7 +71,7 @@ func Test_NewRedis(t *testing.T) {
 			return
 		}
 
-		r.Close()
+		_ = r.Close()
 	}
 }
 

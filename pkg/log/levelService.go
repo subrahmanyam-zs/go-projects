@@ -29,7 +29,6 @@ const LevelFetchInterval = 10 // In seconds
 
 func newLevelService(l Logger, appName string) *levelService {
 	if !rls.init {
-
 		lvl := getLevel(os.Getenv("LOG_LEVEL"))
 
 		mu.Lock()
@@ -60,7 +59,7 @@ func newLevelService(l Logger, appName string) *levelService {
 func (s *levelService) updateRemoteLevel() {
 	rls.logger.Debugf("Making request to remote logging service %s", s.url)
 
-	req, _ := http.NewRequest(http.MethodGet, s.url+"/configs?serviceName="+s.app, nil)
+	req, _ := http.NewRequest(http.MethodGet, s.url+"/configs?serviceName="+s.app, http.NoBody)
 
 	tr := &http.Transport{
 		//nolint:gosec // need this to skip TLS verification

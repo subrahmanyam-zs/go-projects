@@ -119,7 +119,10 @@ func (g *GORM) GetAllMigrations(app string) (upMigration, downMigration []int) {
 		return nil, nil
 	}
 
-	defer rows.Close()
+	defer func() {
+		_ = rows.Close()
+		_ = rows.Err()
+	}()
 
 	for rows.Next() {
 		var (

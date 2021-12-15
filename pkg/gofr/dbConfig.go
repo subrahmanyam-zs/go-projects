@@ -111,7 +111,7 @@ func kafkaConfigFromEnv(c Config) *kafka.Config {
 	if groupName == "" {
 		groupName = c.GetOrDefault("APP_NAME", pkg.DefaultAppName) + "-" + c.GetOrDefault("APP_VERSION", pkg.DefaultAppVersion) + "-consumer"
 	}
-	
+
 	disableautocommit, _ := strconv.ParseBool(c.GetOrDefault("KAFKA_AUTOCOMMIT_DISABLE", "false"))
 
 	// converting the CSV string to slice of string

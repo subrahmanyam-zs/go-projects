@@ -50,7 +50,8 @@ func TestEmployee_Create(t *testing.T) {
 		wantErr bool
 	}{
 		{"success", entity.Employee{ID: 9, Name: "Sunita", Phone: "01234", Email: "sunita@zopsmart.com", City: "Darbhanga"}, false},
-		{"fail-primary key constraint violation", entity.Employee{ID: 9, Name: "Angi", Phone: "01333", Email: "anna@zopsmart.com", City: "Delhi"}, true},
+		{"fail-primary key constraint violation", entity.Employee{ID: 9, Name: "Angi", Phone: "01333", Email: "anna@zopsmart.com", City: "Delhi"},
+			true},
 	}
 
 	for i, tc := range tests {
