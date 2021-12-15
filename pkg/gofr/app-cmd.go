@@ -43,7 +43,14 @@ func (app *cmdApp) Start(logger log.Logger) {
 	app.metricSvr.server = metricsServer(logger, app.metricSvr.port, app.metricSvr.route)
 
 	// start the health-check server
-	app.healthCheckSvr.server = healthCheckHandlerServer(app.context, app.healthCheckSvr.port, app.healthCheckSvr.route)
+	go func() {
+		app.context.Logger.Infof("Starting health-check server at :%v", app.healthCheckSvr.port)
+
+		err := app.healthCheckSvr.server.ListenAndServe()
+		if err != nil {
+			app.context.Logger.Errorf("error in health-check server %v", err)
+		}
+	}()
 
 	h := app.Router.handler(command)
 	if h == nil {

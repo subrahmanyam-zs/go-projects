@@ -257,6 +257,8 @@ func NewCMD() *Gofr {
 		gofr.Logger.Logf("tracing is enabled on, %v %v:%v", c.Get("TRACER_EXPORTER"), c.Get("TRACER_HOST"), c.Get("TRACER_PORT"))
 	}
 
+	cmdApp.healthCheckSvr.server = healthCheckHandlerServer(cmdApp.context, cmdApp.healthCheckSvr.port, cmdApp.healthCheckSvr.route)
+
 	initializeDataStores(c, gofr)
 
 	initializeNotifiers(c, gofr)

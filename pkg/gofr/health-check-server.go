@@ -40,14 +40,5 @@ func healthCheckHandlerServer(ctx *Context, port int, route string) *http.Server
 
 	srv := &http.Server{Addr: ":" + strconv.Itoa(port), Handler: mux}
 
-	ctx.Logger.Infof("Starting health-check server at :%v", port)
-
-	go func() {
-		err := srv.ListenAndServe()
-		if err != nil {
-			ctx.Logger.Errorf("error in health-check server %v", err)
-		}
-	}()
-
 	return srv
 }
