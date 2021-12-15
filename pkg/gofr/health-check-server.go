@@ -16,26 +16,30 @@ func healthCheckHandlerServer(ctx *Context, port int, route string) *http.Server
 		if err != nil {
 			ctx.Logger.Error(err)
 
-			data, _ := json.Marshal(err)
-
-			_, err := w.Write(data)
+			data, err := json.Marshal(err)
 			if err != nil {
 				ctx.Logger.Error(err)
+
+				w.WriteHeader(http.StatusInternalServerError)
 
 				return
 			}
 
+			_, _ = w.Write(data)
+
 			return
 		}
 
-		data, _ := json.Marshal(healthResp)
-
-		_, err := w.Write(data)
+		data, err := json.Marshal(healthResp)
 		if err != nil {
 			ctx.Logger.Error(err)
 
+			w.WriteHeader(http.StatusInternalServerError)
+
 			return
 		}
+
+		_, _ = w.Write(data)
 	})
 
 	srv := &http.Server{Addr: ":" + strconv.Itoa(port), Handler: mux}
