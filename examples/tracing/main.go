@@ -11,7 +11,7 @@ import (
 func main() {
 	app := gofr.New()
 
-	url := app.Config.GetOrDefault("SAMPLE_API_URL", "http://localhost:9000")
+	url := app.Config.Get("SAMPLE_API_URL")
 
 	app.GET("/trace", func(ctx *gofr.Context) (interface{}, error) {
 		span2 := ctx.Trace("some-sample-work")

@@ -240,6 +240,8 @@ func enableTracing(c Config, logger log.Logger) {
 	err := tracerProvider(c)
 	if err != nil {
 		logger.Errorf("tracing is not enabled. Error %v", err)
+
+		return
 	}
 
 	logger.Infof("tracing is enabled on, %v:%v", c.Get("TRACER_HOST"), c.Get("TRACER_PORT"))
