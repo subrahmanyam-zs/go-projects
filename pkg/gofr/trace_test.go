@@ -35,8 +35,6 @@ func TestTraceExporterFailure(t *testing.T) {
 		tracerUrl := fmt.Sprintf("http://%v:%v", v.host, v.port)
 		cfg := &config.MockConfig{Data: map[string]string{
 			"TRACER_EXPORTER": v.exporter,
-			"TRACER_HOST":     v.host,
-			"TRACER_PORT":     v.port,
 			"TRACER_URL":      tracerUrl,
 		}}
 

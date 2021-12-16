@@ -265,7 +265,7 @@ func enableTracing(c Config, logger log.Logger) {
 		return
 	}
 
-	logger.Infof("tracing is enabled on, %v:%v", c.Get("TRACER_HOST"), c.Get("TRACER_PORT"))
+	logger.Infof("tracing is enabled on: %v", c.Get("TRACER_URL"))
 }
 
 // initializeDataStores initializes the Gofr struct with all the data stores for which

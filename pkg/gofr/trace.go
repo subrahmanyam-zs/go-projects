@@ -27,7 +27,7 @@ type exporter struct {
 func tracerProvider(config Config) (err error) {
 	appName := config.GetOrDefault("APP_NAME", "gofr")
 	exporterName := strings.ToLower(config.Get("TRACER_EXPORTER"))
-	exporterHost := config.Get("TRACER_HOST")
+	gcpProjectID := config.Get("GCP_PROJECT_ID")
 
 	e := exporter{
 		name:    exporterName,
@@ -41,7 +41,7 @@ func tracerProvider(config Config) (err error) {
 	case "zipkin":
 		tp, err = e.getZipkinExporter(config)
 	case "gcp":
-		tp, err = getGCPExporter(config, exporterHost)
+		tp, err = getGCPExporter(config, gcpProjectID)
 	case "stdout":
 		tp, err = stdOutTrace(config)
 	default:
