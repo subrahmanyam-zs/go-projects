@@ -6,7 +6,7 @@ import (
 )
 
 func Test_getBody(t *testing.T) {
-	req, _ := http.NewRequest("GET", "/dummy", nil)
+	req, _ := http.NewRequest("GET", "/dummy", http.NoBody)
 	req.Body = nil
 
 	b := GetBodyHash(req)

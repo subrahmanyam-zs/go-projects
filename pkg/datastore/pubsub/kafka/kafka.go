@@ -318,7 +318,7 @@ func convertKafkaConfig(config *Config) {
 		config.Config.Producer.Retry.Max = config.MaxRetry
 	}
 
-	if config.DisableAutoCommit == true {
+	if config.DisableAutoCommit {
 		config.Config.Consumer.Offsets.AutoCommit.Enable = false
 	}
 
@@ -504,7 +504,7 @@ func (k *Kafka) subscribeMessage() (*pubsub.Message, error) {
 	headers := make(map[string]string, len(msg.Headers))
 
 	for _, v := range msg.Headers {
-		if string(v.Key) != "" && string(v.Value) != "" {
+		if len(v.Key) != 0 && len(v.Value) != 0 {
 			headers[string(v.Key)] = string(v.Value)
 		}
 	}
@@ -718,9 +718,11 @@ func (k *Kafka) CommitOffset(offsets pubsub.TopicPartition) {
 	k.Consumer.ConsumerGroupHandler.mu.Lock()
 	k.Consumer.ConsumerGroupHandler.consumerGroupSession.MarkOffset(
 		offsets.Topic, int32(offsets.Partition), offsets.Offset+1, "")
-	if k.config.DisableAutoCommit == true {
+
+	if k.config.DisableAutoCommit {
 		k.Consumer.ConsumerGroupHandler.consumerGroupSession.Commit()
 	}
+
 	k.Consumer.ConsumerGroupHandler.mu.Unlock()
 }
 

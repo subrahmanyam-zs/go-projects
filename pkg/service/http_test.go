@@ -328,14 +328,11 @@ func TestHttpService_SetHeaders(t *testing.T) {
 	httpSvc := NewHTTPServiceWithOptions("http://dummy", log.NewLogger(), nil)
 
 	ctx := context.WithValue(context.TODO(), middleware.ClientIPKey, "123.234.545.894")
-	ctx = context.WithValue(ctx, middleware.ZopsmartChannelKey, "WEB")
 	ctx = context.WithValue(ctx, middleware.AuthenticatedUserIDKey, "2")
-	ctx = context.WithValue(ctx, middleware.ZopsmartTenantKey, "riu")
+	ctx = context.WithValue(ctx, middleware.B3TraceIDKey, "3434")
 
 	req, _ := httpSvc.createReq(ctx, http.MethodGet, "", nil, nil, nil)
-
-	if req.Header.Get("X-Zopsmart-Channel") != "WEB" || req.Header.Get("X-Authenticated-UserId") != "2" ||
-		req.Header.Get("X-Zopsmart-Tenant") != "riu" {
+	if req.Header.Get("X-Authenticated-UserId") != "2" || req.Header.Get("X-B3-TraceID") != "3434" {
 		t.Error("setting of headers failed")
 	}
 }
@@ -671,7 +668,6 @@ func Test_createReq(t *testing.T) {
 
 	h := NewHTTPServiceWithOptions(ts.URL, nil, nil)
 	for _, tc := range testcase {
-
 		req, err := h.createReq(context.Background(), tc.method, tc.target, nil, nil, nil)
 		if err != nil {
 			t.Errorf("DESC: %v Error: %v", tc.desc, err)
@@ -682,5 +678,4 @@ func Test_createReq(t *testing.T) {
 				tc.desc, tc.method, req.Method, tc.expectedURL, req.URL)
 		}
 	}
-
 }

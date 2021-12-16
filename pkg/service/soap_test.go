@@ -88,7 +88,7 @@ func TestCallWithHeaders_SOAP(t *testing.T) {
 		headers     map[string]string
 		expectedLog string
 	}{
-		{"zop", map[string]string{"X-Trace-ID": "a123ru", "X-B-Trace-Id": "198d7sf3d"}, `"X-B-Trace-Id":"198d7sf3d","X-Trace-ID":"a123ru"`},
+		{"zop", map[string]string{"X-Trace-Id": "a123ru", "X-B-Trace-Id": "198d7sf3d"}, `"X-B-Trace-Id":"198d7sf3d","X-Trace-Id":"a123ru"`},
 		{"gfr", map[string]string{"X-Zopsmart-Tenant": "zopsmart"}, `"X-Zopsmart-Tenant":"zopsmart"`},
 		{"gfr", nil, ``},
 	}

@@ -26,7 +26,7 @@ func TestNewFile(t *testing.T) {
 		{Azure, "test.txt", APPEND, nil},
 		{AWS, "test.txt", READWRITE, nil},
 		{GCP, "test.txt", WRITE, fmt.Errorf("dialing: google: could not find default " +
-			"credentials. See https://developers.google.com/accounts/docs/application-default-credentials for more information")},
+			"credentials. See https://developers.google.com/accounts/docs/application-default-credentials for more information.")},
 	}
 
 	for _, tc := range testcases {

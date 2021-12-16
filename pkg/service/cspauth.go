@@ -21,8 +21,6 @@ const (
 	lenRandomChars    = 6
 	minLenAppKey      = 12
 	nanoToMicroSecond = 1000
-	securityType      = "1"
-	securityVersion   = "V1"
 )
 
 var (
