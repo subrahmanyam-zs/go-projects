@@ -21,7 +21,7 @@ func TestTraceExporterFailure(t *testing.T) {
 	testcases := []struct {
 		// exporter input
 		exporter string
-		url     string
+		url      string
 		appName  string
 	}{
 		{"not zipkin", "http://localhost/9411", "gofr"},
@@ -37,6 +37,6 @@ func TestTraceExporterFailure(t *testing.T) {
 
 		err := tracerProvider(cfg)
 
-		assert.Error(t, err,"Failed[%v]",i)
+		assert.Error(t, err, "Failed[%v]", i)
 	}
 }

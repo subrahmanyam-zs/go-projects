@@ -9,7 +9,6 @@ import (
 	"go.opentelemetry.io/collector/translator/conventions"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
-	"go.opentelemetry.io/otel/exporters/stdout/stdouttrace"
 	"go.opentelemetry.io/otel/exporters/zipkin"
 	"go.opentelemetry.io/otel/propagation"
 	"go.opentelemetry.io/otel/sdk/resource"
@@ -42,8 +41,6 @@ func tracerProvider(config Config) (err error) {
 		tp, err = e.getZipkinExporter(config)
 	case "gcp":
 		tp, err = getGCPExporter(config, gcpProjectID)
-	case "stdout":
-		tp, err = stdOutTrace(config)
 	default:
 		return errors.Error("invalid exporter")
 	}
@@ -74,22 +71,6 @@ func (e *exporter) getZipkinExporter(c Config) (*trace.TracerProvider, error) {
 	}
 
 	tp := trace.NewTracerProvider(trace.WithSampler(trace.AlwaysSample()), trace.WithSpanProcessor(batcher), trace.WithResource(r))
-
-	return tp, nil
-}
-
-func stdOutTrace(c Config) (*trace.TracerProvider, error) {
-	exporter, err := stdouttrace.New(stdouttrace.WithPrettyPrint())
-	if err != nil {
-		return nil, err
-	}
-
-	r, err := getResource(c)
-	if err != nil {
-		return nil, err
-	}
-
-	tp := trace.NewTracerProvider(trace.WithBatcher(exporter), trace.WithResource(r))
 
 	return tp, nil
 }
