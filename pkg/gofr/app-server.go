@@ -52,7 +52,6 @@ const (
 	defaultMetricsPort      = 2121
 	defaultMetricsRoute     = "/metrics"
 	defaultHealthCheckPort  = 8000
-	defaultHealthCheckRoute = "/.well-known/health-check"
 )
 
 //nolint:revive // We do not want anyone using the struct without initialization steps.

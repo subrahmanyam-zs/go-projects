@@ -4,13 +4,15 @@ import (
 	"encoding/json"
 	"net/http"
 	"strconv"
+
+	"github.com/gorilla/mux"
 )
 
 func healthCheckHandlerServer(ctx *Context, port int) *http.Server {
-	mux := http.NewServeMux()
+	r := mux.NewRouter()
 	healthResp, err := HealthHandler(ctx)
 
-	mux.HandleFunc(defaultHealthCheckRoute, func(w http.ResponseWriter, r *http.Request) {
+	r.HandleFunc("/.well-known/health-check", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 
 		if err != nil {
@@ -42,7 +44,5 @@ func healthCheckHandlerServer(ctx *Context, port int) *http.Server {
 		_, _ = w.Write(data)
 	})
 
-	srv := &http.Server{Addr: ":" + strconv.Itoa(port), Handler: mux}
-
-	return srv
+	return &http.Server{Addr: ":" + strconv.Itoa(port), Handler: r}
 }
