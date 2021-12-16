@@ -40,6 +40,11 @@ type httpService struct {
 	mu            sync.Mutex
 
 	cache *cachedHTTPService
+
+	// RetryCheck enables the custom retry logic to make service calls
+	// arguments: logger, error, response status-code, attempt count
+	// returns whether framework should retry service call or not
+	RetryCheck func(log.Logger, error, int, int) bool
 }
 
 type responseType int
@@ -100,9 +105,14 @@ func (h *httpService) call(ctx context.Context, method, target string, params ma
 
 		for i := 0; i <= h.numOfRetries; i++ {
 			resp, err = h.Do(req.WithContext(ctx)) //nolint:bodyclose // body is being closed after call response is logged
-
 			if resp != nil {
 				statusCode = resp.StatusCode
+			}
+
+			if h.RetryCheck != nil {
+				if retry := h.RetryCheck(h.logger, err, statusCode, i+1); retry {
+					continue
+				}
 			}
 
 			if err != nil {
@@ -250,24 +260,19 @@ func (h *httpService) setHeadersFromContext(ctx context.Context, req *http.Reque
 		req.Header.Add("X-Correlation-ID", correlationID)
 	}
 
+	if val := ctx.Value(middleware.B3TraceIDKey); val != nil {
+		b3TraceID, _ := val.(string)
+		req.Header.Add("X-B3-TraceID", b3TraceID)
+	}
+
 	if val := ctx.Value(middleware.ClientIPKey); val != nil {
 		clientIP, _ := val.(string)
 		req.Header.Add("True-Client-IP", clientIP)
 	}
 
-	if val := ctx.Value(middleware.ZopsmartChannelKey); val != nil {
-		zopsmartChannel, _ := val.(string)
-		req.Header.Add("X-Zopsmart-Channel", zopsmartChannel)
-	}
-
 	if val := ctx.Value(middleware.AuthenticatedUserIDKey); val != nil {
 		authUserID, _ := val.(string)
 		req.Header.Add("X-Authenticated-UserId", authUserID)
-	}
-
-	if val := ctx.Value(middleware.ZopsmartTenantKey); val != nil {
-		zopsmartTenant, _ := val.(string)
-		req.Header.Add("X-Zopsmart-Tenant", zopsmartTenant)
 	}
 
 	if h.auth != "" {

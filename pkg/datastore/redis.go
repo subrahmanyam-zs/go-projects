@@ -59,7 +59,7 @@ type RedisConfig struct {
 	Options                 *redis.Options
 }
 
-// nolint:gocognit // cannot reduce complexity witout affecting readability.
+// nolint:gocognit // cannot reduce complexity without affecting readability.
 // NewRedis connects to Redis if the given config is correct, otherwise returns the error
 func NewRedis(logger log.Logger, config RedisConfig) (Redis, error) {
 	if config.Options != nil {

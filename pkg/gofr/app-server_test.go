@@ -83,3 +83,44 @@ func Test_AllRouteLog(t *testing.T) {
 	assert.Contains(t, b.String(), "GET /.well-known/openapi.json HEAD /.well-known/openapi.json ")
 	assert.NotContains(t, b.String(), "\"NotFoundHandler\":null,\"MethodNotAllowedHandler\":null,\"KeepContext\":false")
 }
+
+// TestRouter_CatchAllRoute tests the CatchAllRoute for the requests to not registered endpoints or invalid routes.
+func TestRouter_CatchAllRoute(t *testing.T) {
+	app := New()
+
+	app.GET("/dummy", func(ctx *Context) (interface{}, error) {
+		return nil, nil
+	})
+
+	go app.Start()
+	time.Sleep(time.Second * 2)
+
+	tests := []struct {
+		desc       string
+		endpoint   string
+		method     string
+		statusCode int
+	}{
+		{"invalid route", "/dummy1", http.MethodGet, http.StatusNotFound},
+		{"substring route", "/dumm", http.MethodPost, http.StatusNotFound},
+		{"valid route", "/dummy", http.MethodGet, http.StatusOK},
+		{"invalid method", "/dummy", http.MethodDelete, http.StatusMethodNotAllowed},
+	}
+
+	for i, test := range tests {
+		req, _ := http.NewRequest(test.method, "http://localhost:8000"+test.endpoint, http.NoBody)
+		client := http.Client{}
+
+		resp, err := client.Do(req)
+		if err != nil {
+			t.Errorf("TEST[%v] %v\nerror while making request, %v", i, test.desc, err)
+			continue
+		}
+
+		if resp.StatusCode != test.statusCode {
+			t.Errorf("TEST[%v] %v\n expected %v, got %v", i, test.desc, test.statusCode, resp.StatusCode)
+		}
+
+		_ = resp.Body.Close()
+	}
+}
