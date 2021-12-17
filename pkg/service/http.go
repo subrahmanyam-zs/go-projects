@@ -62,7 +62,7 @@ const (
 	ErrToken                = errors.Error("token could not be obtained")
 )
 
-// nolint:lll,gocognit,gocyclo  // cannot reduce the number of lines since there are many parameters.
+// nolint:lll,gocognit,gocyclo,funlen  // cannot reduce the number of lines since there are many parameters.
 func (h *httpService) call(ctx context.Context, method, target string, params map[string]interface{}, body []byte, headers map[string]string) (*Response, error) {
 	correlationID, _ := ctx.Value(middleware.CorrelationIDKey).(string)
 	appData := getAppData(ctx)
