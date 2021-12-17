@@ -23,14 +23,14 @@ type exporter struct {
 	appName string
 }
 
-func tracerProvider(config Config) (err error) {
-	appName := config.GetOrDefault("APP_NAME", "gofr")
-	exporterName := strings.ToLower(config.Get("TRACER_EXPORTER"))
-	gcpProjectID := config.Get("GCP_PROJECT_ID")
+func tracerProvider(c Config) (err error) {
+	appName := c.GetOrDefault("APP_NAME", "gofr")
+	exporterName := strings.ToLower(c.Get("TRACER_EXPORTER"))
+	gcpProjectID := c.Get("GCP_PROJECT_ID")
 
 	e := exporter{
 		name:    exporterName,
-		url:     config.Get("TRACER_URL"),
+		url:     c.Get("TRACER_URL"),
 		appName: appName,
 	}
 
@@ -38,9 +38,9 @@ func tracerProvider(config Config) (err error) {
 
 	switch exporterName {
 	case "zipkin":
-		tp, err = e.getZipkinExporter(config)
+		tp, err = e.getZipkinExporter(c)
 	case "gcp":
-		tp, err = getGCPExporter(config, gcpProjectID)
+		tp, err = getGCPExporter(c, gcpProjectID)
 	default:
 		return errors.Error("invalid exporter")
 	}
