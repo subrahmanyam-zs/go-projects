@@ -16,9 +16,6 @@ import (
 func healthCheckHandlerServer(ctx *Context, port int) *http.Server {
 	r := mux.NewRouter()
 
-	// handles 404
-	r.NotFoundHandler = r.NewRoute().HandlerFunc(http.NotFound).GetHandler()
-
 	r.Use(validateRoutes(ctx.Logger))
 
 	r.HandleFunc("/.well-known/health-check", func(w http.ResponseWriter, r *http.Request) {
@@ -53,6 +50,9 @@ func healthCheckHandlerServer(ctx *Context, port int) *http.Server {
 
 		_, _ = w.Write(data)
 	})
+
+	// handles 404
+	r.NotFoundHandler = r.NewRoute().HandlerFunc(http.NotFound).GetHandler()
 
 	return &http.Server{Addr: ":" + strconv.Itoa(port), Handler: r}
 }
