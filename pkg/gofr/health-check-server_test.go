@@ -13,7 +13,7 @@ func TestHealthCheckHandlerServer(t *testing.T) {
 	app := NewCMD()
 
 	srv := healthCheckHandlerServer(app.cmd)
-	serverURL := "http://localhost:" + strconv.Itoa(defaultMetricsPort)
+	serverURL := "http://localhost:" + strconv.Itoa(defaultHealthCheckPort)
 	r := httptest.NewRequest(http.MethodGet, serverURL+defaultHealthCheckRoute, nil)
 	rr := httptest.NewRecorder()
 

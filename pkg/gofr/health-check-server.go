@@ -9,9 +9,9 @@ import (
 	"strings"
 	"sync"
 
-	"go.opencensus.io/trace"
-
 	"github.com/gorilla/mux"
+
+	"go.opencensus.io/trace"
 
 	"developer.zopsmart.com/go/gofr/pkg/gofr/request"
 	"developer.zopsmart.com/go/gofr/pkg/gofr/responder"
@@ -71,9 +71,7 @@ func (app *cmdApp) healthCheck(w http.ResponseWriter, r *http.Request) {
 func validateRoutes(l log.Logger) func(http.Handler) http.Handler {
 	return func(inner http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
-			path := req.URL.Path
-
-			if !strings.Contains(defaultHealthCheckRoute, path) {
+			if !strings.Contains(defaultHealthCheckRoute, req.URL.Path) {
 				err := middleware.FetchErrResponseWithCode(http.StatusNotFound,
 					fmt.Sprintf("Route %v not found", req.URL), "Invalid Route")
 
@@ -84,7 +82,7 @@ func validateRoutes(l log.Logger) func(http.Handler) http.Handler {
 
 			if req.Method != http.MethodGet {
 				err := middleware.FetchErrResponseWithCode(http.StatusMethodNotAllowed,
-					fmt.Sprintf("%v method not allowed for Route %v", req.Method, req.URL), "Invalid Method")
+					fmt.Sprintf("%v method not allowed for Route %v", req.Method, req.URL.Path), "Invalid Method")
 
 				middleware.ErrorResponse(w, req, l, *err)
 
@@ -99,7 +97,7 @@ func validateRoutes(l log.Logger) func(http.Handler) http.Handler {
 // nolint:dupl // contextInjector is used only for health-check in GOFR CMD
 func (app *cmdApp) contextInjector(inner http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		ctx := app.contextPool.Get().(*Context)
+		ctx := app.healthCheckSvr.contextPool.Get().(*Context)
 		ctx.reset(responder.NewContextualResponder(w, r), request.NewHTTPRequest(r))
 		*r = *r.WithContext(context.WithValue(r.Context(), appData, &sync.Map{}))
 		ctx.Context = r.Context()
@@ -117,6 +115,6 @@ func (app *cmdApp) contextInjector(inner http.Handler) http.Handler {
 
 		inner.ServeHTTP(w, r)
 
-		app.contextPool.Put(ctx)
+		app.healthCheckSvr.contextPool.Put(ctx)
 	})
 }

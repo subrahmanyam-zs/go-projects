@@ -11,7 +11,6 @@ import (
 )
 
 type cmdApp struct {
-	contextPool    sync.Pool
 	Router         CMDRouter
 	metricSvr      *metricServer
 	healthCheckSvr *healthCheckServer
@@ -26,8 +25,9 @@ type metricServer struct {
 }
 
 type healthCheckServer struct {
-	server *http.Server
-	port   int
+	contextPool sync.Pool
+	server      *http.Server
+	port        int
 }
 
 func (app *cmdApp) Start(logger log.Logger) {

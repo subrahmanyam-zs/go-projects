@@ -185,18 +185,6 @@ func initializeAvro(c *avro.Config, k *Gofr) {
 	}
 }
 
-func getConfigFolder() (configFolder string) {
-	if _, err := os.Stat("./configs"); err == nil {
-		configFolder = "./configs"
-	} else if _, err = os.Stat("../configs"); err == nil {
-		configFolder = "../configs"
-	} else {
-		configFolder = "../../configs"
-	}
-
-	return
-}
-
 func NewCMD() *Gofr {
 	c := config.NewGoDotEnvProvider(log.NewLogger(), getConfigFolder())
 	// Here we do things based on what is provided by Config, eg LOG_LEVEL etc.
@@ -253,7 +241,7 @@ func NewCMD() *Gofr {
 
 	cmdApp.context = NewContext(&responder.CMD{}, request.NewCMDRequest(), gofr)
 
-	cmdApp.contextPool.New = func() interface{} {
+	cmdApp.healthCheckSvr.contextPool.New = func() interface{} {
 		return cmdApp.context
 	}
 
@@ -674,4 +662,16 @@ func initializeAwsSNS(c Config, k *Gofr) {
 	}
 
 	k.Logger.Infof("AWS SNS initialized")
+}
+
+func getConfigFolder() (configFolder string) {
+	if _, err := os.Stat("./configs"); err == nil {
+		configFolder = "./configs"
+	} else if _, err = os.Stat("../configs"); err == nil {
+		configFolder = "../configs"
+	} else {
+		configFolder = "../../configs"
+	}
+
+	return
 }
