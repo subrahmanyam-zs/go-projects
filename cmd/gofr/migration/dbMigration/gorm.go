@@ -19,7 +19,7 @@ type GORM struct {
 type gofrMigration struct {
 	App       string    `gorm:"primary_key"`
 	Version   int64     `gorm:"primary_key;auto_increment:false"`
-	StartTime time.Time `gorm:"type:DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP"`
+	StartTime time.Time `gorm:"autoCreateTime"`
 	EndTime   time.Time `gorm:"default:NULL"`
 	Method    string    `gorm:"primary_key"`
 }
