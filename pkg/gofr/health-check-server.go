@@ -73,7 +73,7 @@ func validateRoutes(l log.Logger) func(http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
 			if !strings.Contains(defaultHealthCheckRoute, req.URL.Path) {
 				err := middleware.FetchErrResponseWithCode(http.StatusNotFound,
-					fmt.Sprintf("Route %v not found", req.URL.Path), "Invalid Route")
+					fmt.Sprintf("Route %v %v not found", req.Method, req.URL.Path), "Invalid Route")
 
 				middleware.ErrorResponse(w, req, l, *err)
 
