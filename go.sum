@@ -1278,8 +1278,6 @@ go.opentelemetry.io/otel v1.0.1/go.mod h1:OPEOD4jIT2SlZPMmwT6FqZz2C0ZNdQqiWcoK6M
 go.opentelemetry.io/otel v1.1.0/go.mod h1:7cww0OW51jQ8IaZChIEdqLwgh+44+7uiTdWsAL0wQpA=
 go.opentelemetry.io/otel v1.2.0 h1:YOQDvxO1FayUcT9MIhJhgMyNO1WqoduiyvQHzGN0kUQ=
 go.opentelemetry.io/otel v1.2.0/go.mod h1:aT17Fk0Z1Nor9e0uisf98LrntPGMnk4frBO9+dkf69I=
-go.opentelemetry.io/otel/exporters/stdout/stdouttrace v1.2.0 h1:OiYdrCq1Ctwnovp6EofSPwlp5aGy4LgKNbkg7PtEUw8=
-go.opentelemetry.io/otel/exporters/stdout/stdouttrace v1.2.0/go.mod h1:DUFCmFkXr0VtAHl5Zq2JRx24G6ze5CAq8YfdD36RdX8=
 go.opentelemetry.io/otel/exporters/zipkin v1.0.1 h1:Li6OvM1Po5qrP+HnXlZa+FyLkMun7JG4R0vTAch12qs=
 go.opentelemetry.io/otel/exporters/zipkin v1.0.1/go.mod h1:KXb2W6IVINSd/rKugSARqP3TsByxngvea3B1vm5ju74=
 go.opentelemetry.io/otel/internal/metric v0.21.0/go.mod h1:iOfAaY2YycsXfYD4kaRSbLx2LKmfpKObWBEv9QK5zFo=

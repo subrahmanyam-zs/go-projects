@@ -58,7 +58,6 @@ require (
 	github.com/lib/pq v1.10.4
 	github.com/satori/go.uuid v1.2.0
 	github.com/zopsmart/gorm-opentelemetry v1.0.1-0.20211207094150-86da13bfc8f0
-	go.opentelemetry.io/otel/exporters/stdout/stdouttrace v1.2.0
 	gorm.io/driver/mysql v1.2.0
 	gorm.io/driver/postgres v1.2.2
 	gorm.io/driver/sqlite v1.2.6
