@@ -14,7 +14,7 @@ func TestHealthCheckHandlerServer(t *testing.T) {
 
 	srv := healthCheckHandlerServer(app.cmd)
 	serverURL := "http://localhost:" + strconv.Itoa(defaultMetricsPort)
-	r := httptest.NewRequest(http.MethodGet, serverURL+"/.well-known/health-check", nil)
+	r := httptest.NewRequest(http.MethodGet, serverURL+defaultHealthCheckRoute, nil)
 	rr := httptest.NewRecorder()
 
 	srv.Handler.ServeHTTP(rr, r)

@@ -185,13 +185,8 @@ func initializeAvro(c *avro.Config, k *Gofr) {
 	}
 }
 
-func NewCMD() *Gofr {
-	var (
-		configFolder string
-		err          error
-	)
-
-	if _, err = os.Stat("./configs"); err == nil {
+func getConfigFolder() (configFolder string) {
+	if _, err := os.Stat("./configs"); err == nil {
 		configFolder = "./configs"
 	} else if _, err = os.Stat("../configs"); err == nil {
 		configFolder = "../configs"
@@ -199,14 +194,20 @@ func NewCMD() *Gofr {
 		configFolder = "../../configs"
 	}
 
-	c := config.NewGoDotEnvProvider(log.NewLogger(), configFolder)
+	return
+}
+
+func NewCMD() *Gofr {
+	c := config.NewGoDotEnvProvider(log.NewLogger(), getConfigFolder())
 	// Here we do things based on what is provided by Config, eg LOG_LEVEL etc.
 	logger := log.NewLogger()
 
-	var healthCheckPort int
+	var (
+		healthCheckPort int
+		err             error
+	)
 
-	healthCheckPort, err = strconv.Atoi(c.GetOrDefault("HEALTH_CHECK_PORT", string(rune(defaultHealthCheckPort))))
-	if err != nil {
+	if healthCheckPort, err = strconv.Atoi(c.Get("HEALTH_CHECK_PORT")); err != nil {
 		healthCheckPort = defaultHealthCheckPort
 	}
 

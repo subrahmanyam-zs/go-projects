@@ -24,28 +24,25 @@ func healthCheckHandlerServer(app *cmdApp) *http.Server {
 
 	r.Use(validateRoutes(app.context.Logger), app.contextInjector)
 
-	r.HandleFunc("/.well-known/health-check", func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application/json")
+	r.HandleFunc(defaultHealthCheckRoute, app.healthCheck)
 
-		healthResp, err := HealthHandler(app.context)
-		if err != nil {
-			app.context.Logger.Error(err)
+	// handles 404
+	r.NotFoundHandler = r.NewRoute().HandlerFunc(http.NotFound).GetHandler()
 
-			data, err := json.Marshal(err)
-			if err != nil {
-				app.context.Logger.Error(err)
+	return &http.Server{Addr: ":" + strconv.Itoa(app.healthCheckSvr.port), Handler: r}
+}
 
-				w.WriteHeader(http.StatusInternalServerError)
+// healthCheck calls HealthHandler and returns the response for healthCheck.
+func (app *cmdApp) healthCheck(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
 
-				return
-			}
+	var data []byte
 
-			_, _ = w.Write(data)
+	healthResp, err := HealthHandler(app.context)
+	if err != nil {
+		app.context.Logger.Error(err)
 
-			return
-		}
-
-		data, err := json.Marshal(healthResp)
+		data, err = json.Marshal(err)
 		if err != nil {
 			app.context.Logger.Error(err)
 
@@ -55,24 +52,32 @@ func healthCheckHandlerServer(app *cmdApp) *http.Server {
 		}
 
 		_, _ = w.Write(data)
-	})
 
-	// handles 404
-	r.NotFoundHandler = r.NewRoute().HandlerFunc(http.NotFound).GetHandler()
+		return
+	}
 
-	return &http.Server{Addr: ":" + strconv.Itoa(app.healthCheckSvr.port), Handler: r}
+	data, err = json.Marshal(healthResp)
+	if err != nil {
+		app.context.Logger.Error(err)
+
+		w.WriteHeader(http.StatusInternalServerError)
+
+		return
+	}
+
+	_, _ = w.Write(data)
 }
 
-func validateRoutes(log log.Logger) func(http.Handler) http.Handler {
+func validateRoutes(l log.Logger) func(http.Handler) http.Handler {
 	return func(inner http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
-			path := fmt.Sprintf("%s", req.URL.Path)
+			path := req.URL.Path
 
-			if !strings.Contains("/.well-known/health-check", path) {
+			if !strings.Contains(defaultHealthCheckRoute, path) {
 				err := middleware.FetchErrResponseWithCode(http.StatusNotFound,
 					fmt.Sprintf("Route %v not found", req.URL), "Invalid Route")
 
-				middleware.ErrorResponse(w, req, log, *err)
+				middleware.ErrorResponse(w, req, l, *err)
 
 				return
 			}
@@ -81,7 +86,7 @@ func validateRoutes(log log.Logger) func(http.Handler) http.Handler {
 				err := middleware.FetchErrResponseWithCode(http.StatusMethodNotAllowed,
 					fmt.Sprintf("%v method not allowed for Route %v", req.Method, req.URL), "Invalid Method")
 
-				middleware.ErrorResponse(w, req, log, *err)
+				middleware.ErrorResponse(w, req, l, *err)
 
 				return
 			}
@@ -91,6 +96,7 @@ func validateRoutes(log log.Logger) func(http.Handler) http.Handler {
 	}
 }
 
+// nolint:dupl // contextInjector is used only for health-check in GOFR CMD
 func (app *cmdApp) contextInjector(inner http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		c := app.contextPool.Get().(*Context)
