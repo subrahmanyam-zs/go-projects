@@ -3,6 +3,7 @@ package gofr
 import (
 	"net/http"
 	"os"
+	"sync"
 
 	"go.opencensus.io/trace"
 
@@ -10,6 +11,7 @@ import (
 )
 
 type cmdApp struct {
+	contextPool    sync.Pool
 	Router         CMDRouter
 	metricSvr      *metricServer
 	healthCheckSvr *healthCheckServer

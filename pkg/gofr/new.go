@@ -251,6 +251,11 @@ func NewCMD() *Gofr {
 	}
 
 	cmdApp.context = NewContext(&responder.CMD{}, request.NewCMDRequest(), gofr)
+
+	cmdApp.contextPool.New = func() interface{} {
+		return cmdApp.context
+	}
+
 	// Start tracing span
 	ctx, tSpan := trace.StartSpan(context.Background(), "CMD")
 	cmdApp.context.Context = ctx
@@ -262,7 +267,7 @@ func NewCMD() *Gofr {
 		gofr.Logger.Logf("tracing is enabled on, %v %v:%v", c.Get("TRACER_EXPORTER"), c.Get("TRACER_HOST"), c.Get("TRACER_PORT"))
 	}
 
-	cmdApp.healthCheckSvr.server = healthCheckHandlerServer(cmdApp.context, cmdApp.healthCheckSvr.port)
+	cmdApp.healthCheckSvr.server = healthCheckHandlerServer(cmdApp)
 
 	initializeDataStores(c, gofr)
 

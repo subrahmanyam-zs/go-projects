@@ -1,33 +1,39 @@
 package gofr
 
 import (
+	ctx "context"
 	"encoding/json"
 	"fmt"
 	"net/http"
 	"strconv"
 	"strings"
+	"sync"
+
+	"go.opencensus.io/trace"
 
 	"github.com/gorilla/mux"
 
+	"developer.zopsmart.com/go/gofr/pkg/gofr/request"
+	"developer.zopsmart.com/go/gofr/pkg/gofr/responder"
 	"developer.zopsmart.com/go/gofr/pkg/log"
 	"developer.zopsmart.com/go/gofr/pkg/middleware"
 )
 
-func healthCheckHandlerServer(ctx *Context, port int) *http.Server {
+func healthCheckHandlerServer(app *cmdApp) *http.Server {
 	r := mux.NewRouter()
 
-	r.Use(validateRoutes(ctx.Logger))
+	r.Use(validateRoutes(app.context.Logger), app.contextInjector)
 
 	r.HandleFunc("/.well-known/health-check", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 
-		healthResp, err := HealthHandler(ctx)
+		healthResp, err := HealthHandler(app.context)
 		if err != nil {
-			ctx.Logger.Error(err)
+			app.context.Logger.Error(err)
 
 			data, err := json.Marshal(err)
 			if err != nil {
-				ctx.Logger.Error(err)
+				app.context.Logger.Error(err)
 
 				w.WriteHeader(http.StatusInternalServerError)
 
@@ -41,7 +47,7 @@ func healthCheckHandlerServer(ctx *Context, port int) *http.Server {
 
 		data, err := json.Marshal(healthResp)
 		if err != nil {
-			ctx.Logger.Error(err)
+			app.context.Logger.Error(err)
 
 			w.WriteHeader(http.StatusInternalServerError)
 
@@ -54,7 +60,7 @@ func healthCheckHandlerServer(ctx *Context, port int) *http.Server {
 	// handles 404
 	r.NotFoundHandler = r.NewRoute().HandlerFunc(http.NotFound).GetHandler()
 
-	return &http.Server{Addr: ":" + strconv.Itoa(port), Handler: r}
+	return &http.Server{Addr: ":" + strconv.Itoa(app.healthCheckSvr.port), Handler: r}
 }
 
 func validateRoutes(log log.Logger) func(http.Handler) http.Handler {
@@ -83,4 +89,28 @@ func validateRoutes(log log.Logger) func(http.Handler) http.Handler {
 			inner.ServeHTTP(w, req)
 		})
 	}
+}
+
+func (app *cmdApp) contextInjector(inner http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		c := app.contextPool.Get().(*Context)
+		c.reset(responder.NewContextualResponder(w, r), request.NewHTTPRequest(r))
+		*r = *r.WithContext(ctx.WithValue(r.Context(), appData, &sync.Map{}))
+		c.Context = r.Context()
+		*r = *r.WithContext(ctx.WithValue(c.Context, gofrContextkey, c))
+
+		correlationID := r.Header.Get("X-Correlation-ID")
+		if correlationID == "" {
+			correlationID = r.Header.Get("X-B3-TraceID")
+		}
+		if correlationID == "" {
+			correlationID = trace.FromContext(r.Context()).SpanContext().TraceID.String()
+		}
+
+		c.Logger = log.NewCorrelationLogger(correlationID)
+
+		inner.ServeHTTP(w, r)
+
+		app.contextPool.Put(c)
+	})
 }
