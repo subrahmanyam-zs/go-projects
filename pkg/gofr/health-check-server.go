@@ -1,7 +1,7 @@
 package gofr
 
 import (
-	ctx "context"
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -99,11 +99,11 @@ func validateRoutes(l log.Logger) func(http.Handler) http.Handler {
 // nolint:dupl // contextInjector is used only for health-check in GOFR CMD
 func (app *cmdApp) contextInjector(inner http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		c := app.contextPool.Get().(*Context)
-		c.reset(responder.NewContextualResponder(w, r), request.NewHTTPRequest(r))
-		*r = *r.WithContext(ctx.WithValue(r.Context(), appData, &sync.Map{}))
-		c.Context = r.Context()
-		*r = *r.WithContext(ctx.WithValue(c.Context, gofrContextkey, c))
+		ctx := app.contextPool.Get().(*Context)
+		ctx.reset(responder.NewContextualResponder(w, r), request.NewHTTPRequest(r))
+		*r = *r.WithContext(context.WithValue(r.Context(), appData, &sync.Map{}))
+		ctx.Context = r.Context()
+		*r = *r.WithContext(context.WithValue(ctx.Context, gofrContextkey, ctx))
 
 		correlationID := r.Header.Get("X-Correlation-ID")
 		if correlationID == "" {
@@ -113,10 +113,10 @@ func (app *cmdApp) contextInjector(inner http.Handler) http.Handler {
 			correlationID = trace.FromContext(r.Context()).SpanContext().TraceID.String()
 		}
 
-		c.Logger = log.NewCorrelationLogger(correlationID)
+		ctx.Logger = log.NewCorrelationLogger(correlationID)
 
 		inner.ServeHTTP(w, r)
 
-		app.contextPool.Put(c)
+		app.contextPool.Put(ctx)
 	})
 }
