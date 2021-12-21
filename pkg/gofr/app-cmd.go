@@ -2,8 +2,9 @@ package gofr
 
 import (
 	"fmt"
-	"go.opencensus.io/trace"
 	"os"
+
+	"go.opencensus.io/trace"
 
 	"developer.zopsmart.com/go/gofr/pkg/gofr/config"
 	"developer.zopsmart.com/go/gofr/pkg/log"
