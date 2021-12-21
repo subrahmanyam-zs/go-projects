@@ -49,10 +49,8 @@ type HTTP struct {
 }
 
 const (
-	defaultMetricsPort      = 2121
-	defaultMetricsRoute     = "/metrics"
-	defaultHealthCheckRoute = "/.well-known/health-check"
-	defaultHealthCheckPort  = 8000
+	defaultMetricsPort  = 2121
+	defaultMetricsRoute = "/metrics"
 )
 
 //nolint:revive // We do not want anyone using the struct without initialization steps.
@@ -233,7 +231,6 @@ type contextKey int
 const gofrContextkey contextKey = 1
 const appData middleware.LogDataKey = "appLogData"
 
-// nolint:dupl //using contextInjector for GOFR server.
 // contextInjector injects *Context variable into every request using a middleware
 func (s *server) contextInjector(inner http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

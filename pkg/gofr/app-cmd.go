@@ -1,9 +1,7 @@
 package gofr
 
 import (
-	"net/http"
 	"os"
-	"sync"
 
 	"go.opencensus.io/trace"
 
@@ -11,23 +9,9 @@ import (
 )
 
 type cmdApp struct {
-	Router         CMDRouter
-	metricSvr      *metricServer
-	healthCheckSvr *healthCheckServer
-	context        *Context
-	tracingSpan    *trace.Span
-}
-
-type metricServer struct {
-	server *http.Server
-	port   int
-	route  string
-}
-
-type healthCheckServer struct {
-	contextPool sync.Pool
-	server      *http.Server
-	port        int
+	Router      CMDRouter
+	context     *Context
+	tracingSpan *trace.Span
 }
 
 func (app *cmdApp) Start(logger log.Logger) {
@@ -40,17 +24,10 @@ func (app *cmdApp) Start(logger log.Logger) {
 		}
 	}
 
-	// start the metric server
-	app.metricSvr.server = metricsServer(logger, app.metricSvr.port, app.metricSvr.route)
-
-	// start the health-check server
+	// start the server for health-check and metrics
 	go func() {
-		app.context.Logger.Infof("Starting health-check server at :%v", app.healthCheckSvr.port)
-
-		err := app.healthCheckSvr.server.ListenAndServe()
-		if err != nil {
-			app.context.Logger.Errorf("error in health-check server %v", err)
-		}
+		app := NewWithConfig(app.context.Config)
+		app.Start()
 	}()
 
 	h := app.Router.handler(command)

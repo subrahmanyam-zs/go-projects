@@ -190,17 +190,7 @@ func NewCMD() *Gofr {
 	// Here we do things based on what is provided by Config, eg LOG_LEVEL etc.
 	logger := log.NewLogger()
 
-	var (
-		healthCheckPort int
-		err             error
-	)
-
-	if healthCheckPort, err = strconv.Atoi(c.Get("HEALTH_CHECK_PORT")); err != nil {
-		healthCheckPort = defaultHealthCheckPort
-	}
-
-	cmdApp := &cmdApp{Router: NewCMDRouter(), metricSvr: &metricServer{route: defaultMetricsRoute},
-		healthCheckSvr: &healthCheckServer{port: healthCheckPort}}
+	cmdApp := &cmdApp{Router: NewCMDRouter()}
 
 	gofr := &Gofr{
 		Logger: logger,
@@ -230,20 +220,7 @@ func NewCMD() *Gofr {
 		}
 	}()
 
-	if cmdApp.metricSvr.port, err = strconv.Atoi(c.Get("METRIC_PORT")); err != nil {
-		cmdApp.metricSvr.port = defaultMetricsPort
-	}
-
-	if route := c.Get("METRIC_ROUTE"); route != "" {
-		route = strings.TrimPrefix(route, "/")
-		cmdApp.metricSvr.route = "/" + route
-	}
-
 	cmdApp.context = NewContext(&responder.CMD{}, request.NewCMDRequest(), gofr)
-
-	cmdApp.healthCheckSvr.contextPool.New = func() interface{} {
-		return cmdApp.context
-	}
 
 	// Start tracing span
 	ctx, tSpan := trace.StartSpan(context.Background(), "CMD")
@@ -251,12 +228,10 @@ func NewCMD() *Gofr {
 	cmdApp.tracingSpan = tSpan
 
 	// If Tracing is set, Set tracing
-	err = enableTracing(c)
+	err := enableTracing(c)
 	if err == nil {
 		gofr.Logger.Logf("tracing is enabled on, %v %v:%v", c.Get("TRACER_EXPORTER"), c.Get("TRACER_HOST"), c.Get("TRACER_PORT"))
 	}
-
-	cmdApp.healthCheckSvr.server = healthCheckHandlerServer(cmdApp)
 
 	initializeDataStores(c, gofr)
 
