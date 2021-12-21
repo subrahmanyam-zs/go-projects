@@ -36,20 +36,9 @@ var (
 )
 
 func New() (k *Gofr) {
-	var (
-		logger       = log.NewLogger()
-		configFolder string
-	)
+	logger := log.NewLogger()
 
-	if _, err := os.Stat("./configs"); err == nil {
-		configFolder = "./configs"
-	} else if _, err := os.Stat("../configs"); err == nil {
-		configFolder = "../configs"
-	} else {
-		configFolder = "../../configs"
-	}
-
-	return NewWithConfig(config.NewGoDotEnvProvider(logger, configFolder))
+	return NewWithConfig(config.NewGoDotEnvProvider(logger, getConfigFolder()))
 }
 
 //nolint:gocognit  // It's a sequence of initialization. Easier to understand this way.
