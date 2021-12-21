@@ -24,7 +24,7 @@ func TestIntegration(t *testing.T) {
 		{"create succuss", http.MethodPost, "customer", http.StatusCreated, []byte(`{"name":"Robert"}`)},
 		{"get unknown endpoint", http.MethodGet, "unknown", http.StatusNotFound, nil},
 		{"get invalid endpoint", http.MethodGet, "customer/id", http.StatusNotFound, nil},
-		{"unregistered route", http.MethodPut, "customer", http.StatusNotFound, nil},
+		{"unregistered route", http.MethodPut, "customer", http.StatusMethodNotAllowed, nil},
 		{"delete succuss", http.MethodDelete, "customer?name=Robert", http.StatusNoContent, nil},
 	}
 

@@ -45,7 +45,7 @@ func TestIntegrationPersons(t *testing.T) {
 		{"delete by id", http.MethodDelete, "persons/7", http.StatusNoContent, nil},
 		{"get unknown route", http.MethodGet, "unknown", http.StatusNotFound, nil},
 		{"get invalid route", http.MethodGet, "persons/id", http.StatusNotFound, nil},
-		{"update without id", http.MethodPut, "persons", http.StatusNotFound, nil},
+		{"update without id", http.MethodPut, "persons", http.StatusMethodNotAllowed, nil},
 	}
 	for i, tc := range tests {
 		req, _ := request.NewMock(tc.method, "http://localhost:9094/"+tc.endpoint, bytes.NewBuffer(tc.body))
