@@ -6,7 +6,7 @@ require (
 	cloud.google.com/go/storage v1.16.1
 	contrib.go.opencensus.io/exporter/stackdriver v0.13.8
 	contrib.go.opencensus.io/exporter/zipkin v0.1.2
-	github-lvs.corpzone.internalzone.com/mcafee/cnsr-gofr-csp-auth v0.1.0
+	github-lvs.corpzone.internalzone.com/mcafee/cnsr-gofr-csp-auth v0.1.2
 	github.com/Azure/azure-amqp-common-go/v3 v3.2.0
 	github.com/Azure/azure-event-hubs-go/v3 v3.3.13
 	github.com/Azure/azure-storage-blob-go v0.14.0
@@ -43,8 +43,8 @@ require (
 	github.com/yugabyte/gocql v0.0.0-20200602185649-ef3952a45ff4
 	go.mongodb.org/mongo-driver v1.7.2
 	go.opencensus.io v0.23.0
-	golang.org/x/crypto v0.0.0-20210921155107-089bfa567519
-	golang.org/x/net v0.0.0-20210924054057-cf34111cab4d
+	golang.org/x/crypto v0.0.0-20211215153901-e495a2d5b3d3
+	golang.org/x/net v0.0.0-20211112202133-69e39bad7dc2
 	golang.org/x/text v0.3.7
 	google.golang.org/api v0.57.0
 	google.golang.org/grpc v1.40.0
