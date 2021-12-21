@@ -2,10 +2,8 @@ package gofr
 
 import (
 	"fmt"
-	"os"
-	"time"
-
 	"go.opencensus.io/trace"
+	"os"
 
 	"developer.zopsmart.com/go/gofr/pkg/gofr/config"
 	"developer.zopsmart.com/go/gofr/pkg/log"
@@ -45,8 +43,6 @@ func (app *cmdApp) Start(logger log.Logger) {
 		app := NewWithConfig(cfg)
 		app.Start()
 	}()
-
-	time.Sleep(1 * time.Second)
 
 	h := app.Router.handler(command)
 	if h == nil {
