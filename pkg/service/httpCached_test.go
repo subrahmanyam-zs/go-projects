@@ -196,14 +196,15 @@ func TestGetHeaders(t *testing.T) {
 }
 
 func Test_GetHeaders_All(t *testing.T) {
-	expectedHeaders := map[string]string{"X-Correlation-Id": "123", "True-Client-IP": "127.0.0.1",
-		"X-Authenticated-UserId": "990", "X-B3-TraceID": "123"}
+	expectedHeaders := map[string]string{"X-Correlation-ID": "123", "True-Client-IP": "127.0.0.1",
+		"X-Zopsmart-Channel": "api", "X-Authenticated-UserId": "990", "X-Zopsmart-Tenant": "zopsmart"}
 
 	ctx := context.TODO()
 	ctx = context.WithValue(ctx, middleware.CorrelationIDKey, "123")
 	ctx = context.WithValue(ctx, middleware.ClientIPKey, "127.0.0.1")
+	ctx = context.WithValue(ctx, middleware.ZopsmartChannelKey, "api")
 	ctx = context.WithValue(ctx, middleware.AuthenticatedUserIDKey, "990")
-	ctx = context.WithValue(ctx, middleware.B3TraceIDKey, "123")
+	ctx = context.WithValue(ctx, middleware.ZopsmartTenantKey, "zopsmart")
 
 	headers := cachedHTTPService{httpService: &httpService{}}.getHeaders(ctx, nil)
 

@@ -11,21 +11,17 @@ type MockHandlerForHeaderPropagation struct{}
 
 // ServeHTTP is used for testing if the request context has traceId
 func (r *MockHandlerForHeaderPropagation) ServeHTTP(w http.ResponseWriter, req *http.Request) {
+	channel, _ := req.Context().Value(ZopsmartChannelKey).(string)
+	tenant, _ := req.Context().Value(ZopsmartTenantKey).(string)
 	authorization := req.Context().Value(AuthorizationHeader).(string)
-	b3TraceID := req.Context().Value(B3TraceIDKey).(string)
-	authorizationHeader := req.Context().Value(AuthenticatedUserIDKey).(string)
-	body := strings.Join([]string{b3TraceID, authorizationHeader, authorization}, ",")
-
+	body := strings.Join([]string{channel, tenant, authorization}, ",")
 	_, _ = w.Write([]byte(body))
 }
 
 func TestPropagateHeaders(t *testing.T) {
 	handler := PropagateHeaders(&MockHandlerForHeaderPropagation{})
-	req := httptest.NewRequest("GET", "/dummy", http.NoBody)
-	req.Header.Set("X-B3-TraceID", "WEB")
-	req.Header.Set("Authorization", "zop")
-	req.Header.Set("X-Authenticated-UserId", "zopsmart")
-
+	req := httptest.NewRequest("GET", "/dummy", nil)
+	req.Header = map[string][]string{"X-Zopsmart-Tenant": {"zopsmart"}, "X-Zopsmart-Channel": {"WEB"}, "Authorization": {"zop"}}
 	recorder := httptest.NewRecorder()
 
 	handler.ServeHTTP(recorder, req)

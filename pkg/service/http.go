@@ -260,19 +260,24 @@ func (h *httpService) setHeadersFromContext(ctx context.Context, req *http.Reque
 		req.Header.Add("X-Correlation-ID", correlationID)
 	}
 
-	if val := ctx.Value(middleware.B3TraceIDKey); val != nil {
-		b3TraceID, _ := val.(string)
-		req.Header.Add("X-B3-TraceID", b3TraceID)
-	}
-
 	if val := ctx.Value(middleware.ClientIPKey); val != nil {
 		clientIP, _ := val.(string)
 		req.Header.Add("True-Client-IP", clientIP)
 	}
 
+	if val := ctx.Value(middleware.ZopsmartChannelKey); val != nil {
+		zopsmartChannel, _ := val.(string)
+		req.Header.Add("X-Zopsmart-Channel", zopsmartChannel)
+	}
+
 	if val := ctx.Value(middleware.AuthenticatedUserIDKey); val != nil {
 		authUserID, _ := val.(string)
 		req.Header.Add("X-Authenticated-UserId", authUserID)
+	}
+
+	if val := ctx.Value(middleware.ZopsmartTenantKey); val != nil {
+		zopsmartTenant, _ := val.(string)
+		req.Header.Add("X-Zopsmart-Tenant", zopsmartTenant)
 	}
 
 	if h.auth != "" {

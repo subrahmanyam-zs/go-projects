@@ -128,11 +128,6 @@ func (c cachedHTTPService) getHeaders(ctx context.Context, headers map[string]st
 		headers = make(map[string]string)
 	}
 
-	if val := ctx.Value(middleware.B3TraceIDKey); val != nil {
-		b3TraceID, _ := val.(string)
-		headers["X-B3-TraceID"] = b3TraceID
-	}
-
 	if val := ctx.Value(middleware.CorrelationIDKey); val != nil {
 		correlationID, _ := val.(string)
 		headers["X-Correlation-ID"] = correlationID
@@ -143,9 +138,19 @@ func (c cachedHTTPService) getHeaders(ctx context.Context, headers map[string]st
 		headers["True-Client-IP"] = clientIP
 	}
 
+	if val := ctx.Value(middleware.ZopsmartChannelKey); val != nil {
+		zopsmartChannel, _ := val.(string)
+		headers["X-Zopsmart-Channel"] = zopsmartChannel
+	}
+
 	if val := ctx.Value(middleware.AuthenticatedUserIDKey); val != nil {
 		authUserID, _ := val.(string)
 		headers["X-Authenticated-UserId"] = authUserID
+	}
+
+	if val := ctx.Value(middleware.ZopsmartTenantKey); val != nil {
+		zopsmartTenant, _ := val.(string)
+		headers["X-Zopsmart-Tenant"] = zopsmartTenant
 	}
 
 	if c.auth != "" {
