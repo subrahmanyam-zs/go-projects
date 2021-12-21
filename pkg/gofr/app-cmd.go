@@ -1,17 +1,26 @@
 package gofr
 
 import (
+	"fmt"
 	"os"
+	"time"
 
 	"go.opencensus.io/trace"
 
+	"developer.zopsmart.com/go/gofr/pkg/gofr/config"
 	"developer.zopsmart.com/go/gofr/pkg/log"
 )
 
 type cmdApp struct {
 	Router      CMDRouter
+	metricSvr   *metricServer
 	context     *Context
 	tracingSpan *trace.Span
+}
+
+type metricServer struct {
+	port  int
+	route string
 }
 
 func (app *cmdApp) Start(logger log.Logger) {
@@ -24,11 +33,20 @@ func (app *cmdApp) Start(logger log.Logger) {
 		}
 	}
 
+	// This will avoid users from adding additional configs than required for CMD application.
+	cfg := &config.MockConfig{Data: map[string]string{
+		"HTTP_PORT":    app.context.Config.Get("HTTP_PORT"),
+		"METRIC_PORT":  fmt.Sprint(app.metricSvr.port),
+		"METRIC_ROUTE": app.metricSvr.route,
+	}}
+
 	// start the server for health-check and metrics
 	go func() {
-		app := NewWithConfig(app.context.Config)
+		app := NewWithConfig(cfg)
 		app.Start()
 	}()
+
+	time.Sleep(1 * time.Second)
 
 	h := app.Router.handler(command)
 	if h == nil {

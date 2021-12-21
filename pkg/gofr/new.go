@@ -179,7 +179,7 @@ func NewCMD() *Gofr {
 	// Here we do things based on what is provided by Config, eg LOG_LEVEL etc.
 	logger := log.NewLogger()
 
-	cmdApp := &cmdApp{Router: NewCMDRouter()}
+	cmdApp := &cmdApp{Router: NewCMDRouter(), metricSvr: &metricServer{route: defaultMetricsRoute}}
 
 	gofr := &Gofr{
 		Logger: logger,
@@ -209,6 +209,17 @@ func NewCMD() *Gofr {
 		}
 	}()
 
+	var err error
+
+	if cmdApp.metricSvr.port, err = strconv.Atoi(c.Get("METRIC_PORT")); err != nil {
+		cmdApp.metricSvr.port = defaultMetricsPort
+	}
+
+	if route := c.Get("METRIC_ROUTE"); route != "" {
+		route = strings.TrimPrefix(route, "/")
+		cmdApp.metricSvr.route = "/" + route
+	}
+
 	cmdApp.context = NewContext(&responder.CMD{}, request.NewCMDRequest(), gofr)
 
 	// Start tracing span
@@ -217,7 +228,7 @@ func NewCMD() *Gofr {
 	cmdApp.tracingSpan = tSpan
 
 	// If Tracing is set, Set tracing
-	err := enableTracing(c)
+	err = enableTracing(c)
 	if err == nil {
 		gofr.Logger.Logf("tracing is enabled on, %v %v:%v", c.Get("TRACER_EXPORTER"), c.Get("TRACER_HOST"), c.Get("TRACER_PORT"))
 	}
