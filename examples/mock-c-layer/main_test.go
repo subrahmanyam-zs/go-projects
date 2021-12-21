@@ -29,8 +29,8 @@ func TestIntegration(t *testing.T) {
 		{"get invalid route", http.MethodGet, "unknown", http.StatusNotFound, nil},
 		{"get invalid endpoint", http.MethodGet, "brand/id", http.StatusNotFound, nil},
 
-		{"unregistered update route", http.MethodPut, "brand", http.StatusNotFound, nil},
-		{"unregistered delete route", http.MethodDelete, "brand", http.StatusNotFound, nil},
+		{"unregistered update route", http.MethodPut, "brand", http.StatusMethodNotAllowed, nil},
+		{"unregistered delete route", http.MethodDelete, "brand", http.StatusMethodNotAllowed, nil},
 	}
 
 	for i, tc := range tests {
