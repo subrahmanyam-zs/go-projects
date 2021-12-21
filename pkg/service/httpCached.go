@@ -128,6 +128,11 @@ func (c cachedHTTPService) getHeaders(ctx context.Context, headers map[string]st
 		headers = make(map[string]string)
 	}
 
+	if val := ctx.Value(middleware.B3TraceIDKey); val != nil {
+		b3TraceID, _ := val.(string)
+		headers["X-B3-TraceID"] = b3TraceID
+	}
+
 	if val := ctx.Value(middleware.CorrelationIDKey); val != nil {
 		correlationID, _ := val.(string)
 		headers["X-Correlation-ID"] = correlationID

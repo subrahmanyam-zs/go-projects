@@ -260,6 +260,11 @@ func (h *httpService) setHeadersFromContext(ctx context.Context, req *http.Reque
 		req.Header.Add("X-Correlation-ID", correlationID)
 	}
 
+	if val := ctx.Value(middleware.B3TraceIDKey); val != nil {
+		b3TraceID, _ := val.(string)
+		req.Header.Add("X-B3-TraceID", b3TraceID)
+	}
+
 	if val := ctx.Value(middleware.ClientIPKey); val != nil {
 		clientIP, _ := val.(string)
 		req.Header.Add("True-Client-IP", clientIP)
