@@ -22,8 +22,8 @@ func getJWT(logger log.Logger, r *http.Request) (JWT, error) {
 	// Checking if incoming token string conforms to the predefined jwt structure
 	jwtParts := strings.Split(jwtVal[1], ".")
 
-	const JWTPartsLen = 3
-	if len(jwtParts) != JWTPartsLen {
+	const jwtPartsLen = 3
+	if len(jwtParts) != jwtPartsLen {
 		logger.Error("jwt token is not of the format hhh.ppp.sss")
 		return JWT{}, middleware.ErrInvalidToken
 	}

@@ -23,7 +23,7 @@ func TestServerValidation(t *testing.T) {
 		{"create success case", http.MethodPost, "phone", http.StatusCreated, []byte(`{"phone":"+912123456789098", "email": "c.r@yahoo.com"}`)},
 		{"create fail case", http.MethodPost, "phone", http.StatusInternalServerError, nil},
 		{"invalid endpoint", http.MethodPost, "phone2", http.StatusNotFound, nil},
-		{"invalid route", http.MethodGet, "phone", http.StatusNotFound, nil},
+		{"invalid route", http.MethodGet, "phone", http.StatusMethodNotAllowed, nil},
 	}
 
 	for i, tc := range tests {

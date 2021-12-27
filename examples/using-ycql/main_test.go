@@ -81,7 +81,7 @@ func TestIntegrationShop(t *testing.T) {
 			[]byte(`{"id": 7, "name": "Kalash", "location": "Jehanabad", "state": "Bihar"}`)},
 		{"get at invalid endpoint", http.MethodGet, "unknown", http.StatusNotFound, nil},
 		{"get shop by id at invalid endpoint", http.MethodGet, "shop/id", http.StatusNotFound, nil},
-		{"update shop at invalid endpoint", http.MethodPut, "shop", http.StatusNotFound, nil},
+		{"update shop at invalid endpoint", http.MethodPut, "shop", http.StatusMethodNotAllowed, nil},
 		{"delete shop", http.MethodDelete, "shop/4", http.StatusNoContent, nil},
 	}
 	for i, tc := range testcases {
