@@ -10,7 +10,7 @@ import (
 
 type cmdApp struct {
 	Router      CMDRouter
-	metricSvr   *metricServer
+	server      *server
 	context     *Context
 	tracingSpan *trace.Span
 }
@@ -32,8 +32,7 @@ func (app *cmdApp) Start(logger log.Logger) {
 
 	// start the server for health-check and metrics
 	go func() {
-		app := NewWithConfig(app.context.Config)
-		app.Start()
+		app.server.Start(app.context.Logger)
 	}()
 
 	h := app.Router.handler(command)

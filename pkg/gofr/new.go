@@ -176,28 +176,11 @@ func initializeAvro(c *avro.Config, k *Gofr) {
 
 func NewCMD() *Gofr {
 	c := config.NewGoDotEnvProvider(log.NewLogger(), getConfigFolder())
-	// Here we do things based on what is provided by Config, eg LOG_LEVEL etc.
-	logger := log.NewLogger()
+	gofr := NewWithConfig(c)
+	cmdApp := &cmdApp{Router: NewCMDRouter()}
 
-	cmdApp := &cmdApp{Router: NewCMDRouter(), metricSvr: &metricServer{route: defaultMetricsRoute}}
-
-	gofr := &Gofr{
-		Logger: logger,
-		cmd:    cmdApp,
-		Config: c, // need to be set for using gofr.Config.Get() method
-	}
-
-	appVers := c.Get("APP_VERSION")
-	if appVers == "" {
-		logger.Warnf("APP_VERSION is not set. '%v' will be used in logs", pkg.DefaultAppVersion)
-	}
-
-	appName := c.Get("APP_NAME")
-	if appName == "" {
-		logger.Warnf("APP_NAME is not set.'%v' will be used in logs", pkg.DefaultAppName)
-	}
-
-	frameworkInfo.WithLabelValues(appName+"-"+appVers, "gofr-"+log.GofrVersion).Set(1)
+	gofr.cmd = cmdApp
+	cmdApp.server = gofr.Server
 
 	go func() {
 		const pushDuration = 10
@@ -209,33 +192,12 @@ func NewCMD() *Gofr {
 		}
 	}()
 
-	var err error
-
-	if cmdApp.metricSvr.port, err = strconv.Atoi(c.Get("METRIC_PORT")); err != nil {
-		cmdApp.metricSvr.port = defaultMetricsPort
-	}
-
-	if route := c.Get("METRIC_ROUTE"); route != "" {
-		route = strings.TrimPrefix(route, "/")
-		cmdApp.metricSvr.route = "/" + route
-	}
-
 	cmdApp.context = NewContext(&responder.CMD{}, request.NewCMDRequest(), gofr)
 
 	// Start tracing span
 	ctx, tSpan := trace.StartSpan(context.Background(), "CMD")
 	cmdApp.context.Context = ctx
 	cmdApp.tracingSpan = tSpan
-
-	// If Tracing is set, Set tracing
-	err = enableTracing(c)
-	if err == nil {
-		gofr.Logger.Logf("tracing is enabled on, %v %v:%v", c.Get("TRACER_EXPORTER"), c.Get("TRACER_HOST"), c.Get("TRACER_PORT"))
-	}
-
-	initializeDataStores(c, gofr)
-
-	initializeNotifiers(c, gofr)
 
 	return gofr
 }
