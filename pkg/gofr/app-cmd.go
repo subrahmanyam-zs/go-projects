@@ -1,12 +1,10 @@
 package gofr
 
 import (
-	"fmt"
 	"os"
 
 	"go.opencensus.io/trace"
 
-	"developer.zopsmart.com/go/gofr/pkg/gofr/config"
 	"developer.zopsmart.com/go/gofr/pkg/log"
 )
 
@@ -32,16 +30,9 @@ func (app *cmdApp) Start(logger log.Logger) {
 		}
 	}
 
-	// This will avoid users from adding additional configs than required for CMD application.
-	cfg := &config.MockConfig{Data: map[string]string{
-		"HTTP_PORT":    app.context.Config.Get("HTTP_PORT"),
-		"METRIC_PORT":  fmt.Sprint(app.metricSvr.port),
-		"METRIC_ROUTE": app.metricSvr.route,
-	}}
-
 	// start the server for health-check and metrics
 	go func() {
-		app := NewWithConfig(cfg)
+		app := NewWithConfig(app.context.Config)
 		app.Start()
 	}()
 
