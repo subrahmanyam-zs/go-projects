@@ -151,9 +151,8 @@ func Test_ormRetry(t *testing.T) {
 	assert.NoError(t, err, "FAILED, expected: successful initialisation of ORM, got: orm initialisation failed")
 
 	err = sqlDB.Ping()
-	if err != nil {
-		assert.NoError(t, err, "FAILED, expected: successful initialisation of ORM, got: orm initialisation failed")
-	}
+
+	assert.NoError(t, err, "FAILED, expected: successful initialisation of ORM, got: orm initialisation failed")
 }
 
 // Testing sqlx retry mechanism
