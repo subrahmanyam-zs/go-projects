@@ -148,11 +148,11 @@ func Test_ormRetry(t *testing.T) {
 
 	sqlDB, err := k.GORM().DB()
 
-	assert.NoError(t, err, "FAILED, expected: Orm initialized successfully, got: orm initialization failed")
+	assert.NoError(t, err, "FAILED, expected: successful initialisation of ORM, got: orm initialisation failed")
 
 	err = sqlDB.Ping()
 	if err != nil {
-		assert.NoError(t, err, "FAILED, expected: Orm initialized successfully, got: orm initialization failed")
+		assert.NoError(t, err, "FAILED, expected: successful initialisation of ORM, got: orm initialisation failed")
 	}
 }
 

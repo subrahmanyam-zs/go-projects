@@ -26,7 +26,6 @@ type exporter struct {
 func tracerProvider(c Config) (err error) {
 	appName := c.GetOrDefault("APP_NAME", "gofr")
 	exporterName := strings.ToLower(c.Get("TRACER_EXPORTER"))
-	gcpProjectID := c.Get("GCP_PROJECT_ID")
 
 	e := exporter{
 		name:    exporterName,
@@ -40,7 +39,7 @@ func tracerProvider(c Config) (err error) {
 	case "zipkin":
 		tp, err = e.getZipkinExporter(c)
 	case "gcp":
-		tp, err = getGCPExporter(c, gcpProjectID)
+		tp, err = getGCPExporter(c)
 	default:
 		return errors.Error("invalid exporter")
 	}
@@ -75,8 +74,8 @@ func (e *exporter) getZipkinExporter(c Config) (*trace.TracerProvider, error) {
 	return tp, nil
 }
 
-func getGCPExporter(c Config, projectID string) (*trace.TracerProvider, error) {
-	exporter, err := cloudtrace.New(cloudtrace.WithProjectID(projectID))
+func getGCPExporter(c Config) (*trace.TracerProvider, error) {
+	exporter, err := cloudtrace.New(cloudtrace.WithProjectID(c.Get("GCP_PROJECT_ID")))
 	if err != nil {
 		return nil, err
 	}
