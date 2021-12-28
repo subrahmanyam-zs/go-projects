@@ -15,11 +15,6 @@ type cmdApp struct {
 	tracingSpan *trace.Span
 }
 
-type metricServer struct {
-	port  int
-	route string
-}
-
 func (app *cmdApp) Start(logger log.Logger) {
 	args := os.Args[1:] // 1st one is the command name itself.
 	command := ""
@@ -30,10 +25,8 @@ func (app *cmdApp) Start(logger log.Logger) {
 		}
 	}
 
-	// start the server for health-check and metrics
-	go func() {
-		app.server.Start(app.context.Logger)
-	}()
+	// starts the HTTP server
+	go app.server.Start(app.context.Logger)
 
 	h := app.Router.handler(command)
 	if h == nil {
