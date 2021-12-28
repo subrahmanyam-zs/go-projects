@@ -32,7 +32,8 @@ func TestIntegration(t *testing.T) {
 
 		resp, err := c.Do(req)
 		if err != nil {
-			t.Error(err)
+			t.Errorf("TEST %v: error while making request err, %v", i+1, err)
+			continue
 		}
 
 		assert.Equal(t, tc.expectedStatusCode, resp.StatusCode, "Test %v: Failed.\n", i+1)
