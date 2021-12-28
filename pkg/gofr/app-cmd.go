@@ -25,7 +25,7 @@ func (app *cmdApp) Start(logger log.Logger) {
 		}
 	}
 
-	// starts the HTTP server
+	// starts the HTTP server which is used for metrics and healthCheck endpoints.
 	go app.server.Start(app.context.Logger)
 
 	h := app.Router.handler(command)
