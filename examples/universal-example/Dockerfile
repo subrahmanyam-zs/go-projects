@@ -4,13 +4,14 @@ RUN mkdir -p /src/build
 WORKDIR  /src/build
 
 RUN apk add --no-cache tzdata ca-certificates
-COPY examples/universal-example/build/main /main
-COPY examples/universal-example/configs /configs
+
+COPY /build/main /main
+COPY /configs /configs
 
 RUN mkdir certificates
-COPY examples/universal-example/yugabytedb_zs_dev.crt certificates/
-COPY examples/universal-example/yugabytedb_zs_dev.key certificates/
-COPY examples/universal-example/yugabytedb_zs_dev_ca.crt certificates/
+COPY /yugabytedb_zs_dev.crt certificates/
+COPY /yugabytedb_zs_dev.key certificates/
+COPY /yugabytedb_zs_dev_ca.crt certificates/
 
 RUN chmod 600 certificates/yugabytedb_zs_dev.crt
 RUN chmod 600 certificates/yugabytedb_zs_dev.key
