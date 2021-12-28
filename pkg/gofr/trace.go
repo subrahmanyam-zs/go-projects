@@ -6,13 +6,13 @@ import (
 
 	cloudtrace "github.com/GoogleCloudPlatform/opentelemetry-operations-go/exporter/trace"
 
-	"go.opentelemetry.io/collector/translator/conventions"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/exporters/zipkin"
 	"go.opentelemetry.io/otel/propagation"
 	"go.opentelemetry.io/otel/sdk/resource"
 	"go.opentelemetry.io/otel/sdk/trace"
+	semconv "go.opentelemetry.io/otel/semconv/v1.4.0"
 
 	"developer.zopsmart.com/go/gofr/pkg/errors"
 )
@@ -96,9 +96,9 @@ func getGCPExporter(c Config, projectID string) (*trace.TracerProvider, error) {
 
 func getResource(c Config) (*resource.Resource, error) {
 	attributes := []attribute.KeyValue{
-		attribute.String(conventions.AttributeTelemetrySDKLanguage, "go"),
-		attribute.String(conventions.AttributeTelemetrySDKVersion, c.GetOrDefault("APP_VERSION", "Dev")),
-		attribute.String(conventions.AttributeServiceName, c.GetOrDefault("APP_NAME", "Gofr-App")),
+		attribute.String(string(semconv.TelemetrySDKLanguageKey), "go"),
+		attribute.String(string(semconv.TelemetrySDKVersionKey), c.GetOrDefault("APP_VERSION", "Dev")),
+		attribute.String(string(semconv.ServiceNameKey), c.GetOrDefault("APP_NAME", "Gofr-App")),
 	}
 
 	return resource.New(context.Background(), resource.WithAttributes(attributes...))
