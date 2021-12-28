@@ -30,6 +30,8 @@ func CMDOutputContains(t *testing.T, main func(), command, expected string) {
 
 	if !strings.Contains(output, expected) {
 		t.Errorf("Expected output: %s Got: %s", expected, output)
+
+		return
 	}
 
 	t.Logf("Test passed for '%s'", command)

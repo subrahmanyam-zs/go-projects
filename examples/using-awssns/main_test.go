@@ -1,7 +1,8 @@
+//go:build !integration
+
 package main
 
 import (
-	"fmt"
 	"net/http"
 	"testing"
 	"time"
@@ -26,21 +27,17 @@ func TestIntegration(t *testing.T) {
 	}
 
 	for i, tc := range tests {
-		tc := tc
-		i := i
-		t.Run(fmt.Sprintf("Test %v", i+1), func(t *testing.T) {
-			req, _ := request.NewMock(tc.method, "http://localhost:8080/"+tc.endpoint, nil)
-			c := http.Client{}
+		req, _ := request.NewMock(tc.method, "http://localhost:8080/"+tc.endpoint, http.NoBody)
+		c := http.Client{}
 
-			resp, err := c.Do(req)
-			if resp == nil || err != nil {
-				t.Error(err)
-			}
+		resp, err := c.Do(req)
+		if err != nil {
+			t.Errorf("TEST %v: error while making request err, %v", i+1, err)
+			continue
+		}
 
-			if resp != nil {
-				assert.Equal(t, tc.expectedStatusCode, resp.StatusCode, "Test %v: Failed.\n", i+1)
-				resp.Body.Close()
-			}
-		})
+		assert.Equal(t, tc.expectedStatusCode, resp.StatusCode, "Test %v: Failed.\n", i+1)
+
+		_ = resp.Body.Close()
 	}
 }

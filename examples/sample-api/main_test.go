@@ -25,7 +25,7 @@ func TestIntegration(t *testing.T) {
 		{"get json", http.MethodGet, "json", http.StatusOK, nil},
 		{"get error", http.MethodGet, "error", http.StatusInternalServerError, nil},
 		{"get swagger", http.MethodGet, "swagger", http.StatusOK, nil},
-		{"unregistered update route", http.MethodPut, "swagger", http.StatusNotFound, []byte(`{}`)},
+		{"unregistered update route", http.MethodPut, "swagger", http.StatusMethodNotAllowed, []byte(`{}`)},
 	}
 
 	for i, tc := range tests {
