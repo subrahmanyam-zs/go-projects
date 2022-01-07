@@ -36,20 +36,9 @@ var (
 )
 
 func New() (k *Gofr) {
-	var (
-		logger       = log.NewLogger()
-		configFolder string
-	)
+	logger := log.NewLogger()
 
-	if _, err := os.Stat("./configs"); err == nil {
-		configFolder = "./configs"
-	} else if _, err := os.Stat("../configs"); err == nil {
-		configFolder = "../configs"
-	} else {
-		configFolder = "../../configs"
-	}
-
-	return NewWithConfig(config.NewGoDotEnvProvider(logger, configFolder))
+	return NewWithConfig(config.NewGoDotEnvProvider(logger, getConfigFolder()))
 }
 
 //nolint:gocognit  // It's a sequence of initialization. Easier to understand this way.
@@ -186,40 +175,12 @@ func initializeAvro(c *avro.Config, k *Gofr) {
 }
 
 func NewCMD() *Gofr {
-	var (
-		configFolder string
-		err          error
-	)
+	c := config.NewGoDotEnvProvider(log.NewLogger(), getConfigFolder())
+	gofr := NewWithConfig(c)
+	cmdApp := &cmdApp{Router: NewCMDRouter()}
 
-	if _, err = os.Stat("./configs"); err == nil {
-		configFolder = "./configs"
-	} else if _, err = os.Stat("../configs"); err == nil {
-		configFolder = "../configs"
-	} else {
-		configFolder = "../../configs"
-	}
-
-	c := config.NewGoDotEnvProvider(log.NewLogger(), configFolder)
-	// Here we do things based on what is provided by Config, eg LOG_LEVEL etc.
-	logger := log.NewLogger()
-	cmdApp := &cmdApp{Router: NewCMDRouter(), metricSvr: &metricServer{route: defaultMetricsRoute}}
-	gofr := &Gofr{
-		Logger: logger,
-		cmd:    cmdApp,
-		Config: c, // need to be set for using gofr.Config.Get() method
-	}
-
-	appVers := c.Get("APP_VERSION")
-	if appVers == "" {
-		logger.Warnf("APP_VERSION is not set. '%v' will be used in logs", pkg.DefaultAppVersion)
-	}
-
-	appName := c.Get("APP_NAME")
-	if appName == "" {
-		logger.Warnf("APP_NAME is not set.'%v' will be used in logs", pkg.DefaultAppName)
-	}
-
-	frameworkInfo.WithLabelValues(appName+"-"+appVers, "gofr-"+log.GofrVersion).Set(1)
+	gofr.cmd = cmdApp
+	cmdApp.server = gofr.Server
 
 	go func() {
 		const pushDuration = 10
@@ -231,30 +192,12 @@ func NewCMD() *Gofr {
 		}
 	}()
 
-	if cmdApp.metricSvr.port, err = strconv.Atoi(c.Get("METRIC_PORT")); err != nil {
-		cmdApp.metricSvr.port = defaultMetricsPort
-	}
-
-	if route := c.Get("METRIC_ROUTE"); route != "" {
-		route = strings.TrimPrefix(route, "/")
-		cmdApp.metricSvr.route = "/" + route
-	}
-
 	cmdApp.context = NewContext(&responder.CMD{}, request.NewCMDRequest(), gofr)
+
 	// Start tracing span
 	ctx, tSpan := trace.StartSpan(context.Background(), "CMD")
 	cmdApp.context.Context = ctx
 	cmdApp.tracingSpan = tSpan
-
-	// If Tracing is set, Set tracing
-	err = enableTracing(c)
-	if err == nil {
-		gofr.Logger.Logf("tracing is enabled on, %v %v:%v", c.Get("TRACER_EXPORTER"), c.Get("TRACER_HOST"), c.Get("TRACER_PORT"))
-	}
-
-	initializeDataStores(c, gofr)
-
-	initializeNotifiers(c, gofr)
 
 	return gofr
 }
@@ -656,4 +599,16 @@ func initializeAwsSNS(c Config, k *Gofr) {
 	}
 
 	k.Logger.Infof("AWS SNS initialized")
+}
+
+func getConfigFolder() (configFolder string) {
+	if _, err := os.Stat("./configs"); err == nil {
+		configFolder = "./configs"
+	} else if _, err = os.Stat("../configs"); err == nil {
+		configFolder = "../configs"
+	} else {
+		configFolder = "../../configs"
+	}
+
+	return
 }
