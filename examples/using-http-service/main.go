@@ -26,7 +26,7 @@ func main() {
 	app.GET("/user/{name}", handler.Get)
 
 	// custom retry logic to retry the service call on error or non 200 status code.
-	sampleSvc.RetryCheck = func(logger log.Logger, err error, statusCode, attemptCount int) bool {
+	sampleSvc.CustomRetry = func(logger log.Logger, err error, statusCode, attemptCount int) bool {
 		if statusCode == http.StatusOK {
 			return false
 		}

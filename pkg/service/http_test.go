@@ -105,7 +105,7 @@ func TestService_Get(t *testing.T) {
 	}
 }
 
-func TestService_Customfunc(t *testing.T) {
+func TestService_CustomRetry(t *testing.T) {
 	ts := retryTestServer()
 	defer ts.Close()
 
@@ -113,7 +113,7 @@ func TestService_Customfunc(t *testing.T) {
 	logger := log.NewMockLogger(b)
 	svc := NewHTTPServiceWithOptions(ts.URL, logger, &Options{NumOfRetries: 1})
 
-	svc.RetryCheck = func(logger log.Logger, err error, statusCode, attemptCount int) bool {
+	svc.CustomRetry = func(logger log.Logger, err error, statusCode, attemptCount int) bool {
 		if statusCode == http.StatusBadRequest {
 			logger.Logf("got error %v on attempt %v", err, attemptCount)
 			return true
