@@ -47,7 +47,7 @@ type httpService struct {
 	// RetryCheck enables the custom retry logic to make service calls
 	// arguments: logger, error, response status-code, attempt count
 	// returns whether framework should retry service call or not
-	RetryCheck func(log.Logger, error, int, int) bool
+	RetryCheck func(logger log.Logger, err error, statusCode, attemptCount int) bool
 }
 
 type responseType int

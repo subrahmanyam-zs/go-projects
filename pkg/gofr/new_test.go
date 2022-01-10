@@ -505,17 +505,3 @@ func Test_GofrCMDConfig(t *testing.T) {
 		t.Errorf("expected redis to be connected through configs")
 	}
 }
-
-// This function verifies that metric server is starting successfully or not, when NewCMD is called.
-func Test_GofrCMDMetricServer(t *testing.T) {
-	b := new(bytes.Buffer)
-	logger := log.NewMockLogger(b)
-	k := NewCMD()
-	k.cmd.metricSvr.port = 12221
-	k.Logger = logger
-	k.Start()
-
-	if k.cmd.metricSvr.server == nil || strings.Contains(b.String(), "error in metrics server") {
-		t.Errorf("failed to start the metric server")
-	}
-}

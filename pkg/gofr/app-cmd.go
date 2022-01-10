@@ -1,7 +1,6 @@
 package gofr
 
 import (
-	"net/http"
 	"os"
 
 	"developer.zopsmart.com/go/gofr/pkg/log"
@@ -11,15 +10,9 @@ import (
 
 type cmdApp struct {
 	Router      CMDRouter
-	metricSvr   *metricServer
+	server      *server
 	context     *Context
 	tracingSpan *trace.Span
-}
-
-type metricServer struct {
-	server *http.Server
-	port   int
-	route  string
 }
 
 func (app *cmdApp) Start(logger log.Logger) {
@@ -32,8 +25,8 @@ func (app *cmdApp) Start(logger log.Logger) {
 		}
 	}
 
-	// start the metric server
-	app.metricSvr.server = metricsServer(logger, app.metricSvr.port, app.metricSvr.route)
+	// starts the HTTP server which is used for metrics and healthCheck endpoints.
+	go app.server.Start(app.context.Logger)
 
 	h := app.Router.handler(command)
 	if h == nil {
