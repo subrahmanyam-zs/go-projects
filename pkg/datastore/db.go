@@ -300,9 +300,9 @@ func (c SQLXClient) HealthCheck() types.Health {
 }
 
 // dbConnection will establish a database connection based on the gorm.Dialector passed and returns a gorm.DB instance
-func dbConnection(dialector gorm.Dialector) (db *gorm.DB, err error) {
+func dbConnection(d gorm.Dialector) (db *gorm.DB, err error) {
 	// Silent the default gorm logger. Else redundant error logs will be logged.
-	db, err = gorm.Open(dialector, &gorm.Config{Logger: logger.Default.LogMode(logger.Silent)})
+	db, err = gorm.Open(d, &gorm.Config{Logger: logger.Default.LogMode(logger.Silent), DisableForeignKeyConstraintWhenMigrating: true})
 	if err != nil {
 		return
 	}
