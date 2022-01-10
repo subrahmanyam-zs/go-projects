@@ -65,9 +65,11 @@ func (g *GORM) Run(m Migrator, app, name, methods string, logger log.Logger) err
 }
 
 func (g *GORM) preRun(app, method, name string) error {
-	err := g.db.AutoMigrate(&gofrMigration{})
-	if err != nil {
-		return &errors.Response{Reason: "unable to create gofr_migrations table", Detail: err}
+	if !g.db.Migrator().HasTable(&gofrMigration{}) {
+		err := g.db.Migrator().CreateTable(&gofrMigration{}).Error
+		if err != nil {
+			return &errors.Response{Reason: "unable to create gofr_migrations table", Detail: err}
+		}
 	}
 
 	if g.isDirty(app) {
@@ -76,7 +78,7 @@ func (g *GORM) preRun(app, method, name string) error {
 
 	ver, _ := strconv.Atoi(name)
 
-	err = g.txn.Create(&gofrMigration{App: app, Version: int64(ver), StartTime: time.Now(), Method: method}).Error
+	err := g.txn.Create(&gofrMigration{App: app, Version: int64(ver), StartTime: time.Now(), Method: method}).Error
 	if err != nil {
 		return &errors.Response{Reason: "unable to insert migration start time", Detail: err}
 	}
