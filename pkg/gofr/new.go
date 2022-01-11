@@ -210,6 +210,10 @@ func NewCMD() *Gofr {
 
 func enableTracing(c Config, logger log.Logger) {
 	// If Tracing is set, initialize tracing
+	if c.Get("TRACER_URL") == "" && c.Get("TRACER_EXPORTER") == "" && c.Get("GCP_PROJECT_ID") == "" {
+		return
+	}
+
 	err := tracerProvider(c)
 	if err != nil {
 		logger.Errorf("tracing is not enabled. Error %v", err)
