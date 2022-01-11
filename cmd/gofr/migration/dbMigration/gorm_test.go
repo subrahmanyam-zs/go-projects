@@ -185,7 +185,7 @@ func insertMigration(t *testing.T, g *gorm.DB, mig *gofrMigration) {
 }
 
 func createTable(t *testing.T, g *gorm.DB) {
-	err := g.AutoMigrate(&gofrMigration{})
+	err := g.Migrator().CreateTable(&gofrMigration{})
 	if err != nil {
 		t.Error(err)
 	}

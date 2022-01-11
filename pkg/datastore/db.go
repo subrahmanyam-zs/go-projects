@@ -134,50 +134,34 @@ func NewORM(config *DBConfig) (GORMClient, error) {
 	var (
 		db  *gorm.DB
 		err error
+		d   gorm.Dialector
 	)
 
 	driverName := registerDialect(config.Dialect)
 
 	switch config.Dialect {
 	case mySQL:
-		dialector := mysql.New(mysql.Config{DriverName: driverName, DSN: connectionStr})
-
-		db, err = dbConnection(dialector)
-		if err != nil {
-			return GORMClient{config: config}, err
-		}
-
+		d = mysql.New(mysql.Config{DriverName: driverName, DSN: connectionStr})
 	case pgSQL:
-		dialector := postgres.New(postgres.Config{DriverName: driverName, DSN: connectionStr})
-
-		db, err = dbConnection(dialector)
-		if err != nil {
-			return GORMClient{config: config}, err
-		}
-
+		d = postgres.New(postgres.Config{DriverName: driverName, DSN: connectionStr})
 	case "sqlite":
-		dialector := sqlite.Dialector{DriverName: driverName, DSN: connectionStr}
-
-		db, err = dbConnection(dialector)
-		if err != nil {
-			return GORMClient{config: config}, err
-		}
-
+		d = sqlite.Dialector{DriverName: driverName, DSN: connectionStr}
 	case "mssql":
 		// driverName is not added to the config. Currently, it breaks migrations for sqlserver.
-		dialector := sqlserver.New(sqlserver.Config{DSN: connectionStr})
-
-		db, err = dbConnection(dialector)
-		if err != nil {
-			return GORMClient{config: config}, err
-		}
+		d = sqlserver.New(sqlserver.Config{DSN: connectionStr})
 	default:
 		return GORMClient{config: config}, errors.DB{}
 	}
 
-	sqlDB, _ := db.DB()
+	db, err = dbConnection(d)
+	if err != nil {
+		return GORMClient{config: config}, err
+	}
 
-	go pushConnMetrics(config.Database, config.HostName, sqlDB)
+	sqlDB, err := db.DB()
+	if err == nil {
+		go pushConnMetrics(config.Database, config.HostName, sqlDB)
+	}
 
 	return GORMClient{DB: db, config: config}, err
 }

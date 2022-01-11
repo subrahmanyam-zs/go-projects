@@ -193,10 +193,9 @@ func NewCMD() *Gofr {
 	tracer := otel.Tracer("gofr")
 
 	// Start tracing span
-	ctx, span := tracer.Start(context.Background(), "CMD")
+	ctx, _ := tracer.Start(context.Background(), "CMD")
 
 	cmdApp.context.Context = ctx
-	cmdApp.tracingSpan = &span
 
 	// If Tracing is set, Set tracing
 	enableTracing(c, gofr.Logger)

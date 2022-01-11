@@ -9,10 +9,9 @@ import (
 )
 
 type cmdApp struct {
-	Router      CMDRouter
-	server      *server
-	context     *Context
-	tracingSpan *trace.Span
+	Router  CMDRouter
+	server  *server
+	context *Context
 }
 
 func (app *cmdApp) Start(logger log.Logger) {
@@ -40,4 +39,6 @@ func (app *cmdApp) Start(logger log.Logger) {
 	} else {
 		app.context.resp.Respond(data, nil)
 	}
+
+	trace.SpanFromContext(app.context).End()
 }

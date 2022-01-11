@@ -14,9 +14,9 @@ func main() {
 	url := app.Config.Get("SAMPLE_API_URL")
 
 	app.GET("/trace", func(ctx *gofr.Context) (interface{}, error) {
-		span2 := ctx.Trace("some-sample-work")
+		span := ctx.Trace("some-sample-work")
 		<-time.After(time.Millisecond * 1) // Waiting for 1ms to simulate workload
-		span2.End()
+		span.End()
 
 		var wg sync.WaitGroup
 
