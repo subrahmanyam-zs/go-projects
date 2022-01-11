@@ -66,7 +66,7 @@ func (g *GORM) Run(m Migrator, app, name, methods string, logger log.Logger) err
 
 func (g *GORM) preRun(app, method, name string) error {
 	if !g.db.Migrator().HasTable(&gofrMigration{}) {
-		err := g.db.Migrator().CreateTable(&gofrMigration{}).Error
+		err := g.db.Migrator().CreateTable(&gofrMigration{})
 		if err != nil {
 			return &errors.Response{Reason: "unable to create gofr_migrations table", Detail: err}
 		}
