@@ -164,7 +164,7 @@ func NewORM(config *DBConfig) (GORMClient, error) {
 		}
 
 	case "mssql":
-		// todo: add driverName. Currently, it breaks migrations for sqlserver.
+		// driverName is not added to the config. Currently, it breaks migrations for sqlserver.
 		dialector := sqlserver.New(sqlserver.Config{DSN: connectionStr})
 
 		db, err = dbConnection(dialector)
