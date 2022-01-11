@@ -6,6 +6,7 @@ import (
 	"encoding/csv"
 	"encoding/json"
 	"fmt"
+	"gorm.io/gorm"
 	"os"
 	"strconv"
 	"strings"
@@ -71,14 +72,11 @@ func (d *Seeder) ClearTable(t tester, tableName string) {
 
 func (d *Seeder) populateTable(t tester, tableName string, records [][]string) {
 	var err error
-	d.resetIdentitySequence(t, tableName, true)
-	db, err := d.GORM().DB()
-	if err != nil {
-		return
-	}
 
-	txn, err := db.Begin()
-	if err != nil {
+	d.resetIdentitySequence(t, tableName, true)
+
+	txn := getTxn(d.GORM())
+	if txn == nil {
 		return
 	}
 
@@ -600,4 +598,19 @@ func putItem(d *Seeder, t tester, tableName string, raw []byte) {
 			t.Errorf("Got error while calling PutItem: %s", err)
 		}
 	}
+}
+
+// getTxn returns a transaction
+func getTxn(db *gorm.DB) *sql.Tx {
+	d, err := db.DB()
+	if err != nil {
+		return nil
+	}
+
+	txn, err := d.Begin()
+	if err != nil {
+		return nil
+	}
+
+	return txn
 }
