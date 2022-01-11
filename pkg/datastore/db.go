@@ -136,7 +136,7 @@ func NewORM(config *DBConfig) (GORMClient, error) {
 		err error
 	)
 
-	driverName := getDriverName(config.Dialect)
+	driverName := registerDialect(config.Dialect)
 
 	switch config.Dialect {
 	case mySQL:
@@ -316,8 +316,8 @@ func dbConnection(d gorm.Dialector) (db *gorm.DB, err error) {
 	return
 }
 
-// getDriverName returns driverName based on the db Dialect.
-func getDriverName(dialect string) (driverName string) {
+// registerDialect registers the dialect to instrument the database/sql pkg and returns driverName based on the db Dialect.
+func registerDialect(dialect string) (driverName string) {
 	if dialect == pgSQL {
 		driverName, _ = otelsql.Register(dialect, semconv.DBSystemPostgreSQL.Value.AsString())
 	} else {
