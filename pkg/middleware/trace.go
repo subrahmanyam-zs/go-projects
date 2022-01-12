@@ -37,9 +37,9 @@ func Trace(appName, appVersion, tracerExporter string) func(inner http.Handler) 
 
 // getTraceID is used to fetch the correlationID from request header.
 func getTraceID(r *http.Request) string {
-	if id := r.Header.Get("X-Correlation-ID"); id != "" {
+	if id := r.Header.Get("X-B3-TraceId"); id != "" {
 		return id
 	}
 
-	return r.Header.Get("X-B3-TraceId")
+	return r.Header.Get("X-Correlation-ID")
 }
