@@ -197,10 +197,6 @@ func NewCMD() *Gofr {
 
 	cmdApp.context.Context = ctx
 
-	initializeDataStores(c, gofr)
-
-	initializeNotifiers(c, gofr)
-
 	return gofr
 }
 
