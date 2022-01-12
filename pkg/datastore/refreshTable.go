@@ -160,7 +160,8 @@ func getIdentityInsert(txn *sql.Tx, tableName string) (bool, error) {
 
 	// query the information schema to identify if the tables has an identity
 	_ = txn.QueryRow(`SELECT TABLE_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE 
-		COLUMNPROPERTY(object_id(TABLE_SCHEMA+'.'+TABLE_NAME), COLUMN_NAME, 'IsIdentity') = 1 AND TABLE_NAME = ?`, tableName).Scan(&name)
+		COLUMNPROPERTY(object_id(TABLE_SCHEMA+'.'+TABLE_NAME), COLUMN_NAME, 'IsIdentity') = 1 AND TABLE_NAME = @table`,
+		sql.Named("table", tableName)).Scan(&name)
 
 	identityInsert := false
 
