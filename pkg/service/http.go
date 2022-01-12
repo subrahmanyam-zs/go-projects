@@ -44,10 +44,10 @@ type httpService struct {
 	csp   *generator.CSP
 	cache *cachedHTTPService
 
-	// RetryCheck enables the custom retry logic to make service calls
+	// CustomRetry enables the custom retry logic to make service calls
 	// arguments: logger, error, response status-code, attempt count
 	// returns whether framework should retry service call or not
-	RetryCheck func(logger log.Logger, err error, statusCode, attemptCount int) bool
+	CustomRetry func(logger log.Logger, err error, statusCode, attemptCount int) bool
 }
 
 type responseType int
@@ -113,8 +113,8 @@ func (h *httpService) call(ctx context.Context, method, target string, params ma
 				statusCode = resp.StatusCode
 			}
 
-			if h.RetryCheck != nil {
-				if retry := h.RetryCheck(h.logger, err, statusCode, i+1); retry {
+			if h.CustomRetry != nil {
+				if retry := h.CustomRetry(h.logger, err, statusCode, i+1); retry {
 					continue
 				}
 			}
