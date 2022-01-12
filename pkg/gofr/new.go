@@ -197,9 +197,6 @@ func NewCMD() *Gofr {
 
 	cmdApp.context.Context = ctx
 
-	// If Tracing is set, Set tracing
-	enableTracing(c, gofr.Logger)
-
 	initializeDataStores(c, gofr)
 
 	initializeNotifiers(c, gofr)
