@@ -8,11 +8,11 @@ import (
 	"strings"
 	"time"
 
-	"go.opencensus.io/trace"
-
-	"github.com/go-redis/redis/extra/rediscensus"
+	"github.com/go-redis/redis/extra/redisotel"
 	"github.com/go-redis/redis/v8"
 	"github.com/prometheus/client_golang/prometheus"
+
+	"go.opentelemetry.io/otel/trace"
 
 	"developer.zopsmart.com/go/gofr/pkg"
 	"developer.zopsmart.com/go/gofr/pkg/gofr/types"
@@ -80,7 +80,7 @@ func NewRedis(logger log.Logger, config RedisConfig) (Redis, error) {
 		config.Options.TLSConfig = &tls.Config{}
 	}
 
-	_, span := trace.StartSpan(context.Background(), "Redis")
+	span := trace.SpanFromContext(context.Background())
 	defer span.End()
 
 	rc := redis.NewClient(config.Options)
@@ -92,7 +92,7 @@ func NewRedis(logger log.Logger, config RedisConfig) (Redis, error) {
 
 	rc.AddHook(&rLog)
 
-	rc.AddHook(rediscensus.TracingHook{})
+	rc.AddHook(redisotel.TracingHook{})
 
 	if err := rc.Ping(context.Background()).Err(); err != nil {
 		// Close the redis connection

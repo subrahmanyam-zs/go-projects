@@ -3,16 +3,15 @@ package gofr
 import (
 	"os"
 
-	"go.opencensus.io/trace"
-
 	"developer.zopsmart.com/go/gofr/pkg/log"
+
+	"go.opentelemetry.io/otel/trace"
 )
 
 type cmdApp struct {
-	Router      CMDRouter
-	server      *server
-	context     *Context
-	tracingSpan *trace.Span
+	Router  CMDRouter
+	server  *server
+	context *Context
 }
 
 func (app *cmdApp) Start(logger log.Logger) {
@@ -41,5 +40,5 @@ func (app *cmdApp) Start(logger log.Logger) {
 		app.context.resp.Respond(data, nil)
 	}
 
-	app.tracingSpan.End()
+	trace.SpanFromContext(app.context).End()
 }

@@ -2,15 +2,14 @@ package gofr
 
 import (
 	"context"
-	"errors"
 	"os"
 	"strconv"
 	"strings"
 	"time"
 
-	"go.opencensus.io/trace"
-
 	"github.com/prometheus/client_golang/prometheus"
+
+	"go.opentelemetry.io/otel"
 
 	"developer.zopsmart.com/go/gofr/pkg"
 	"developer.zopsmart.com/go/gofr/pkg/datastore"
@@ -104,10 +103,7 @@ func NewWithConfig(c Config) (k *Gofr) {
 	s.initializeMetricServerConfig(c)
 
 	// If Tracing is set, Set tracing
-	err = enableTracing(c)
-	if err == nil {
-		gofr.Logger.Logf("tracing is enabled on, %v:%v", c.Get("TRACER_HOST"), c.Get("TRACER_PORT"))
-	}
+	enableTracing(c, logger)
 
 	initializeDataStores(c, gofr)
 
@@ -194,30 +190,30 @@ func NewCMD() *Gofr {
 
 	cmdApp.context = NewContext(&responder.CMD{}, request.NewCMDRequest(), gofr)
 
+	tracer := otel.Tracer("gofr")
+
 	// Start tracing span
-	ctx, tSpan := trace.StartSpan(context.Background(), "CMD")
+	ctx, _ := tracer.Start(context.Background(), "CMD")
+
 	cmdApp.context.Context = ctx
-	cmdApp.tracingSpan = tSpan
 
 	return gofr
 }
 
-func enableTracing(c Config) error {
-	// If Tracing is set, Set tracing
-	exporter := TraceExporter(
-		c.GetOrDefault("APP_NAME", "gofr"),
-		c.Get("TRACER_EXPORTER"),
-		c.Get("TRACER_HOST"),
-		c.Get("TRACER_PORT"),
-	)
-	if exporter == nil {
-		return errors.New("could not create exporter")
+func enableTracing(c Config, logger log.Logger) {
+	// If Tracing is set, initialize tracing
+	if c.Get("TRACER_URL") == "" && c.Get("TRACER_EXPORTER") == "" && c.Get("GCP_PROJECT_ID") == "" {
+		return
 	}
 
-	trace.RegisterExporter(exporter)
-	trace.ApplyConfig(trace.Config{DefaultSampler: trace.AlwaysSample()})
+	err := tracerProvider(c)
+	if err != nil {
+		logger.Errorf("tracing is not enabled. Error %v", err)
 
-	return nil
+		return
+	}
+
+	logger.Infof("tracing is enabled on: %v", c.Get("TRACER_URL"))
 }
 
 // initializeDataStores initializes the Gofr struct with all the data stores for which

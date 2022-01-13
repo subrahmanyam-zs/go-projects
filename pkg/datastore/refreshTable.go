@@ -14,10 +14,12 @@ import (
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/dynamodb"
 	"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbattribute"
+
+	"gorm.io/gorm"
 )
 
 const (
-	msSQL = "mssql"
+	msSQL = "sqlserver"
 	mySQL = "mysql"
 	pgSQL = "postgres"
 )
@@ -35,7 +37,7 @@ func NewSeeder(db *DataStore, directoryPath string) *Seeder {
 	dialect := ""
 
 	if v != nil {
-		dialect = db.GORM().Dialect().GetName()
+		dialect = db.GORM().Dialector.Name()
 	}
 
 	return &Seeder{DataStore: db, path: directoryPath, dialect: dialect}
@@ -70,10 +72,14 @@ func (d *Seeder) ClearTable(t tester, tableName string) {
 }
 
 func (d *Seeder) populateTable(t tester, tableName string, records [][]string) {
-	d.resetIdentitySequence(t, tableName, true)
-	txn, _ := d.GORM().DB().Begin()
-
 	var err error
+
+	d.resetIdentitySequence(t, tableName, true)
+
+	txn := getTxn(d.GORM())
+	if txn == nil {
+		return
+	}
 
 	// this indicates if a table has identity column or not
 	identityInsert := false
@@ -142,7 +148,7 @@ func (d *Seeder) resetIdentitySequence(t tester, tableName string, beforeTransac
 		}
 	}
 
-	if _, err := d.GORM().DB().Exec(q); err != nil {
+	if err := d.GORM().Exec(q).Error; err != nil {
 		t.Errorf("Unable to reset identity. got err: %v", err)
 	}
 }
@@ -151,9 +157,11 @@ func (d *Seeder) resetIdentitySequence(t tester, tableName string, beforeTransac
 // values to the identity columns
 func getIdentityInsert(txn *sql.Tx, tableName string) (bool, error) {
 	var name string
+
 	// query the information schema to identify if the tables has an identity
 	_ = txn.QueryRow(`SELECT TABLE_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE 
-		COLUMNPROPERTY(object_id(TABLE_SCHEMA+'.'+TABLE_NAME), COLUMN_NAME, 'IsIdentity') = 1 AND TABLE_NAME = ?`, tableName).Scan(&name)
+		COLUMNPROPERTY(object_id(TABLE_SCHEMA+'.'+TABLE_NAME), COLUMN_NAME, 'IsIdentity') = 1 AND TABLE_NAME = @table`,
+		sql.Named("table", tableName)).Scan(&name)
 
 	identityInsert := false
 
@@ -592,4 +600,19 @@ func putItem(d *Seeder, t tester, tableName string, raw []byte) {
 			t.Errorf("Got error while calling PutItem: %s", err)
 		}
 	}
+}
+
+// getTxn returns a transaction
+func getTxn(db *gorm.DB) *sql.Tx {
+	d, err := db.DB()
+	if err != nil {
+		return nil
+	}
+
+	txn, err := d.Begin()
+	if err != nil {
+		return nil
+	}
+
+	return txn
 }

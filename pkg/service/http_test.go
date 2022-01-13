@@ -17,7 +17,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"go.opencensus.io/plugin/ochttp"
+	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 
 	"developer.zopsmart.com/go/gofr/pkg/log"
 	"developer.zopsmart.com/go/gofr/pkg/middleware"
@@ -158,14 +158,13 @@ func TestService_GetRetry(t *testing.T) {
 			_, _ = w.Write(reBytes)
 		}))
 
-		b := new(bytes.Buffer)
 		opts := &Options{NumOfRetries: tc.numOfRetries}
 		// Assigning the test server url
 		if tc.url == "server-url" {
 			tc.url = ts.URL
 		}
 
-		h := NewHTTPServiceWithOptions(tc.url, log.NewMockLogger(b), opts)
+		h := NewHTTPServiceWithOptions(tc.url, log.NewMockLogger(io.Discard), opts)
 		// The non-zero value of ResponseHeaderTimeout, specifies the amount of time to wait for a server's response headers
 		// after fully writing the request
 		http.DefaultTransport.(*http.Transport).ResponseHeaderTimeout = timeout * time.Millisecond
@@ -214,7 +213,7 @@ func Test_Client_ctx_cancel(t *testing.T) {
 }
 
 func TestCallError(t *testing.T) {
-	octr := &ochttp.Transport{}
+	octr := otelhttp.NewTransport(nil)
 	c := &http.Client{Transport: octr}
 	client := &httpService{
 		url:    "sample service",
@@ -233,7 +232,7 @@ func TestCallError(t *testing.T) {
 
 func TestLogError(t *testing.T) {
 	b := new(bytes.Buffer)
-	octr := &ochttp.Transport{}
+	octr := otelhttp.NewTransport(nil)
 
 	c := &http.Client{Transport: octr}
 	client := &httpService{

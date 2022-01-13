@@ -4,12 +4,13 @@ import (
 	"database/sql"
 	"time"
 
+	"github.com/jmoiron/sqlx"
+
+	"gorm.io/gorm"
+
 	"developer.zopsmart.com/go/gofr/pkg/datastore/pubsub"
 	"developer.zopsmart.com/go/gofr/pkg/gofr/types"
 	"developer.zopsmart.com/go/gofr/pkg/log"
-
-	"github.com/jinzhu/gorm"
-	"github.com/jmoiron/sqlx"
 )
 
 type DataStore struct {
@@ -39,17 +40,19 @@ type QueryLogger struct {
 }
 
 func (ds *DataStore) GORM() *gorm.DB {
+	var err error
+
 	if ds.gorm.DB != nil {
 		return ds.gorm.DB
 	}
 
 	if db, ok := ds.ORM.(GORMClient); ok {
 		ds.gorm = db
-
 		if db.DB != nil {
-			s, ok := db.DB.CommonDB().(*sql.DB)
-			if ok {
-				ds.rdb.DB = s
+			ds.rdb.DB, err = db.DB.DB()
+			if err != nil {
+				ds.Logger.Warn(err)
+				return db.DB
 			}
 		}
 
@@ -90,12 +93,13 @@ func (ds *DataStore) DB() *SQLClient {
 	}
 
 	if db := ds.GORM(); db != nil {
-		sqlDB, ok := db.CommonDB().(*sql.DB)
-		if !ok {
+		dbg, err := ds.GORM().DB()
+		if err != nil {
+			ds.Logger.Warn(err)
 			return &SQLClient{DB: nil, config: ds.gorm.config, logger: ds.Logger}
 		}
 
-		return &SQLClient{DB: sqlDB, config: ds.gorm.config, logger: ds.Logger}
+		return &SQLClient{DB: dbg, config: ds.gorm.config, logger: ds.Logger}
 	}
 
 	if db := ds.SQLX(); db != nil {
@@ -121,11 +125,16 @@ func (ds *DataStore) SetORM(client interface{}) {
 		ds.gorm = v
 
 		if v.DB != nil {
-			if sqlDB, ok := v.DB.CommonDB().(*sql.DB); ok {
-				ds.rdb.DB, ds.rdb.config, ds.rdb.logger = sqlDB, v.config, ds.Logger
-				ds.ORM = v.DB
+			sqlDB, err := v.DB.DB()
+			if err != nil {
+				ds.Logger.Warn(err)
+				return
 			}
+
+			ds.rdb.DB, ds.rdb.config, ds.rdb.logger = sqlDB, v.config, ds.Logger
+			ds.ORM = v.DB
 		}
+
 	case SQLXClient:
 		if v.DB != nil {
 			ds.ORM = v.DB
@@ -135,38 +144,56 @@ func (ds *DataStore) SetORM(client interface{}) {
 	}
 }
 
+// SQLHealthCheck pings the sql instance. If the ping does not return an error, the healthCheck status will be set to UP,
+// else the healthCheck status will be DOWN
 func (ds *DataStore) SQLHealthCheck() types.Health {
 	return ds.gorm.HealthCheck()
 }
 
+// SQLXHealthCheck pings the sqlx instance. If the ping does not return an error, the healthCheck status will be set to UP,
+// else the healthCheck status will be DOWN.
 func (ds *DataStore) SQLXHealthCheck() types.Health {
 	return ds.sqlx.HealthCheck()
 }
 
+// CQLHealthCheck performs a query operation on the cql instance. If the operation does not return an error, the healthCheck
+// status will be set to UP, else the healthCheck status will be DOWN.
 func (ds *DataStore) CQLHealthCheck() types.Health {
 	return ds.Cassandra.HealthCheck()
 }
 
+// YCQLHealthCheck performs a query operation on the ycql instance. If the operation does not return an error, the healthCheck
+// status will be set to UP, else the healthCheck status will be DOWN.
 func (ds *DataStore) YCQLHealthCheck() types.Health {
 	return ds.YCQL.HealthCheck()
 }
 
+// ElasticsearchHealthCheck pings the Elasticsearch instance. If the ping does not return an error,
+// the healthCheck status will be set to UP, else the healthCheck status will be DOWN
 func (ds *DataStore) ElasticsearchHealthCheck() types.Health {
 	return ds.Elasticsearch.HealthCheck()
 }
 
+// MongoHealthCheck pings the MongoDB instance. If the ping does not return an error,
+// the healthCheck status will be set to UP, else the healthCheck status will be DOWN.
 func (ds *DataStore) MongoHealthCheck() types.Health {
 	return ds.MongoDB.HealthCheck()
 }
 
+// RedisHealthCheck pings the redis instance. If the ping does not return an error,
+// the healthCheck status will be set to UP, else the healthCheck status will be DOWN
 func (ds *DataStore) RedisHealthCheck() types.Health {
 	return ds.Redis.HealthCheck()
 }
 
+// PubSubHealthCheck pings the pubsub instance. If the ping does not return an error,
+// the healthCheck status will be set to UP, else the healthCheck status will be DOWN
 func (ds *DataStore) PubSubHealthCheck() types.Health {
 	return ds.PubSub.HealthCheck()
 }
 
+// DynamoDBHealthCheck executes a ListTable API operation. If the returned error is not nil,
+// the healthCheck status will be set to DOWN, else the healthCheck status will be UP
 func (ds *DataStore) DynamoDBHealthCheck() types.Health {
 	return ds.DynamoDB.HealthCheck()
 }

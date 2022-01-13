@@ -15,6 +15,8 @@ import (
 	"github.com/golang-jwt/jwt/v4"
 	"github.com/gorilla/mux"
 	"github.com/gorilla/websocket"
+
+	"go.opentelemetry.io/otel/trace"
 )
 
 type Context struct {
@@ -49,6 +51,14 @@ func (c *Context) reset(w responder.Responder, r request.Request) {
 	c.resp = w
 	c.Context = nil
 	c.Logger = nil
+}
+
+// Trace returns an open telemetry span. We have to always close the span after corresponding work is done.
+func (c *Context) Trace(name string) trace.Span {
+	tr := trace.SpanFromContext(c).TracerProvider().Tracer("gofr-context")
+	_, span := tr.Start(c.Context, name)
+
+	return span
 }
 
 // Request returns the underlying HTTP request

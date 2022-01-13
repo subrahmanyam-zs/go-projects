@@ -10,6 +10,7 @@ import (
 	"io"
 	"net"
 	"net/http"
+	"net/http/httptrace"
 	"strings"
 	"sync"
 	"time"
@@ -18,7 +19,8 @@ import (
 
 	"github-lvs.corpzone.internalzone.com/mcafee/cnsr-gofr-csp-auth/generator"
 
-	"go.opencensus.io/plugin/ochttp"
+	"go.opentelemetry.io/contrib/instrumentation/net/http/httptrace/otelhttptrace"
+	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 
 	"developer.zopsmart.com/go/gofr/pkg/errors"
 	"developer.zopsmart.com/go/gofr/pkg/log"
@@ -108,7 +110,7 @@ func (h *httpService) call(ctx context.Context, method, target string, params ma
 		)
 
 		for i := 0; i <= h.numOfRetries; i++ {
-			resp, err = h.Do(req.WithContext(ctx)) //nolint:bodyclose // body is being closed after call response is logged
+			resp, err = h.Do(req) //nolint:bodyclose // body is being closed after call response is logged
 			if resp != nil {
 				statusCode = resp.StatusCode
 			}
@@ -230,7 +232,9 @@ func (h *httpService) createReq(ctx context.Context, method, target string, para
 		uri = h.url
 	}
 
-	req, err := http.NewRequest(method, uri, bytes.NewBuffer(body))
+	ctx = httptrace.WithClientTrace(ctx, otelhttptrace.NewClientTrace(ctx))
+
+	req, err := http.NewRequestWithContext(ctx, method, uri, bytes.NewBuffer(body))
 	if err != nil {
 		return nil, FailedRequest{URL: h.url, Err: err}
 	}
@@ -341,7 +345,7 @@ func encodeQueryParameters(req *http.Request, params map[string]interface{}) {
 
 func (h *httpService) SetConnectionPool(maxConnections int, idleConnectionTimeout time.Duration) {
 	t := http.Transport{MaxIdleConns: maxConnections, IdleConnTimeout: idleConnectionTimeout}
-	octr := &ochttp.Transport{Base: &t}
+	octr := otelhttp.NewTransport(&t)
 	h.Timeout = idleConnectionTimeout
 	cl := &http.Client{Transport: octr}
 	h.Client = cl

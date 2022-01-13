@@ -11,10 +11,9 @@ import (
 
 	"github.com/gorilla/websocket"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
-
-	"go.opencensus.io/trace"
-
 	"golang.org/x/net/context"
+
+	"go.opentelemetry.io/otel/trace"
 
 	"developer.zopsmart.com/go/gofr/pkg/errors"
 	"developer.zopsmart.com/go/gofr/pkg/gofr/request"
@@ -80,6 +79,8 @@ func NewServer(c Config, gofr *Gofr) *server {
 
 	// Add NewRelic based on Config
 	appName := c.Get("APP_NAME")
+	appVersion := c.Get("APP_VERSION")
+	tracerExporter := c.Get("TRACER_EXPORTER")
 	nrLicense := c.Get("NEWRELIC_LICENSE")
 
 	if appName != "" && nrLicense != "" {
@@ -89,7 +90,7 @@ func NewServer(c Config, gofr *Gofr) *server {
 	s.Router.Use(s.wsConnCreate)
 	s.Router.Use(s.serverPushFlush)
 	s.Router.Use(middleware.PropagateHeaders)
-	s.Router.Use(middleware.Trace)
+	s.Router.Use(middleware.Trace(appName, appVersion, tracerExporter))
 	s.Router.Use(middleware.CORS(s.mwVars))
 	s.Router.Use(middleware.Logging(gofr.Logger, s.mwVars["LOG_OMIT_HEADERS"]))
 	s.Router.Use(middleware.PrometheusMiddleware)
@@ -246,7 +247,7 @@ func (s *server) contextInjector(inner http.Handler) http.Handler {
 		}
 
 		if correlationID == "" {
-			correlationID = trace.FromContext(r.Context()).SpanContext().TraceID.String()
+			correlationID = trace.SpanFromContext(r.Context()).SpanContext().TraceID().String()
 		}
 
 		c.Logger = log.NewCorrelationLogger(correlationID)
