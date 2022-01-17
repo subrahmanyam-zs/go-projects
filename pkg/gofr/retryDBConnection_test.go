@@ -146,9 +146,13 @@ func Test_ormRetry(t *testing.T) {
 
 	ormRetry(&dc, &k)
 
-	if k.GORM() == nil || (k.GORM() != nil && k.GORM().DB().Ping() != nil) {
-		t.Errorf("FAILED, expected: Orm initialized successfully, got: orm initialization failed")
-	}
+	sqlDB, err := k.GORM().DB()
+
+	assert.NoError(t, err, "FAILED, expected: successful initialisation of ORM, got: orm initialisation failed")
+
+	err = sqlDB.Ping()
+
+	assert.NoError(t, err, "FAILED, expected: successful initialisation of ORM, got: orm initialisation failed")
 }
 
 // Testing sqlx retry mechanism

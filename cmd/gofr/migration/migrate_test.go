@@ -12,6 +12,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/assert"
+
 	dbmigration "developer.zopsmart.com/go/gofr/cmd/gofr/migration/dbMigration"
 	"developer.zopsmart.com/go/gofr/pkg/datastore"
 	"developer.zopsmart.com/go/gofr/pkg/errors"
@@ -180,7 +182,9 @@ func TestMySQL_Migration(t *testing.T) {
 		Dialect:  "mysql",
 	})
 
-	defer mysql.DropTable("gofr_migrations")
+	defer func() {
+		_ = mysql.Migrator().DropTable("gofr_migrations")
+	}()
 
 	testcases := []struct {
 		method     string
@@ -275,7 +279,9 @@ func Test_MigrateCheck(t *testing.T) {
 		Dialect:  "mysql",
 	})
 
-	defer mysql.DropTable("gofr_migrations")
+	defer func() {
+		_ = mysql.Migrator().DropTable("gofr_migrations")
+	}()
 
 	migrations := map[string]dbmigration.Migrator{"20200324150906": K20200324150906{},
 		"20200324120906": K20200324120906{},
@@ -298,7 +304,7 @@ func Test_MigrateCheck(t *testing.T) {
 type gofrMigration struct {
 	App       string    `gorm:"primary_key"`
 	Version   int64     `gorm:"primary_key;auto_increment:false"`
-	StartTime time.Time `gorm:"default:CURRENT_TIMESTAMP"`
+	StartTime time.Time `gorm:"autoCreateTime"`
 	EndTime   time.Time `gorm:"default:NULL"`
 	Method    string    `gorm:"primary_key"`
 }
@@ -340,7 +346,9 @@ func Test_DirtyTest(t *testing.T) {
 	_ = cassandra.Session.Query("insert into gofr_migrations (app, version, start_time, method, end_time) " +
 		"values ('testing', 12, dateof(now()), 'UP', '')").Exec()
 
-	mysql.CreateTable(&gofrMigration{})
+	err := mysql.Migrator().CreateTable(&gofrMigration{})
+	assert.NoError(t, err)
+
 	mysql.Create(&gofrMigration{App: "testing", Method: "UP", Version: 20000102121212, StartTime: time.Now()})
 
 	ctx := context.Background()
@@ -352,7 +360,7 @@ func Test_DirtyTest(t *testing.T) {
 	redisMigrator.LastRunVersion("testing", "UP")
 
 	defer func() {
-		_ = mysql.DropTable("gofr_migrations")
+		_ = mysql.Migrator().DropTable("gofr_migrations")
 		_ = cassandra.Session.Query("truncate gofr_migrations").Exec()
 		_ = redis.Del(ctx, "gofr_migrations")
 	}()

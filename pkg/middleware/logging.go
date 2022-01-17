@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	"go.opencensus.io/trace"
+	"go.opentelemetry.io/otel/trace"
 )
 
 type message string
@@ -118,13 +118,14 @@ func Logging(logger logger, omitHeaders string) func(inner http.Handler) http.Ha
 }
 
 func getCorrelationID(r *http.Request) string {
-	correlationID := r.Header.Get("X-Correlation-ID")
+	correlationID := r.Header.Get("X-B3-TraceID")
 	if correlationID == "" {
-		correlationID = r.Header.Get("X-B3-TraceID")
+		correlationID = r.Header.Get("X-Correlation-ID")
 	}
 
 	if correlationID == "" {
-		correlationID = trace.FromContext(r.Context()).SpanContext().TraceID.String()
+		correlationID = trace.SpanFromContext(r.Context()).SpanContext().TraceID().String()
+		r.Header.Set("X-Correlation-Id", correlationID)
 	}
 
 	return correlationID

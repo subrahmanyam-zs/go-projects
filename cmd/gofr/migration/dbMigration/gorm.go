@@ -4,7 +4,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/jinzhu/gorm"
+	"gorm.io/gorm"
 
 	"developer.zopsmart.com/go/gofr/pkg/datastore"
 	"developer.zopsmart.com/go/gofr/pkg/errors"
@@ -19,7 +19,7 @@ type GORM struct {
 type gofrMigration struct {
 	App       string    `gorm:"primary_key"`
 	Version   int64     `gorm:"primary_key;auto_increment:false"`
-	StartTime time.Time `gorm:"default:CURRENT_TIMESTAMP"`
+	StartTime time.Time `gorm:"autoCreateTime"`
 	EndTime   time.Time `gorm:"default:NULL"`
 	Method    string    `gorm:"primary_key"`
 }
@@ -65,8 +65,8 @@ func (g *GORM) Run(m Migrator, app, name, methods string, logger log.Logger) err
 }
 
 func (g *GORM) preRun(app, method, name string) error {
-	if !g.db.HasTable(&gofrMigration{}) {
-		err := g.db.CreateTable(&gofrMigration{}).Error
+	if !g.db.Migrator().HasTable(&gofrMigration{}) {
+		err := g.db.Migrator().CreateTable(&gofrMigration{})
 		if err != nil {
 			return &errors.Response{Reason: "unable to create gofr_migrations table", Detail: err}
 		}
@@ -87,7 +87,7 @@ func (g *GORM) preRun(app, method, name string) error {
 }
 
 func (g *GORM) isDirty(app string) bool {
-	val := 0
+	var val int64
 
 	err := g.txn.Table("gofr_migrations").Where("app = ? AND end_time is null", app).Count(&val).Error
 	if err != nil || val > 0 {
@@ -100,7 +100,8 @@ func (g *GORM) isDirty(app string) bool {
 func (g *GORM) postRun(app, method, name string) error {
 	// finish the migration
 	err := g.txn.Table("gofr_migrations").Where("app = ? AND version = ? AND method = ?", app, name, method).
-		Update(&gofrMigration{EndTime: time.Now()}).Error
+		Update(`end_time`, time.Now()).Error
+
 	return err
 }
 

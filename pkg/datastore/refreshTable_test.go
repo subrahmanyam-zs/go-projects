@@ -9,6 +9,7 @@ import (
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/dynamodb"
+	"github.com/stretchr/testify/assert"
 
 	"developer.zopsmart.com/go/gofr/pkg/gofr/config"
 	"developer.zopsmart.com/go/gofr/pkg/log"
@@ -76,7 +77,7 @@ func createTestTable(d *DataStore) error {
 
 	var createTableQuery string
 
-	switch d.GORM().Dialect().GetName() {
+	switch d.GORM().Dialector.Name() {
 	case msSQL:
 		createTableMSSQL(d)
 	case pgSQL:
@@ -130,16 +131,16 @@ func Test_RefreshTablesAndVersionCheck(t *testing.T) {
 		rows      int
 	}{
 		{"store", "wrong",
-			DBConfig{os.Getenv("DB_HOST"), os.Getenv("DB_USER"),
-				os.Getenv("DB_PASSWORD"), os.Getenv("DB_NAME"), os.Getenv("DB_PORT"),
+			DBConfig{c.Get("DB_HOST"), c.Get("DB_USER"),
+				c.Get("DB_PASSWORD"), c.Get("DB_NAME"), c.Get("DB_PORT"),
 				"mysql", "", "", "", "", 30}, 5,
 		},
 		{"store", "incorrect", msSQLConf, 5},
 		{"student", "incorrect", msSQLConf, 2},
 		{"employee", "incorrect", msSQLConf, 3},
 		{"store", "incorrect",
-			DBConfig{os.Getenv("PGSQL_HOST"), os.Getenv("PGSQL_USER"),
-				os.Getenv("PGSQL_PASSWORD"), os.Getenv("PGSQL_DB_NAME"), os.Getenv("PGSQL_PORT"),
+			DBConfig{c.Get("PGSQL_HOST"), c.Get("PGSQL_USER"),
+				c.Get("PGSQL_PASSWORD"), c.Get("PGSQL_DB_NAME"), c.Get("PGSQL_PORT"),
 				"postgres", "", "", "", "", 30}, 5,
 		},
 	}
@@ -299,17 +300,37 @@ func TestForeignKey(t *testing.T) {
 		c.Get("MSSQL_PASSWORD"), c.Get("MSSQL_DB_NAME"),
 		c.Get("MSSQL_PORT"), "mssql", "", "", "", "", 30}
 
-	db, _ := NewORM(&msSQLConf)
-
-	_ = db.Exec("DROP TABLE IF EXISTS store_employee")
-	_ = db.Exec("CREATE table store_employee (store_id int, employee_id int, CONSTRAINT store_employee_1 FOREIGN KEY " +
-		"(store_id) REFERENCES store	(id), CONSTRAINT store_employee_2 FOREIGN KEY (employee_id) REFERENCES employee	(id) )")
-
-	defer func() {
-		_ = db.Exec("DROP TABLE IF EXISTS store_employee")
-	}()
+	db, err := NewORM(&msSQLConf)
+	assert.NoError(t, err)
 
 	d := DataStore{ORM: db}
+
+	// table with Primary Key
+	_, err = d.DB().Exec("DROP TABLE IF EXISTS store")
+	assert.NoError(t, err)
+
+	_, err = d.DB().Exec("CREATE TABLE store(id int not null PRIMARY KEY, name varchar(20))")
+	assert.NoError(t, err)
+
+	_, err = d.DB().Exec("DROP TABLE IF EXISTS employee")
+	assert.NoError(t, err)
+
+	// table with Identity Column
+	_, err = d.DB().Exec("CREATE TABLE employee(id int PRIMARY KEY IDENTITY, name varchar(20))")
+	assert.NoError(t, err)
+
+	err = db.Exec("DROP TABLE IF EXISTS store_employee").Error
+	assert.NoError(t, err)
+
+	err = db.Exec("CREATE table store_employee (store_id int, employee_id int, CONSTRAINT store_employee_1 FOREIGN KEY " +
+		"(store_id) REFERENCES store (id), CONSTRAINT store_employee_2 FOREIGN KEY (employee_id) REFERENCES employee (id) )").Error
+	assert.NoError(t, err)
+
+	defer func() {
+		_ = db.Exec("DROP TABLE IF EXISTS store")
+		_ = db.Exec("DROP TABLE IF EXISTS employee")
+		_ = db.Exec("DROP TABLE IF EXISTS store_employee")
+	}()
 
 	path, _ := os.Getwd()
 	s := NewSeeder(&d, path)
@@ -321,7 +342,7 @@ func TestForeignKey(t *testing.T) {
 
 	// expecting 0 errors
 	if tester.TotalErrors != 0 {
-		t.Error("Test Data seeding failed")
+		t.Errorf("Test Data seeding failed. Got %v, expected 0", tester.TotalErrors)
 	}
 }
 
@@ -620,7 +641,7 @@ func TestSeeder_resetIdentitySequence(t *testing.T) {
 			Password: c.Get("MSSQL_PASSWORD"),
 			Database: c.Get("MSSQL_DB_NAME"),
 			Port:     c.Get("MSSQL_PORT"),
-			Dialect:  msSQL,
+			Dialect:  "mssql",
 		}, `IF NOT EXISTS
 	(  SELECT [name]
 		FROM sys.tables

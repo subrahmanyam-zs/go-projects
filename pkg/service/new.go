@@ -8,7 +8,7 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 
-	"go.opencensus.io/plugin/ochttp"
+	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 
 	"developer.zopsmart.com/go/gofr/pkg"
 	"developer.zopsmart.com/go/gofr/pkg/gofr/cache"
@@ -68,7 +68,9 @@ func NewHTTPServiceWithOptions(resourceAddr string, logger log.Logger, options *
 	// Register the prometheus metric
 	resourceAddr = strings.TrimRight(resourceAddr, "/")
 	_ = prometheus.Register(httpServiceResponse)
-	transport := &ochttp.Transport{}
+
+	// Transport for http Client
+	transport := otelhttp.NewTransport(http.DefaultTransport)
 
 	httpSvc := &httpService{
 		url:       resourceAddr,

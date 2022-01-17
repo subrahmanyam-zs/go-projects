@@ -27,7 +27,7 @@ func getDB() DataStore {
 
 	store := new(DataStore)
 
-	store.rdb.DB = db.DB.DB()
+	store.rdb.DB, _ = db.DB.DB()
 	store.rdb.config = db.config
 	store.rdb.logger = log.NewMockLogger(io.Discard)
 
@@ -212,7 +212,7 @@ func Test_QueryLog(t *testing.T) {
 
 	ds := new(DataStore)
 
-	ds.rdb.DB = db.DB.DB()
+	ds.rdb.DB, _ = db.DB.DB()
 	ds.rdb.config = db.config
 	ds.rdb.logger = logger
 
@@ -438,7 +438,7 @@ func Test_DataBaseNameInTransaction(t *testing.T) {
 
 	store := new(DataStore)
 
-	store.rdb.DB = db.DB.DB()
+	store.rdb.DB, _ = db.DB.DB()
 	store.rdb.config = db.config
 	store.rdb.logger = log.NewMockLogger(b)
 

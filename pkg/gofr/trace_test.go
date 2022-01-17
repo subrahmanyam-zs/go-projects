@@ -1,52 +1,42 @@
 package gofr
 
 import (
+	"io"
 	"testing"
 
-	"go.opencensus.io/trace"
+	"github.com/stretchr/testify/assert"
+
+	"developer.zopsmart.com/go/gofr/pkg/gofr/config"
+	"developer.zopsmart.com/go/gofr/pkg/log"
 )
 
-func TestTraceExporter(t *testing.T) {
-	testcases := []struct {
-		// exporter input
-		name    string
-		host    string
-		port    string
-		appName string
+func TestTraceExporterSuccess(t *testing.T) {
+	cfg := config.NewGoDotEnvProvider(log.NewMockLogger(io.Discard), "../../configs")
+	err := tracerProvider(cfg)
 
-		// output
-		exporter trace.Exporter
-	}{
-		{"zipkin", "invalid", "2005", "gofr", nil},
-		{"not zipkin", "localhost", "2005", "gofr", nil},
-		{"gcp", "fakeproject", "0", "gofr", nil},
-	}
-
-	for _, v := range testcases {
-		exporter := TraceExporter(v.appName, v.name, v.host, v.port)
-
-		if exporter != v.exporter {
-			t.Errorf("Failed.\tExpected %v\tGot %v\n", v.exporter, exporter)
-		}
-	}
+	assert.NoError(t, err)
 }
 
-func TestGCPTrace(t *testing.T) {
-	tests := []struct {
-		name      string
-		projectID string
-		want      trace.Exporter
+func TestTraceExporterFailure(t *testing.T) {
+	testcases := []struct {
+		// exporter input
+		exporter string
+		url      string
+		appName  string
 	}{
-		{"exporter creation failed", "", nil},
+		{"not zipkin", "http://localhost/9411", "gofr"},
+		{"zipkin", "invalid url", "gofr"},
+		{"gcp", "http://fakeProject/9411", "sample-api"},
 	}
 
-	for _, tt := range tests {
-		tt := tt
-		t.Run(tt.name, func(t *testing.T) {
-			got := getGCPExporter(tt.projectID)
-			if got != tt.want {
-				t.Errorf("getGCPExporter() = %v, want %v", got, tt.want)
-			}
-		})
+	for i, tc := range testcases {
+		cfg := &config.MockConfig{Data: map[string]string{
+			"TRACER_EXPORTER": tc.exporter,
+			"TRACER_URL":      tc.url,
+		}}
+
+		err := tracerProvider(cfg)
+
+		assert.Error(t, err, "Failed[%v]", i)
 	}
 }
