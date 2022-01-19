@@ -190,6 +190,8 @@ func TestGofr_Patch(t *testing.T) {
 	// Added contextInjector middleware
 	k.Server.Router.Use(k.Server.contextInjector)
 
+	k.Server.ValidateHeaders = false
+
 	k.PATCH("/patch", func(c *Context) (interface{}, error) {
 		return "success", nil
 	})

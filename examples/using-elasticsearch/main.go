@@ -9,6 +9,8 @@ import (
 func main() {
 	app := gofr.New()
 
+	app.Server.ValidateHeaders = false
+
 	store := customer.New()
 	h := handler.New(store)
 

@@ -9,6 +9,7 @@ func main() {
 	// create the application object
 	app := gofr.New()
 
+	app.Server.ValidateHeaders = false
 	// enabling /swagger endpoint for Swagger UI
 	app.EnableSwaggerUI()
 

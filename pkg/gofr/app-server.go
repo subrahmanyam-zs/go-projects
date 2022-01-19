@@ -39,6 +39,10 @@ type server struct {
 	MetricsPort   int
 	MetricsRoute  string
 	metricsServer *http.Server
+
+	// ValidateHeaders is used to decide if we need to enforce v3 headers and headers configured using VALIDATE_HEADERS
+	// Making this false will disable this check. By default it is set to true.
+	ValidateHeaders bool
 }
 
 type HTTP struct {
@@ -54,14 +58,15 @@ const (
 //nolint:revive // We do not want anyone using the struct without initialization steps.
 func NewServer(c Config, gofr *Gofr) *server {
 	s := &server{
-		Router:       NewRouter(),
-		HTTP:         HTTP{},
-		HTTPS:        HTTPS{},
-		mwVars:       getMWVars(c),
-		WSUpgrader:   websocket.Upgrader{},
-		done:         make(chan bool),
-		MetricsPort:  defaultMetricsPort,
-		MetricsRoute: defaultMetricsRoute,
+		Router:          NewRouter(),
+		HTTP:            HTTP{},
+		HTTPS:           HTTPS{},
+		mwVars:          getMWVars(c),
+		WSUpgrader:      websocket.Upgrader{},
+		done:            make(chan bool),
+		ValidateHeaders: true,
+		MetricsPort:     defaultMetricsPort,
+		MetricsRoute:    defaultMetricsRoute,
 	}
 
 	s.contextPool.New = func() interface{} {
@@ -130,6 +135,10 @@ func (s *server) Start(logger log.Logger) {
 	s.Router.Route(http.MethodGet, "/.well-known/openapi.json", OpenAPIHandler)
 
 	s.handleMetrics(logger)
+
+	if s.ValidateHeaders {
+		s.Router.Use(middleware.ValidateHeaders(s.mwVars["VALIDATE_HEADERS"], logger))
+	}
 
 	// call the recovery middleware
 	s.Router.Use(middleware.Recover(logger))
