@@ -87,7 +87,7 @@ func Test_postRun(t *testing.T) {
 
 	err := g.postRun("gofr-app", "UP", "20180324120906")
 
-	assert.NotNil(t, err, "TEST failed.\n%s", "failure in endtime update (gofr_migrations table)")
+	assert.Error(t, err, "TEST failed.\n%s", "failure in endtime update (gofr_migrations table)")
 }
 
 func Test_isDirty(t *testing.T) {

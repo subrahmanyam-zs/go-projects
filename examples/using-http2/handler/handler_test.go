@@ -78,7 +78,7 @@ func TestServeStatic(t *testing.T) {
 	})
 
 	resp, err := ServeStatic(ctx)
-	assert.Nil(t, err)
+	assert.NoError(t, err)
 
 	assert.Equal(t, resp, template.Template{File: "app.js"})
 }

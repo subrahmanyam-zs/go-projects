@@ -6,4 +6,4 @@ RUN apk add --no-cache tzdata ca-certificates
 COPY examples/sample-api/build ./main
 COPY examples/sample-api/configs /configs
 EXPOSE 9000
-CMD ["./main"]
+CMD ["/main"]

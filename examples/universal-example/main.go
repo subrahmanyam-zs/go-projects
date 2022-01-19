@@ -93,7 +93,6 @@ func main() {
 	if err != nil {
 		app.Logger.Errorf("Azure Eventhub could not be initialized, Namespace: %v, Eventhub: %v, error: %v\n",
 			config.Namespace, config.EventhubName, err)
-		return
 	}
 
 	app.Logger.Infof("Azure Eventhub initialized, Namespace: %v, Eventhub: %v\n", config.Namespace, config.EventhubName)

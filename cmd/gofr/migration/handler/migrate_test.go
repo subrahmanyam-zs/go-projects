@@ -43,7 +43,7 @@ func Test_getModulePath(t *testing.T) {
 
 	name, err := getModulePath(fs, "random-dir")
 
-	assert.Nil(t, err)
+	assert.NoError(t, err)
 
 	assert.Equal(t, "example.com/my-project", name)
 }
