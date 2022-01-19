@@ -88,6 +88,8 @@ func Test_AllRouteLog(t *testing.T) {
 func TestRouter_CatchAllRoute(t *testing.T) {
 	app := New()
 
+	app.Server.ValidateHeaders = false
+
 	app.GET("/dummy", func(ctx *Context) (interface{}, error) {
 		return nil, nil
 	})
