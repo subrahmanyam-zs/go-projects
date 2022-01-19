@@ -186,17 +186,17 @@ func TestGofr_Patch(t *testing.T) {
 	}
 
 	// Create a server with PATCH routes
-	k := New()
+	app := New()
 	// Added contextInjector middleware
-	k.Server.Router.Use(k.Server.contextInjector)
+	app.Server.Router.Use(app.Server.contextInjector)
 
-	k.Server.ValidateHeaders = false
+	app.Server.ValidateHeaders = false
 
-	k.PATCH("/patch", func(c *Context) (interface{}, error) {
+	app.PATCH("/patch", func(c *Context) (interface{}, error) {
 		return "success", nil
 	})
 
-	k.PATCH("/error", func(c *Context) (interface{}, error) {
+	app.PATCH("/error", func(c *Context) (interface{}, error) {
 		return nil, errors.New("sample")
 	})
 
@@ -204,7 +204,7 @@ func TestGofr_Patch(t *testing.T) {
 		rr := httptest.NewRecorder()
 		r := httptest.NewRequest(http.MethodPatch, tc.target, nil)
 
-		k.Server.Router.ServeHTTP(rr, r)
+		app.Server.Router.ServeHTTP(rr, r)
 
 		assert.Equal(t, rr.Code, tc.expectedCode)
 	}

@@ -24,7 +24,7 @@ func main() {
 	app := gofr.New()
 
 	// To disable the header validation
-	k.Server.ValidateHeaders = false
+	app.Server.ValidateHeaders = false
 
 	// Service urls
 	urlHelloAPI := app.Config.Get("GOFR_HELLO_API")
