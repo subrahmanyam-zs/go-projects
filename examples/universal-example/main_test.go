@@ -76,7 +76,7 @@ func TestUniversalIntegration(t *testing.T) {
 }
 
 func testDataStores(t *testing.T) {
-	testcases := []struct {
+	tests := []struct {
 		testID             int
 		method             string
 		endpoint           string
@@ -96,7 +96,7 @@ func testDataStores(t *testing.T) {
 		{7, http.MethodPost, "/pgsql/employee", http.StatusCreated,
 			[]byte(`{"id": 5, "name": "Sukanya", "phone": "01477", "email":"sukanya@zopsmart.com", "city":"Guwahati"}`)},
 	}
-	for _, tc := range testcases {
+	for _, tc := range tests {
 		req, _ := request.NewMock(tc.method, "http://localhost:9095"+tc.endpoint, bytes.NewBuffer(tc.body))
 		client := http.Client{}
 
@@ -118,7 +118,7 @@ func testDataStores(t *testing.T) {
 
 // nolint:gocognit // can't break the function because of retry logic
 func testKafkaDataStore(t *testing.T) {
-	tcs := []struct {
+	tests := []struct {
 		testID             int
 		method             string
 		endpoint           string
@@ -129,7 +129,7 @@ func testKafkaDataStore(t *testing.T) {
 		{9, http.MethodGet, "http://localhost:9095/avro/sub", "1", http.StatusOK},
 	}
 
-	for _, tc := range tcs {
+	for _, tc := range tests {
 		req, _ := request.NewMock(tc.method, tc.endpoint, nil)
 		c := http.Client{}
 
@@ -173,11 +173,7 @@ func testKafkaDataStore(t *testing.T) {
 
 //nolint:gocognit // braking down the function will reduce the readability
 func testEventhub(t *testing.T) {
-	if testing.Short() {
-		t.Skip("skipping testing in short mode")
-	}
-
-	testcase := []struct {
+	tests := []struct {
 		testID             int
 		method             string
 		endpoint           string
@@ -188,7 +184,7 @@ func testEventhub(t *testing.T) {
 		{11, http.MethodGet, "http://localhost:9095/eventhub/sub", "1", http.StatusOK},
 	}
 
-	for _, tc := range testcase {
+	for _, tc := range tests {
 		req, _ := request.NewMock(tc.method, tc.endpoint, nil)
 		c := http.Client{}
 		resp, _ := c.Do(req)
