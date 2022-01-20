@@ -10,7 +10,6 @@ import (
 )
 
 // Migrate either runs UP or DOWN migration based in the `method` specified
-//nolint:lll // Documentation for Database migration
 // More on Database Migration: https://docs.zopsmart.com/doc/gofr-migrations-lOHnVKrsfi
 func Migrate(app string, database db.DBDriver, migrations map[string]db.Migrator, method string, logger log.Logger) error {
 	if database == nil {

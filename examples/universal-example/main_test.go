@@ -103,7 +103,7 @@ func testDataStores(t *testing.T) {
 		resp, err := client.Do(req)
 		if err != nil {
 			t.Errorf("TestCase[%v] \t FAILED \nGot Error: %v", tc.testID, err)
-			return
+			continue
 		}
 
 		if resp != nil && resp.StatusCode != tc.expectedStatusCode {
