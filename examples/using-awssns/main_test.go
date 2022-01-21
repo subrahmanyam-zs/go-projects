@@ -3,6 +3,7 @@
 package main
 
 import (
+	"bytes"
 	"net/http"
 	"testing"
 	"time"
@@ -27,7 +28,7 @@ func TestIntegration(t *testing.T) {
 	}
 
 	for i, tc := range tests {
-		req, _ := request.NewMock(tc.method, "http://localhost:8080/"+tc.endpoint, http.NoBody)
+		req, _ := request.NewMock(tc.method, "http://localhost:8080/"+tc.endpoint, bytes.NewReader(tc.body))
 		c := http.Client{}
 
 		resp, err := c.Do(req)

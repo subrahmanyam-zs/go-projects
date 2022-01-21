@@ -77,32 +77,18 @@ func (mr *MockNotifierMockRecorder) IsSet() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsSet", reflect.TypeOf((*MockNotifier)(nil).IsSet))
 }
 
-// Ping mocks base method.
-func (m *MockNotifier) Ping() error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Ping")
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// Ping indicates an expected call of Ping.
-func (mr *MockNotifierMockRecorder) Ping() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Ping", reflect.TypeOf((*MockNotifier)(nil).Ping))
-}
-
 // Publish mocks base method.
-func (m *MockNotifier) Publish(value interface{}) error {
+func (m *MockNotifier) Publish(value interface{}, attributes map[string]interface{}) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Publish", value)
+	ret := m.ctrl.Call(m, "Publish", value, attributes)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // Publish indicates an expected call of Publish.
-func (mr *MockNotifierMockRecorder) Publish(value interface{}) *gomock.Call {
+func (mr *MockNotifierMockRecorder) Publish(value, attributes interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Publish", reflect.TypeOf((*MockNotifier)(nil).Publish), value)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Publish", reflect.TypeOf((*MockNotifier)(nil).Publish), value, attributes)
 }
 
 // Subscribe mocks base method.
