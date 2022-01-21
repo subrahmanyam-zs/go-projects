@@ -575,6 +575,11 @@ func (k *Kafka) SubscribeWithCommit(f pubsub.CommitFunc) (*pubsub.Message, error
 		}
 
 		isCommit, isContinue := f(msg)
+
+		// for successful subscribe
+		subscribeSuccessCount.WithLabelValues(msg.Topic, k.config.GroupID).Inc()
+		subscribeRecieveCount.WithLabelValues(msg.Topic, k.config.GroupID).Inc()
+
 		if isCommit {
 			k.CommitOffset(pubsub.TopicPartition{
 				Topic:     msg.Topic,
@@ -584,10 +589,6 @@ func (k *Kafka) SubscribeWithCommit(f pubsub.CommitFunc) (*pubsub.Message, error
 		}
 
 		if !isContinue {
-			// for successful subscribe
-			subscribeSuccessCount.WithLabelValues(msg.Topic, k.config.GroupID).Inc()
-			subscribeRecieveCount.WithLabelValues(msg.Topic, k.config.GroupID).Inc()
-
 			return msg, nil
 		}
 	}
