@@ -131,14 +131,14 @@ func Test_validateMandatoryHeaders(t *testing.T) {
 		{"invalid X-Zopsmart-Tenant", map[string]string{
 			"X-Authenticated-UserId": "gofr0000",
 			"True-Client-Ip":         "127.0.0.1",
-			"X-B3-TraceId":           "1s3d323adsd",
+			"X-B3-TraceID":           "1s3d323adsd",
 			"X-Zopsmart-Tenant":      "good14less",
 		}, "", MultipleErrors{StatusCode: http.StatusBadRequest, Errors: []errors.Response{
 			{Code: "BAD_REQUEST", Reason: "Header X-Zopsmart-Tenant value is invalid"}}}},
 		{"env headers not present", map[string]string{
 			"X-Authenticated-UserId": "gofr0000",
 			"True-Client-Ip":         "127.0.0.1",
-			"X-B3-TraceId":           "1s3d323adsd",
+			"X-B3-TraceID":           "1s3d323adsd",
 			"X-Zopsmart-Tenant":      "good4more",
 		}, "Test-Header", MultipleErrors{StatusCode: http.StatusBadRequest, Errors: []errors.Response{
 			{Code: "BAD_REQUEST", Reason: "Header Test-Header is missing"}}}},
@@ -149,7 +149,7 @@ func Test_validateMandatoryHeaders(t *testing.T) {
 		j := i
 
 		t.Run(tt.name, func(t *testing.T) {
-			req := httptest.NewRequest("GET", "http://dummy", nil)
+			req := httptest.NewRequest(http.MethodGet, "http://dummy", nil)
 
 			for k, v := range tests[j].headers {
 				req.Header.Set(k, v)
@@ -189,10 +189,10 @@ func Test_HeaderValidation_Success(t *testing.T) {
 	headers := map[string]string{
 		"X-Authenticated-UserId": "gofr0000",
 		"True-Client-Ip":         "127.0.0.1",
-		"X-B3-TraceId":           "1s3d323adsd",
+		"X-B3-TraceID":           "1s3d323adsd",
 		"Test-Header":            "test"}
 
-	req := httptest.NewRequest("GET", "http://dummy", nil)
+	req := httptest.NewRequest(http.MethodGet, "http://dummy", nil)
 
 	for k, v := range headers {
 		req.Header.Set(k, v)

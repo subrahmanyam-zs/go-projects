@@ -1,6 +1,7 @@
 package metrics
 
 import (
+	"net/http"
 	"reflect"
 	"strings"
 	"testing"
@@ -24,13 +25,14 @@ func Test_IncCounter(t *testing.T) {
 	}
 
 	for i, tc := range tcs {
-		err = p.IncCounter(tc.name, "200", "POST")
+		err = p.IncCounter(tc.name, "200", http.MethodPost)
 		if !reflect.DeepEqual(tc.err, err) {
 			t.Errorf("TESTCASE[%v] expected error %T, got %T", i, tc.err, err)
 		}
 	}
 }
 
+//nolint:dupl // duplicate code is for different metrics
 func Test_AddCounter(t *testing.T) {
 	tcs := []struct {
 		desc string
@@ -49,7 +51,7 @@ func Test_AddCounter(t *testing.T) {
 	}
 
 	for i, tc := range tcs {
-		err = p.AddCounter(tc.name, float64(i), "200", "POST")
+		err = p.AddCounter(tc.name, float64(i), "200", http.MethodPost)
 		if !reflect.DeepEqual(tc.err, err) {
 			t.Errorf("TESTCASE[%v] expected error %v, got %v", i, tc.err, err)
 		}
@@ -76,7 +78,7 @@ func Test_ObserveHistogram(t *testing.T) {
 	}
 
 	for i, tc := range tcs {
-		err = p.ObserveHistogram(tc.name, float64(i), "200", "POST")
+		err = p.ObserveHistogram(tc.name, float64(i), "200", http.MethodPost)
 		if !reflect.DeepEqual(tc.err, err) {
 			t.Errorf("TESTCASE[%v] expected error %v, got %v", i, tc.err, err)
 		}
@@ -108,6 +110,7 @@ func Test_SetGauge(t *testing.T) {
 	}
 }
 
+//nolint:dupl // duplicate code is for different metrics
 func Test_ObserveSummary(t *testing.T) {
 	tcs := []struct {
 		desc string
@@ -126,7 +129,7 @@ func Test_ObserveSummary(t *testing.T) {
 	}
 
 	for i, tc := range tcs {
-		err = p.ObserveSummary(tc.name, float64(i), "200", "POST")
+		err = p.ObserveSummary(tc.name, float64(i), "200", http.MethodPost)
 		if !reflect.DeepEqual(tc.err, err) {
 			t.Errorf("TESTCASE[%v] expected error %v, got %v", i, tc.err, err)
 		}
@@ -134,8 +137,6 @@ func Test_ObserveSummary(t *testing.T) {
 }
 
 func Test_InvalidLabelError(t *testing.T) {
-	errString := "inconsistent label cardinality"
-
 	p := newPromVec()
 
 	err := p.registerCounter("label_counter", "testing method", "code", "method")
@@ -161,27 +162,24 @@ func Test_InvalidLabelError(t *testing.T) {
 	}
 
 	err = p.IncCounter("label_counter")
-	if err == nil || !strings.Contains(err.Error(), errString) {
-		t.Errorf("expected err string %v, got %v", errString, err)
-	}
+	handleError(t, err)
 
 	err = p.AddCounter("label_counter", 2)
-	if err == nil || !strings.Contains(err.Error(), errString) {
-		t.Errorf("expected err string %v, got %v", errString, err)
-	}
+	handleError(t, err)
 
 	err = p.SetGauge("label_gauge", 2)
-	if err == nil || !strings.Contains(err.Error(), errString) {
-		t.Errorf("expected err string %v, got %v", errString, err)
-	}
+	handleError(t, err)
 
 	err = p.ObserveSummary("label_summary", 2)
-	if err == nil || !strings.Contains(err.Error(), errString) {
-		t.Errorf("expected err string %v, got %v", errString, err)
-	}
+	handleError(t, err)
 
 	err = p.ObserveHistogram("label_histogram", 2)
-	if err == nil || !strings.Contains(err.Error(), errString) {
-		t.Errorf("expected err string %v, got %v", errString, err)
+	handleError(t, err)
+}
+
+func handleError(t *testing.T, err error) {
+	errStr := "inconsistent label cardinality"
+	if err == nil || !strings.Contains(err.Error(), errStr) {
+		t.Errorf("expected err string %v, got %v", errStr, err)
 	}
 }

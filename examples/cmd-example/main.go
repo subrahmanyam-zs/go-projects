@@ -9,33 +9,35 @@ import (
 )
 
 func main() {
-	k := gofr.NewCMD()
+	app := gofr.NewCMD()
 
-	k.GET("hello", func(c *gofr.Context) (i interface{}, err error) {
-		name := c.PathParam("name")
+	app.GET("hello", func(ctx *gofr.Context) (interface{}, error) {
+		name := ctx.PathParam("name")
+
 		if name == "" {
-			return fmt.Sprint("Hello!"), nil
+			return "Hello!", nil
 		}
+
 		return fmt.Sprintf("Hello %s!", name), nil
 	})
 
-	k.GET("error", func(c *gofr.Context) (i interface{}, err error) {
+	app.GET("error", func(ctx *gofr.Context) (interface{}, error) {
 		return nil, errors.New("some error occurred")
 	})
 
-	k.GET("bind", func(c *gofr.Context) (i interface{}, err error) {
+	app.GET("bind", func(ctx *gofr.Context) (interface{}, error) {
 		var a struct {
 			Name   string
 			IsGood bool
 		}
 
-		_ = c.Bind(&a)
+		_ = ctx.Bind(&a)
 
 		return fmt.Sprintf("Name: %s Good: %v", a.Name, a.IsGood), nil
 	})
 
-	k.GET("temp", func(c *gofr.Context) (i interface{}, err error) {
-		filename := c.PathParam("filename")
+	app.GET("temp", func(ctx *gofr.Context) (interface{}, error) {
+		filename := ctx.PathParam("filename")
 		return template.Template{
 			Directory: "templates",
 			File:      filename,
@@ -44,12 +46,12 @@ func main() {
 		}, nil
 	})
 
-	k.GET("file", func(c *gofr.Context) (i interface{}, err error) {
+	app.GET("file", func(ctx *gofr.Context) (interface{}, error) {
 		return template.File{
 			Content:     []byte("Hello"),
 			ContentType: "text/plain",
 		}, nil
 	})
 
-	k.Start()
+	app.Start()
 }

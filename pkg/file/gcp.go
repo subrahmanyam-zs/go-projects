@@ -3,7 +3,6 @@ package file
 import (
 	"context"
 	"io"
-	"io/ioutil"
 	"os"
 
 	"cloud.google.com/go/storage"
@@ -42,7 +41,7 @@ func (g *gcp) fetch(fd *os.File) error {
 	}
 	defer r.Close()
 
-	data, err := ioutil.ReadAll(r)
+	data, err := io.ReadAll(r)
 	if err != nil {
 		return err
 	}

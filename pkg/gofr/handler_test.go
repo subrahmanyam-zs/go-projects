@@ -12,6 +12,7 @@ import (
 	"testing"
 
 	"github.com/gorilla/mux"
+
 	gofrErrors "developer.zopsmart.com/go/gofr/pkg/errors"
 	"developer.zopsmart.com/go/gofr/pkg/gofr/request"
 	"developer.zopsmart.com/go/gofr/pkg/gofr/responder"
@@ -228,7 +229,7 @@ func TestHandler_ServeHTTP_PartialContent(t *testing.T) {
 func TestHandler_ServeHTTP_EntityAlreadyExists(t *testing.T) {
 	k := New()
 	w := newCustomWriter()
-	r := httptest.NewRequest("POST", "/Dummy", nil)
+	r := httptest.NewRequest(http.MethodPost, "/Dummy", nil)
 	r = routeKeySetter(w, r)
 	req := request.NewHTTPRequest(r)
 	resp := responder.NewContextualResponder(w, r)
@@ -264,7 +265,7 @@ func Test_HealthInvalidMethod(t *testing.T) {
 		data       interface{}
 		method     string
 	}{
-		{gofrErrors.MethodMissing{}, http.StatusMethodNotAllowed, "", nil, "POST"},
+		{gofrErrors.MethodMissing{}, http.StatusMethodNotAllowed, "", nil, http.MethodPost},
 		{nil, http.StatusOK, "", nil, "GET"},
 	}
 
@@ -347,7 +348,7 @@ func TestHTTP_Respond_Nil(t *testing.T) {
 func TestHTTP_Respond_Delete(t *testing.T) {
 	k := New()
 	w := newCustomWriter()
-	r := httptest.NewRequest("DELETE", "/delete", nil)
+	r := httptest.NewRequest(http.MethodDelete, "/delete", nil)
 	r = routeKeySetter(w, r)
 	req := request.NewHTTPRequest(r)
 	resp := responder.NewContextualResponder(w, r)

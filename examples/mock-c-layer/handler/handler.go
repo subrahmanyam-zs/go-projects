@@ -1,23 +1,25 @@
 package handler
 
 import (
+	"developer.zopsmart.com/go/gofr/examples/mock-c-layer/models"
 	"developer.zopsmart.com/go/gofr/examples/mock-c-layer/store"
 	"developer.zopsmart.com/go/gofr/pkg/errors"
 	"developer.zopsmart.com/go/gofr/pkg/gofr"
 )
 
-type Brand struct {
-	core store.Brand
+type handler struct {
+	store store.Brand
 }
 
-// New returns a Model consumer
-func New(b store.Brand) Brand {
-	return Brand{b}
+// New is factory function for handler layer
+//nolint:revive // handler should not be used without proper initilization with required dependency
+func New(b store.Brand) handler {
+	return handler{store: b}
 }
 
 // Get interacts with core layer to get brands
-func (b Brand) Get(c *gofr.Context) (interface{}, error) {
-	resp, err := b.core.Get(c)
+func (h handler) Get(ctx *gofr.Context) (interface{}, error) {
+	resp, err := h.store.Get(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -26,15 +28,15 @@ func (b Brand) Get(c *gofr.Context) (interface{}, error) {
 }
 
 // Create interacts with core layer to create a Model
-func (b Brand) Create(c *gofr.Context) (interface{}, error) {
-	m := store.Model{}
+func (h handler) Create(ctx *gofr.Context) (interface{}, error) {
+	var b models.Brand
 
-	err := c.Bind(&m)
+	err := ctx.Bind(&b)
 	if err != nil {
 		return nil, errors.InvalidParam{Param: []string{"request body"}}
 	}
 
-	resp, err := b.core.Create(c, m)
+	resp, err := h.store.Create(ctx, b)
 	if err != nil {
 		return nil, err
 	}

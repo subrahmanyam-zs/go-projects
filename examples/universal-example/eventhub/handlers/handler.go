@@ -17,7 +17,7 @@ type handler struct {
 	eventHub pubsub.PublisherSubscriber
 }
 
-//nolint:golint //handler should not get accessed, without initialization of pubsub.PublisherSubscriber
+//nolint:revive //handler should not get accessed, without initialization of pubsub.PublisherSubscriber
 func New(eve pubsub.PublisherSubscriber) handler {
 	return handler{eventHub: eve}
 }

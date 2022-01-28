@@ -1,8 +1,6 @@
 package errors
 
-import (
-	"fmt"
-)
+import "fmt"
 
 type Response struct {
 	StatusCode int         `json:"-"`
@@ -23,7 +21,11 @@ type DateTime struct {
 }
 
 func (k *Response) Error() string {
-	return fmt.Sprint(k.Reason)
+	if e, ok := k.Detail.(error); ok {
+		return fmt.Sprintf("%v : %v ", k.Reason, e)
+	}
+
+	return k.Reason
 }
 
 type Error string

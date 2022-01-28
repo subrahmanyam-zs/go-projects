@@ -130,7 +130,7 @@ func TestTemplate_fileContentType(t1 *testing.T) {
 		{"default.html", "text/html; charset=utf-8"},
 		{"sample.css", "text/css; charset=utf-8"},
 		{"sample.svg", "image/svg+xml"},
-		{"sample.js", "application/javascript"},
+		{"sample.js", "text/javascript; charset=utf-8"},
 		{"image.jpeg", "image/jpeg"},
 		{"openapi.json", "application/json"},
 	}

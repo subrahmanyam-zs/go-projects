@@ -5,14 +5,14 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/gocql/gocql"
-
 	"developer.zopsmart.com/go/gofr/pkg"
 	"developer.zopsmart.com/go/gofr/pkg/datastore"
 	"developer.zopsmart.com/go/gofr/pkg/datastore/pubsub/avro"
 	"developer.zopsmart.com/go/gofr/pkg/datastore/pubsub/eventhub"
 	"developer.zopsmart.com/go/gofr/pkg/datastore/pubsub/kafka"
 	awssns "developer.zopsmart.com/go/gofr/pkg/notifier/aws-sns"
+
+	"github.com/gocql/gocql"
 )
 
 // cassandraDBConfigFromEnv returns configuration from environment variables to client so it can connect to cassandra
@@ -112,13 +112,16 @@ func kafkaConfigFromEnv(c Config) *kafka.Config {
 		groupName = c.GetOrDefault("APP_NAME", pkg.DefaultAppName) + "-" + c.GetOrDefault("APP_VERSION", pkg.DefaultAppVersion) + "-consumer"
 	}
 
+	disableautocommit, _ := strconv.ParseBool(c.GetOrDefault("KAFKA_AUTOCOMMIT_DISABLE", "false"))
+
 	// converting the CSV string to slice of string
 	topics := strings.Split(topic, ",")
 	config := &kafka.Config{
 		Brokers: hosts,
 		SASL: kafka.SASLConfig{
-			User:     c.Get("KAFKA_SASL_USER"),
-			Password: c.Get("KAFKA_SASL_PASS"),
+			User:      c.Get("KAFKA_SASL_USER"),
+			Password:  c.Get("KAFKA_SASL_PASS"),
+			Mechanism: c.Get("KAFKA_SASL_MECHANISM"),
 		},
 		Topics:            topics,
 		MaxRetry:          maxRetry,
@@ -126,6 +129,7 @@ func kafkaConfigFromEnv(c Config) *kafka.Config {
 		ConnRetryDuration: getRetryDuration(c.Get("KAFKA_CONN_RETRY")),
 		InitialOffsets:    kafka.OffsetOldest,
 		GroupID:           groupName,
+		DisableAutoCommit: disableautocommit,
 	}
 
 	offset := c.GetOrDefault("KAFKA_CONSUMER_OFFSET", "OLDEST")
@@ -140,18 +144,29 @@ func kafkaConfigFromEnv(c Config) *kafka.Config {
 	return config
 }
 
-// getElasticSearchConfigFromEnv returns configuration from environment variables to client so it can connect to elasticsearch
-func getElasticSearchConfigFromEnv(c Config) datastore.ElasticSearchCfg {
-	elasticSearchCfg := datastore.ElasticSearchCfg{
-		Host: c.Get("ELASTIC_SEARCH_HOST"),
-		User: c.Get("ELASTIC_SEARCH_USER"),
-		Pass: c.Get("ELASTIC_SEARCH_PASS"),
+// elasticSearchConfigFromEnv returns configuration from environment variables to client so it can connect to elasticsearch
+func elasticSearchConfigFromEnv(c Config) datastore.ElasticSearchCfg {
+	ports := make([]int, 0)
+
+	portList := strings.Split(c.Get("ELASTIC_SEARCH_PORT"), ",")
+
+	for _, port := range portList {
+		p, err := strconv.Atoi(strings.TrimSpace(port))
+		if err != nil {
+			continue
+		}
+
+		ports = append(ports, p)
 	}
 
-	elasticSearchCfg.Port, _ = strconv.Atoi(c.Get("ELASTIC_SEARCH_PORT"))
-	elasticSearchCfg.ConnectionRetryDuration = getRetryDuration(c.Get("ELASTIC_SEARCH_CONN_RETRY"))
-
-	return elasticSearchCfg
+	return datastore.ElasticSearchCfg{
+		Host:                    c.Get("ELASTIC_SEARCH_HOST"),
+		Ports:                   ports,
+		Username:                c.Get("ELASTIC_SEARCH_USER"),
+		Password:                c.Get("ELASTIC_SEARCH_PASS"),
+		CloudID:                 c.Get("ELASTIC_CLOUD_ID"),
+		ConnectionRetryDuration: getRetryDuration(c.Get("ELASTIC_SEARCH_CONN_RETRY")),
+	}
 }
 
 func avroConfigFromEnv(c Config) *avro.Config {
@@ -181,7 +196,6 @@ func eventhubConfigFromEnv(c Config) eventhub.Config {
 }
 
 func awsSNSConfigFromEnv(c Config) awssns.Config {
-
 	return awssns.Config{
 		AccessKeyID:     c.Get("SNS_ACCESS_KEY"),
 		SecretAccessKey: c.Get("SNS_SECRET_ACCESS_KEY"),

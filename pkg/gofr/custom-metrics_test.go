@@ -8,10 +8,9 @@ import (
 	"developer.zopsmart.com/go/gofr/pkg/errors"
 )
 
-var metricErr = errors.Error("invalid/duplicate metrics collector registration attempted")
+const metricErr = errors.Error("invalid/duplicate metrics collector registration attempted")
 
 func Test_New(t *testing.T) {
-
 	testcases := []struct {
 		desc string
 		err  error

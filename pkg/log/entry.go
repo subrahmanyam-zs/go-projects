@@ -30,21 +30,7 @@ func (e *entry) TerminalOutput() string {
 
 	s := fmt.Sprintf("\u001B[%dm%s\u001B[0m [%s] ", levelColor, e.Level.String()[0:4], e.Time.Format("15:04:05"))
 
-	if len(e.Data) > 0 {
-		if v, ok := e.Data["errorMessage"]; ok {
-			s += fmt.Sprintf(" %v", v)
-		}
-
-		s += populateDatastoreAndMessage(e)
-
-		duration, ok := e.Data["duration"]
-		if ok {
-			durationf64, _ := duration.(float64)
-			s += fmt.Sprintf(" - %.2fms", durationf64/1000) //nolint:gomnd // 1000 is used to convert the microsecond to milliseconds
-		}
-	} else {
-		s += fmt.Sprintf(" %v", e.Message)
-	}
+	s = populateData(e, s)
 
 	for k, v := range e.App.Data {
 		s += fmt.Sprintf("\n%15s: %v", k, v)
@@ -53,9 +39,9 @@ func (e *entry) TerminalOutput() string {
 	// Add some system stats
 	if e.CorrelationID != "" {
 		s += fmt.Sprintf("\n%15s: %s \u001B[%dm(Memory: %v GoRoutines: %v) \u001B[0m",
-			"CorrelationId", e.CorrelationID, 37, e.System["alloc"], e.System["goRoutines"])
+			"CorrelationId", e.CorrelationID, normalColor, e.System["alloc"], e.System["goRoutines"])
 	} else {
-		s += fmt.Sprintf("\n%15s \u001B[%dm (Memory: %v GoRoutines: %v) \u001B[0m", "", 37, e.System["alloc"], e.System["goRoutines"])
+		s += fmt.Sprintf("\n%15s \u001B[%dm (Memory: %v GoRoutines: %v) \u001B[0m", "", normalColor, e.System["alloc"], e.System["goRoutines"])
 	}
 
 	return s + "\n"
@@ -73,8 +59,6 @@ func populateDatastoreAndMessage(e *entry) string {
 
 	if v, ok := e.Data["query"]; ok {
 		s += fmt.Sprintf(" %v", v)
-	} else {
-		s += fmt.Sprintf("\u001B[%dm %s\u001B[0m %v", 37, e.Data["method"], e.Data["uri"])
 	}
 
 	return s
@@ -176,4 +160,29 @@ func entryFromInputs(format string, args ...interface{}) (e *entry, data map[str
 	}
 
 	return
+}
+
+func populateData(e *entry, s string) string {
+	if len(e.Data) > 0 {
+		if v, ok := e.Data["errorMessage"]; ok {
+			s += fmt.Sprintf(" %v", v)
+		}
+
+		s += populateDatastoreAndMessage(e)
+
+		duration, ok := e.Data["duration"]
+		if ok {
+			durationf64, _ := duration.(float64)
+			s += fmt.Sprintf(" - %.2fms", durationf64/1000) //nolint:gomnd // 1000 is used to convert the microsecond to milliseconds
+		}
+
+		statusCode, ok := e.Data["responseCode"]
+		if ok {
+			s += fmt.Sprintf(" (StatusCode: %v)", statusCode)
+		}
+	} else {
+		s += fmt.Sprintf(" %v", e.Message)
+	}
+
+	return s
 }

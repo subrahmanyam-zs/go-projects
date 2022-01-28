@@ -1,0 +1,210 @@
+package shop
+
+import (
+	"encoding/json"
+	"net/http"
+	"net/http/httptest"
+	"reflect"
+	"strings"
+	"testing"
+
+	"developer.zopsmart.com/go/gofr/examples/using-ycql/models"
+	"developer.zopsmart.com/go/gofr/examples/using-ycql/stores"
+	"developer.zopsmart.com/go/gofr/pkg/errors"
+	"developer.zopsmart.com/go/gofr/pkg/gofr"
+	"developer.zopsmart.com/go/gofr/pkg/gofr/request"
+
+	"github.com/golang/mock/gomock"
+	"github.com/stretchr/testify/assert"
+)
+
+func initializeHandlerTest(t *testing.T) (*stores.MockShop, handler, *gofr.Gofr) {
+	ctrl := gomock.NewController(t)
+
+	store := stores.NewMockShop(ctrl)
+	h := New(store)
+	app := gofr.New()
+
+	return store, h, app
+}
+
+func TestGet(t *testing.T) {
+	tests := []struct {
+		desc        string
+		queryParams string
+		resp        []models.Shop
+		err         error
+	}{
+		{"Get by id", "id=1", []models.Shop{{ID: 1, Name: "PhoenixMall", Location: "Gaya", State: "Bihar"}}, nil},
+		{"Gey by name&location", "name=PhoenixMall&location=Gaya",
+			[]models.Shop{{ID: 1, Name: "PhoenixMall", Location: "Gaya", State: "Bihar"}}, nil},
+		{"Get without query params", "", []models.Shop{
+			{ID: 1, Name: "PhoenixMall", Location: "Gaya", State: "Bihar"},
+			{ID: 2, Name: "GarudaMall", Location: "Dhanbad", State: "bihar"},
+		}, nil},
+	}
+
+	store, h, app := initializeHandlerTest(t)
+
+	for i, tc := range tests {
+		req := httptest.NewRequest(http.MethodGet, "/shop?"+tc.queryParams, nil)
+		r := request.NewHTTPRequest(req)
+		context := gofr.NewContext(nil, r, app)
+
+		store.EXPECT().Get(gomock.Any(), gomock.Any()).Return(tc.resp)
+
+		resp, err := h.Get(context)
+
+		assert.Equal(t, tc.err, err, "TEST[%d], failed.\n%s", i, tc.desc)
+
+		assert.Equal(t, tc.resp, resp, "TEST[%d], failed.\n%s", i, tc.desc)
+	}
+}
+
+func TestCreate(t *testing.T) {
+	store, h, app := initializeHandlerTest(t)
+
+	// create success case
+	store.EXPECT().Get(gomock.Any(), gomock.Any()).Return(nil)
+	store.EXPECT().Create(gomock.Any(), gomock.Any()).Return(
+		[]models.Shop{{ID: 4, Name: "UBCity", Location: "HSR", State: "karnataka"}}, nil,
+	)
+	// entity exists case
+	store.EXPECT().Get(gomock.Any(), gomock.Any()).Return(
+		[]models.Shop{{ID: 3, Name: "UBCity", Location: "Bangalore", State: "karnataka"}},
+	)
+
+	tests := []struct {
+		desc  string
+		input string
+		resp  interface{}
+		err   error
+	}{
+		{
+			"create success", `{"id":4, "name": "UBCity", "location":"HSR", "State":"karnataka"}`,
+			[]models.Shop{{ID: 4, Name: "UBCity", Location: "HSR", State: "karnataka"}}, nil,
+		},
+		{
+			"entity exists", `{"id": 3, "name": "UBCity", "location":"Bangalore", "state":"karnataka"}`,
+			nil, errors.EntityAlreadyExists{},
+		},
+		{
+			"unmarshal error", `{"id":"3", "name":"UBCity", "location":"Bangalore", "state":"karnataka"}`, nil,
+			&json.UnmarshalTypeError{Value: "string", Type: reflect.TypeOf(40), Offset: 9, Struct: "Shop", Field: "id"},
+		},
+	}
+
+	for i, tc := range tests {
+		in := strings.NewReader(tc.input)
+		req := httptest.NewRequest(http.MethodPost, "/dummy", in)
+		r := request.NewHTTPRequest(req)
+		ctx := gofr.NewContext(nil, r, app)
+
+		resp, err := h.Create(ctx)
+
+		assert.Equal(t, tc.err, err, "TEST[%d], failed.\n%s", i, tc.desc)
+
+		assert.Equal(t, tc.resp, resp, "TEST[%d], failed.\n%s", i, tc.desc)
+	}
+}
+
+func TestUpdate(t *testing.T) {
+	store, h, app := initializeHandlerTest(t)
+
+	// update name,location and state
+	store.EXPECT().Get(gomock.Any(), gomock.Any()).Return(
+		[]models.Shop{{ID: 3, Name: "SelectCityWalk", Location: "tirupati", State: "AndhraPradesh"}},
+	)
+	store.EXPECT().Update(gomock.Any(), gomock.Any()).Return(
+		[]models.Shop{{ID: 3, Name: "SelectCityWalk", Location: "tirupati", State: "AndhraPradesh"}}, nil,
+	)
+	// udpate location,state case
+	store.EXPECT().Get(gomock.Any(), gomock.Any()).Return(
+		[]models.Shop{{ID: 3, Name: "SelectCityWalk", Location: "Dhanbad", State: "Jharkhand"}},
+	)
+	store.EXPECT().Update(gomock.Any(), gomock.Any()).Return(
+		[]models.Shop{{ID: 3, Name: "SelectCityWalk", Location: "Dhanbad", State: "Jharkhand"}}, nil,
+	)
+	// update non existent entity
+	store.EXPECT().Get(gomock.Any(), gomock.Any()).Return([]models.Shop{})
+
+	tests := []struct {
+		desc  string
+		id    string
+		input string
+		resp  interface{}
+		err   error
+	}{
+		{
+			"update name,location and state", "3", `{ "name":  "SelectCityWalk", "location":  "tirupati", "State": "AndhraPradesh"}`,
+			[]models.Shop{{ID: 3, Name: "SelectCityWalk", Location: "tirupati", State: "AndhraPradesh"}}, nil,
+		},
+		{
+			"udpate location,state", "3", `{  "location":"Dhanbad"  , "state": "Jharkhand"}`,
+			[]models.Shop{{ID: 3, Name: "SelectCityWalk", Location: "Dhanbad", State: "Jharkhand"}}, nil,
+		},
+		{
+			"unmarshall error", "3", `{ "name":  "SkyWalkMall", "location":30, "state": "karnataka"}`, nil,
+			&json.UnmarshalTypeError{Value: "number", Type: reflect.TypeOf("30"), Offset: 39, Struct: "Shop", Field: "location"},
+		},
+		{
+			"update non existent entity", "5", `{ "name":  "Mali", "age":   40, "State": "AP"}`, nil,
+			errors.EntityNotFound{Entity: "shop", ID: "5"},
+		},
+	}
+
+	for i, tc := range tests {
+		in := strings.NewReader(tc.input)
+		req := httptest.NewRequest(http.MethodPut, "/shop/"+tc.id, in)
+		r := request.NewHTTPRequest(req)
+		ctx := gofr.NewContext(nil, r, app)
+
+		ctx.SetPathParams(map[string]string{
+			"id": tc.id,
+		})
+
+		resp, err := h.Update(ctx)
+
+		assert.Equal(t, tc.err, err, "TEST[%d], failed.\n%s", i, tc.desc)
+
+		assert.Equal(t, tc.resp, resp, "TEST[%d], failed.\n%s", i, tc.desc)
+	}
+}
+
+func TestDelete(t *testing.T) {
+	store, h, app := initializeHandlerTest(t)
+
+	// delete non existent item fail case
+	store.EXPECT().Get(gomock.Any(), gomock.Any()).Return(nil)
+	// delete existent item success case
+	store.EXPECT().Get(gomock.Any(), gomock.Any()).Return(
+		[]models.Shop{{ID: 3, Name: "Kali", Location: "HSR", State: "karnataka"}},
+	)
+	store.EXPECT().Delete(gomock.Any(), gomock.Any()).Return(nil)
+
+	tests := []struct {
+		desc string
+		id   string
+		resp interface{}
+		err  error
+	}{
+		{"delete non existent item fail", "5", nil, errors.EntityNotFound{Entity: "shop", ID: "5"}},
+		{"delete existent item success", "3", nil, nil},
+	}
+
+	for i, tc := range tests {
+		req := httptest.NewRequest(http.MethodDelete, "/shop/"+tc.id, nil)
+		r := request.NewHTTPRequest(req)
+		ctx := gofr.NewContext(nil, r, app)
+
+		ctx.SetPathParams(map[string]string{
+			"id": tc.id,
+		})
+
+		resp, err := h.Delete(ctx)
+
+		assert.Equal(t, tc.err, err, "TEST[%d], failed.\n%s", i, tc.desc)
+
+		assert.Equal(t, tc.resp, resp, "TEST[%d], failed.\n%s", i, tc.desc)
+	}
+}

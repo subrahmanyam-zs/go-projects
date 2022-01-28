@@ -1,36 +1,38 @@
 package grpc
 
 import (
+	"net/http"
 	"net/http/httptest"
 	"testing"
 
 	"developer.zopsmart.com/go/gofr/pkg/errors"
 	"developer.zopsmart.com/go/gofr/pkg/gofr"
 	"developer.zopsmart.com/go/gofr/pkg/gofr/request"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestExample_Get(t *testing.T) {
-	tcs := []struct {
+	tests := []struct {
+		desc string
 		id   string
-		resp interface{}
+		resp *Response
 		err  error
 	}{
-		{"1", &Response{FirstName: "First", SecondName: "Second"}, nil},
-		{"2", nil, errors.EntityNotFound{Entity: "name", ID: "2"}},
+		{"get success", "1", &Response{FirstName: "First", SecondName: "Second"}, nil},
+		{"get non existent entity", "2", nil, errors.EntityNotFound{Entity: "name", ID: "2"}},
 	}
 
-	for _, tc := range tcs {
-		var (
-			req = httptest.NewRequest("GET", "http://dummy?id="+tc.id, nil)
-			r   = request.NewHTTPRequest(req)
-			c   = gofr.NewContext(nil, r, nil)
-		)
+	for i, tc := range tests {
+		req := httptest.NewRequest(http.MethodGet, "http://dummy?id="+tc.id, nil)
+		r := request.NewHTTPRequest(req)
+		ctx := gofr.NewContext(nil, r, nil)
 
-		resp, _ := Handler{}.Get(c, &ID{Id: tc.id})
+		grcpHandler := New()
+		resp, err := grcpHandler.Get(ctx, &ID{Id: tc.id})
 
-		if resp == nil && tc.resp != nil {
-			t.Errorf("FAILED, Expected: %v, Got: %v", tc.resp, resp)
-			continue
-		}
+		assert.Equal(t, tc.err, err, "TEST[%d], failed.\n%s", i, tc.desc)
+
+		assert.Equal(t, tc.resp, resp, "TEST[%d], failed.\n%s", i, tc.desc)
 	}
 }

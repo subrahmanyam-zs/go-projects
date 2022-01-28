@@ -10,6 +10,8 @@ import (
 	"testing"
 
 	"github.com/gorilla/mux"
+	"github.com/stretchr/testify/assert"
+
 	"developer.zopsmart.com/go/gofr/pkg/errors"
 	"developer.zopsmart.com/go/gofr/pkg/log"
 )
@@ -29,8 +31,11 @@ func (m MockWriteHandler) Write(b []byte) (int, error) {
 func (m MockWriteHandler) WriteHeader(statuscode int) {}
 
 func (r *MockHandler) ServeHTTP(w http.ResponseWriter, req *http.Request) {
-	if r.statusCode == 0 {
+	switch r.statusCode {
+	case 0:
 		r.statusCode = http.StatusOK
+	case 1:
+		r.statusCode = http.StatusInternalServerError
 	}
 
 	w.WriteHeader(r.statusCode)
@@ -55,11 +60,45 @@ func TestLogging(t *testing.T) {
 	}
 }
 
+func Test5xxLogs(t *testing.T) {
+	b := new(bytes.Buffer)
+	logger := log.NewMockLogger(b)
+	handler := Logging(logger, "")(&MockHandler{1})
+
+	req := httptest.NewRequest("GET", "/dummy", nil)
+	handler.ServeHTTP(MockWriteHandler{}, req)
+
+	if len(b.Bytes()) == 0 {
+		t.Errorf("Failed to write the logs")
+	}
+
+	x := b.String()
+	assert.Contains(t, x, "\"type\":\"ERROR\"", "5xx responses could not be logged, got: %v", x)
+}
+
+func TestExemptPath(t *testing.T) {
+	b := new(bytes.Buffer)
+	logger := log.NewMockLogger(b)
+	handler := Logging(logger, "")(&MockHandler{})
+
+	req := httptest.NewRequest("GET", "/metrics", nil)
+	handler.ServeHTTP(MockWriteHandler{}, req)
+
+	if len(b.Bytes()) == 0 {
+		t.Errorf("Failed to write the logs")
+	}
+
+	x := b.String()
+	if !strings.Contains(x, "time") || !strings.Contains(x, "level") {
+		t.Errorf("error, expected fields are not present in log, got: %v", x)
+	}
+}
+
 func TestGetIPAddress(t *testing.T) {
 	{
 		// 1. When RemoteAddr is set
 		addr := "0.0.0.0:8080"
-		req, err := http.NewRequest("GET", "http://dummy", nil)
+		req, err := http.NewRequest("GET", "http://dummy", http.NoBody)
 		if err != nil {
 			t.Errorf("FAILED, got error creating req object: %v", err)
 		}
@@ -74,7 +113,8 @@ func TestGetIPAddress(t *testing.T) {
 	{
 		// 2. When `X-Forwarded-For` header is set
 		addr := "192.168.0.1:8080"
-		req, err := http.NewRequest("GET", "http://dummy", nil)
+
+		req, err := http.NewRequest("GET", "http://dummy", http.NoBody)
 		if err != nil {
 			t.Errorf("FAILED, got error creating req object: %v", err)
 		}
@@ -94,7 +134,7 @@ func TestLoggingCorrelationID(t *testing.T) {
 	handler := Logging(logger, "")(&MockHandler{})
 
 	req := httptest.NewRequest("GET", "/dummy", nil)
-	req.Header.Add("X-B3-TraceId", "12bhu987")
+	req.Header.Add("X-B3-TraceID", "12bhu987")
 	handler.ServeHTTP(MockWriteHandler{}, req)
 
 	if len(b.Bytes()) == 0 {
@@ -116,7 +156,7 @@ func TestLoggingCorrelationContext(t *testing.T) {
 	correlationID := "12bhu987"
 
 	req := httptest.NewRequest("GET", "/dummy", nil)
-	req.Header.Add("X-Correlation-Id", correlationID)
+	req.Header.Add("X-Correlation-ID", correlationID)
 	handler.ServeHTTP(MockWriteHandler{}, req)
 
 	cID, _ := req.Context().Value(CorrelationIDKey).(string)

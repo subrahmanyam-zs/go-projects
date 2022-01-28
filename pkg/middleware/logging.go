@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	"go.opencensus.io/trace"
+	"go.opentelemetry.io/otel/trace"
 )
 
 type message string
@@ -52,12 +52,14 @@ type logger interface {
 	Debug(args ...interface{})
 	AddData(key string, value interface{})
 	Errorf(format string, a ...interface{})
+	Error(args ...interface{})
 }
 
 type contextKey string
 
 const CorrelationIDKey contextKey = "correlationID"
 
+// nolint:gocognit // cannot reduce complexity without affecting readability.
 // It's sequential statements and some closures. Trying to break it will make it
 // Logging is a middleware which logs response status and time in microseconds along with other data.
 func Logging(logger logger, omitHeaders string) func(inner http.Handler) http.Handler {
@@ -74,8 +76,6 @@ func Logging(logger logger, omitHeaders string) func(inner http.Handler) http.Ha
 			srw := &StatusResponseWriter{ResponseWriter: w}
 			defer func(res *StatusResponseWriter, req *http.Request) {
 				headers := fetchHeaders(omitHeadersMap, req.Header)
-				// Don't want to log the Cookie.
-				delete(headers, "Cookie")
 
 				l := LogLine{
 					CorrelationID:  correlationID,
@@ -98,10 +98,16 @@ func Logging(logger logger, omitHeaders string) func(inner http.Handler) http.Ha
 
 					// .well-known, swagger and metrics endpoints are logged in debug mode, so that it can be excluded
 					// from logs, as usually logs with level INFO or higher than INFO are logged
+
 					if ExemptPath(r) {
 						logger.Debug(&l)
 					} else {
 						logger.Log(&l)
+					}
+
+					if res.status >= http.StatusInternalServerError && res.status <= http.StatusNetworkAuthenticationRequired {
+						l.Type = "ERROR"
+						logger.Error(&l)
 					}
 				}
 			}(srw, r)
@@ -112,13 +118,14 @@ func Logging(logger logger, omitHeaders string) func(inner http.Handler) http.Ha
 }
 
 func getCorrelationID(r *http.Request) string {
-	correlationID := r.Header.Get("X-Correlation-Id")
+	correlationID := r.Header.Get("X-B3-TraceID")
 	if correlationID == "" {
-		correlationID = r.Header.Get("X-B3-TraceId")
+		correlationID = r.Header.Get("X-Correlation-ID")
 	}
 
 	if correlationID == "" {
-		correlationID = trace.FromContext(r.Context()).SpanContext().TraceID.String()
+		correlationID = trace.SpanFromContext(r.Context()).SpanContext().TraceID().String()
+		r.Header.Set("X-Correlation-Id", correlationID)
 	}
 
 	return correlationID
@@ -155,6 +162,9 @@ func fetchHeaders(omitHeaders map[string]bool, reqHeaders http.Header) map[strin
 			headers[h] = "xxx-masked-value-xxx"
 		}
 	}
+
+	// Don't want to log the Cookie.
+	delete(headers, "Cookie")
 
 	return headers
 }

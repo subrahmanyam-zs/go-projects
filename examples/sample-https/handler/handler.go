@@ -2,24 +2,25 @@ package handler
 
 import (
 	"fmt"
+	"net/http"
 
 	"developer.zopsmart.com/go/gofr/pkg/errors"
 	"developer.zopsmart.com/go/gofr/pkg/gofr"
 	"developer.zopsmart.com/go/gofr/pkg/gofr/types"
 )
 
-type Person struct {
+type person struct {
 	Username string
 	Password string
 }
 
 // HelloWorld is a handler function of type gofr.Handler, it responds with a message
-func HelloWorld(c *gofr.Context) (interface{}, error) {
+func HelloWorld(ctx *gofr.Context) (interface{}, error) {
 	return "Hello World!", nil
 }
 
-func HelloName(c *gofr.Context) (interface{}, error) {
-	name := c.Param("name")
+func HelloName(ctx *gofr.Context) (interface{}, error) {
+	name := ctx.Param("name")
 
 	return types.Response{
 		Data: fmt.Sprintf("Hello %s", name),
@@ -27,10 +28,10 @@ func HelloName(c *gofr.Context) (interface{}, error) {
 	}, nil
 }
 
-func PostName(c *gofr.Context) (interface{}, error) {
-	var p Person
+func PostName(ctx *gofr.Context) (interface{}, error) {
+	var p person
 
-	err := c.Bind(&p)
+	err := ctx.Bind(&p)
 	if err != nil {
 		return nil, err
 	}
@@ -42,19 +43,19 @@ func PostName(c *gofr.Context) (interface{}, error) {
 	return p, nil
 }
 
-func ErrorHandler(c *gofr.Context) (interface{}, error) {
-	return nil, &errors.Response{StatusCode: 404}
+func ErrorHandler(ctx *gofr.Context) (interface{}, error) {
+	return nil, &errors.Response{StatusCode: http.StatusNotFound}
 }
 
 // MultipleErrorHandler returns multiple errors and
 // also sets the statusCode to 400 if id is 1 else to 500
-func MultipleErrorHandler(c *gofr.Context) (interface{}, error) {
-	id := c.Param("id")
+func MultipleErrorHandler(ctx *gofr.Context) (interface{}, error) {
+	id := ctx.Param("id")
 
 	var statusCode int
 
 	if id == "1" {
-		statusCode = 400
+		statusCode = http.StatusBadRequest
 	}
 
 	return nil, errors.MultipleErrors{

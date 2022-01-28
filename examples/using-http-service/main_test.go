@@ -1,7 +1,6 @@
 package main
 
 import (
-	"bytes"
 	"net/http"
 	"testing"
 	"time"
@@ -13,26 +12,29 @@ func TestIntegration(t *testing.T) {
 	go main()
 	time.Sleep(3 * time.Second)
 
-	tcs := []struct {
-		method             string
-		endpoint           string
-		expectedStatusCode int
-		body               []byte
+	tests := []struct {
+		desc       string
+		endpoint   string
+		statusCode int
 	}{
-		{"GET", "brand1", 404, nil},
-		{"GET", "brand/1", 200, nil},
+		{"get with incomplete endpoint", "user/ ", http.StatusBadRequest},
+		{"get with invalid endpoint", "dummyendpoint", http.StatusNotFound},
 	}
 
-	for _, tc := range tcs {
-		req, _ := request.NewMock(tc.method, "http://localhost:9091/"+tc.endpoint, bytes.NewBuffer(tc.body))
+	for i, tc := range tests {
+		req, _ := request.NewMock(http.MethodGet, "http://localhost:9091/"+tc.endpoint, nil)
 		c := http.Client{}
 
-		resp, _ := c.Do(req)
-
-		if resp != nil && resp.StatusCode != tc.expectedStatusCode {
-			t.Errorf("Failed.\tExpected %v\tGot %v\n", tc.expectedStatusCode, resp.StatusCode)
+		resp, err := c.Do(req)
+		if err != nil {
+			t.Errorf("TEST[%v] Failed.\tHTTP request encountered Err: %v\n%s", i, err, tc.desc)
+			continue
 		}
 
-		resp.Body.Close()
+		if resp.StatusCode != tc.statusCode {
+			t.Errorf("TEST[%v] Failed.\tExpected %v\tGot %v\n%s", i, tc.statusCode, resp.StatusCode, tc.desc)
+		}
+
+		_ = resp.Body.Close()
 	}
 }

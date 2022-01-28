@@ -6,12 +6,14 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 )
 
 type Crontab struct {
 	ticker *time.Ticker
 	jobs   []job
+	mu     sync.RWMutex
 }
 
 // job in cron table
@@ -59,6 +61,14 @@ var (
 
 // parseSchedule creates job struct with filled times to launch, or error if syntax is wrong
 func parseSchedule(s string) (j job, err error) {
+	const (
+		maxMinute = 59
+		maxHour   = 23
+		maxDay    = 31
+		maxMonth  = 12
+		maxWeek   = 6
+	)
+
 	s = matchSpaces.ReplaceAllLiteralString(s, " ")
 
 	parts := strings.Split(s, " ")
@@ -69,27 +79,27 @@ func parseSchedule(s string) (j job, err error) {
 		return job{}, ErrBadCronFormat
 	}
 
-	j.min, err = parseParts(parts[0], 0, 59)
+	j.min, err = parseParts(parts[0], 0, maxMinute)
 	if err != nil {
 		return j, err
 	}
 
-	j.hour, err = parseParts(parts[1], 0, 23)
+	j.hour, err = parseParts(parts[1], 0, maxHour)
 	if err != nil {
 		return j, err
 	}
 
-	j.day, err = parseParts(parts[2], 1, 31)
+	j.day, err = parseParts(parts[2], 1, maxDay)
 	if err != nil {
 		return j, err
 	}
 
-	j.month, err = parseParts(parts[3], 1, 12)
+	j.month, err = parseParts(parts[3], 1, maxMonth)
 	if err != nil {
 		return j, err
 	}
 
-	j.dayOfWeek, err = parseParts(parts[4], 0, 6)
+	j.dayOfWeek, err = parseParts(parts[4], 0, maxWeek)
 	if err != nil {
 		return j, err
 	}
@@ -245,7 +255,15 @@ func parseParts(s string, min, max int) (map[int]struct{}, error) {
 }
 
 func (c *Crontab) runScheduled(t time.Time) {
-	for _, j := range c.jobs {
+	c.mu.Lock()
+
+	n := len(c.jobs)
+	jb := make([]job, n)
+	copy(jb, c.jobs)
+
+	c.mu.Unlock()
+
+	for _, j := range jb {
 		if j.tick(getTick(t)) {
 			go j.fn()
 		}
@@ -285,7 +303,12 @@ func (c *Crontab) AddJob(schedule string, fn func()) error {
 	}
 
 	j.fn = fn
+
+	c.mu.Lock()
+
 	c.jobs = append(c.jobs, j)
+
+	c.mu.Unlock()
 
 	return nil
 }

@@ -7,20 +7,29 @@ import (
 	"strings"
 	"time"
 
+	"github.com/XSAM/otelsql"
+	"github.com/jmoiron/sqlx"
+	"github.com/prometheus/client_golang/prometheus"
+	otelgorm "github.com/zopsmart/gorm-opentelemetry"
+
+	// used for concrete implementation of the database driver.
+	_ "github.com/lib/pq"
+
+	"go.opentelemetry.io/otel"
+	semconv "go.opentelemetry.io/otel/semconv/v1.7.0"
+
+	"gorm.io/driver/mysql"
+	"gorm.io/driver/postgres"
+	"gorm.io/driver/sqlite"
+	"gorm.io/driver/sqlserver"
+	"gorm.io/gorm"
+	"gorm.io/gorm/logger"
+
 	"developer.zopsmart.com/go/gofr/pkg"
+	"developer.zopsmart.com/go/gofr/pkg/errors"
 	"developer.zopsmart.com/go/gofr/pkg/gofr/types"
 	"developer.zopsmart.com/go/gofr/pkg/log"
 	"developer.zopsmart.com/go/gofr/pkg/middleware"
-
-	"github.com/jinzhu/gorm"
-	"github.com/jmoiron/sqlx"
-	"github.com/prometheus/client_golang/prometheus"
-
-	// empty imports are to ensure inits are run for these packages.
-	_ "github.com/jinzhu/gorm/dialects/mssql"
-	_ "github.com/jinzhu/gorm/dialects/mysql"
-	_ "github.com/jinzhu/gorm/dialects/postgres"
-	_ "github.com/jinzhu/gorm/dialects/sqlite"
 )
 
 const (
@@ -122,12 +131,37 @@ func NewORM(config *DBConfig) (GORMClient, error) {
 
 	connectionStr := formConnectionStr(config)
 
-	db, err := gorm.Open(config.Dialect, connectionStr)
+	var (
+		db  *gorm.DB
+		err error
+		d   gorm.Dialector
+	)
+
+	driverName := registerDialect(config.Dialect)
+
+	switch config.Dialect {
+	case mySQL:
+		d = mysql.New(mysql.Config{DriverName: driverName, DSN: connectionStr})
+	case pgSQL:
+		d = postgres.New(postgres.Config{DriverName: driverName, DSN: connectionStr})
+	case "sqlite":
+		d = sqlite.Dialector{DriverName: driverName, DSN: connectionStr}
+	case "mssql":
+		// driverName is not added to the config. Currently, it breaks migrations for sqlserver.
+		d = sqlserver.New(sqlserver.Config{DSN: connectionStr})
+	default:
+		return GORMClient{config: config}, errors.DB{}
+	}
+
+	db, err = dbConnection(d)
 	if err != nil {
 		return GORMClient{config: config}, err
 	}
 
-	go pushConnMetrics(config.Database, config.HostName, db.DB())
+	sqlDB, err := db.DB()
+	if err == nil {
+		go pushConnMetrics(config.Database, config.HostName, sqlDB)
+	}
 
 	return GORMClient{DB: db, config: config}, err
 }
@@ -196,6 +230,8 @@ func formConnectionStr(config *DBConfig) string {
 	}
 }
 
+// HealthCheck pings the sql instance in gorm. If the ping does not return an error, the healthCheck status will be set to UP,
+// else the healthCheck status will be DOWN
 func (c GORMClient) HealthCheck() types.Health {
 	resp := types.Health{
 		Name:     pkg.SQL,
@@ -209,12 +245,18 @@ func (c GORMClient) HealthCheck() types.Health {
 		return resp
 	}
 
-	err := c.DB.DB().Ping()
+	sqlDB, err := c.DB.DB()
+	if err != nil {
+		return resp
+	}
+
+	err = sqlDB.Ping()
 	if err != nil {
 		return resp
 	}
 
 	resp.Status = pkg.StatusUp
+	resp.Details = sqlDB.Stats()
 
 	return resp
 }
@@ -237,6 +279,34 @@ func (c SQLXClient) HealthCheck() types.Health {
 	}
 
 	resp.Status = pkg.StatusUp
+	resp.Details = c.DB.Stats()
 
 	return resp
+}
+
+// dbConnection will establish a database connection based on the gorm.Dialector passed and returns a gorm.DB instance
+func dbConnection(d gorm.Dialector) (db *gorm.DB, err error) {
+	// Silent the default gorm logger. Else redundant error logs will be logged.
+	db, err = gorm.Open(d, &gorm.Config{Logger: logger.Default.LogMode(logger.Silent), DisableForeignKeyConstraintWhenMigrating: true})
+	if err != nil {
+		return
+	}
+
+	opts := otelgorm.WithTracerProvider(otel.GetTracerProvider())
+	plugin := otelgorm.NewPlugin(opts)
+
+	_ = db.Use(plugin)
+
+	return
+}
+
+// registerDialect registers the dialect to instrument the database/sql pkg and returns driverName based on the db Dialect.
+func registerDialect(dialect string) (driverName string) {
+	if dialect == pgSQL {
+		driverName, _ = otelsql.Register(dialect, semconv.DBSystemPostgreSQL.Value.AsString())
+	} else {
+		driverName, _ = otelsql.Register(dialect, dialect)
+	}
+
+	return
 }

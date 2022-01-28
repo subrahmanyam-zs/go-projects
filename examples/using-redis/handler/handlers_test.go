@@ -4,11 +4,11 @@ import (
 	"bytes"
 	"net/http"
 	"net/http/httptest"
-	"reflect"
 	"testing"
 	"time"
 
 	"github.com/golang/mock/gomock"
+	"github.com/stretchr/testify/assert"
 
 	"developer.zopsmart.com/go/gofr/pkg/errors"
 	"developer.zopsmart.com/go/gofr/pkg/gofr"
@@ -57,198 +57,165 @@ func (m mockStore) Error() string {
 func TestModel_GetKey(t *testing.T) {
 	m := New(mockStore{})
 
-	k := gofr.New()
+	app := gofr.New()
 
 	tests := []struct {
-		key         string
-		expectedErr error
-		value       string
+		desc string
+		key  string
+		resp interface{}
+		err  error
 	}{
-		{
-			key:   redisKey,
-			value: "someValue",
-		},
-		{
-			key:         "",
-			expectedErr: errors.MissingParam{Param: []string{"key"}},
-		},
-		{
-			key:         "errorKey",
-			expectedErr: mockStore{},
-		},
+		{"get with key", redisKey, "someValue", nil},
+		{"get with empty key", "", nil, errors.MissingParam{Param: []string{"key"}}},
+		{"get with error key", "errorKey", nil, mockStore{}},
 	}
 
-	for _, test := range tests {
-		r := httptest.NewRequest("GET", "http://dummy", nil)
+	for i, tc := range tests {
+		r := httptest.NewRequest(http.MethodGet, "http://dummy", nil)
 
 		req := request.NewHTTPRequest(r)
-		c := gofr.NewContext(nil, req, k)
+		ctx := gofr.NewContext(nil, req, app)
 
-		if test.key != "" {
-			c.SetPathParams(map[string]string{
-				"key": test.key,
+		if tc.key != "" {
+			ctx.SetPathParams(map[string]string{
+				"key": tc.key,
 			})
 		}
 
-		_, gotErr := m.GetKey(c)
+		_, err := m.GetKey(ctx)
 
-		if !reflect.DeepEqual(gotErr, test.expectedErr) {
-			t.Errorf("FAILED, Expected: %v, Got: %v", test.expectedErr, gotErr)
-		}
+		assert.Equal(t, tc.err, err, "TEST[%d], failed.\n%s", i, tc.desc)
 	}
 }
 
 func TestModel_DeleteKey(t *testing.T) {
 	m := New(mockStore{})
 
-	k := gofr.New()
+	app := gofr.New()
 
 	tests := []struct {
-		key         string
-		expectedErr error
+		desc string
+		key  string
+		err  error
 	}{
-		{
-			key: redisKey,
-		},
-		{
-			key:         "",
-			expectedErr: errors.MissingParam{Param: []string{"key"}},
-		},
-		{
-			key:         "errorKey",
-			expectedErr: deleteErr{},
-		},
+		{"delete success", redisKey, nil},
+		{"delete with empty key", "", errors.MissingParam{Param: []string{"key"}}},
+		{"delete with error key", "errorKey", deleteErr{}},
 	}
 
-	for _, test := range tests {
-		r := httptest.NewRequest("DELETE", "http://dummy", nil)
+	for i, tc := range tests {
+		r := httptest.NewRequest(http.MethodDelete, "http://dummy", nil)
 
 		req := request.NewHTTPRequest(r)
-		c := gofr.NewContext(nil, req, k)
+		ctx := gofr.NewContext(nil, req, app)
 
-		if test.key != "" {
-			c.SetPathParams(map[string]string{
-				"key": test.key,
+		if tc.key != "" {
+			ctx.SetPathParams(map[string]string{
+				"key": tc.key,
 			})
 		}
 
-		_, gotErr := m.DeleteKey(c)
+		_, err := m.DeleteKey(ctx)
 
-		if !reflect.DeepEqual(gotErr, test.expectedErr) {
-			t.Errorf("FAILED, Expected: %v, Got: %v", test.expectedErr, gotErr)
-		}
+		assert.Equal(t, tc.err, err, "TEST[%d], failed.\n%s", i, tc.desc)
 	}
 }
 
 func TestModel_SetKey(t *testing.T) {
 	m := New(mockStore{})
 
-	k := gofr.New()
+	app := gofr.New()
 	mockMetric := metrics.NewMockMetric(gomock.NewController(t))
-	k.Metric = mockMetric
+	app.Metric = mockMetric
 
 	mockMetric.EXPECT().SetGauge(gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
 	mockMetric.EXPECT().IncCounter(gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
 
 	tests := []struct {
-		body        []byte
-		expectedErr error
+		desc string
+		body []byte
+		err  error
 	}{
-		{
-			body:        []byte(`{`),
-			expectedErr: invalidBodyErr{},
-		},
-		{
-			body:        []byte(`{"someKey":"someValue"}`),
-			expectedErr: invalidInputErr{},
-		},
-		{
-			body:        []byte(`{"someKey123": "123"}`),
-			expectedErr: nil,
-		},
+		{"set key with invalid body", []byte(`{`), invalidBodyErr{}},
+		{"set key with invalid input", []byte(`{"someKey":"someValue"}`), invalidInputErr{}},
+		{"set key success", []byte(`{"someKey123": "123"}`), nil},
 	}
 
-	for _, test := range tests {
-		r := httptest.NewRequest("POST", "http://dummy", bytes.NewReader(test.body))
+	for i, tc := range tests {
+		r := httptest.NewRequest(http.MethodPost, "http://dummy", bytes.NewReader(tc.body))
 
 		req := request.NewHTTPRequest(r)
-		c := gofr.NewContext(nil, req, k)
+		ctx := gofr.NewContext(nil, req, app)
 
-		_, gotErr := m.SetKey(c)
+		_, err := m.SetKey(ctx)
 
-		if !reflect.DeepEqual(gotErr, test.expectedErr) {
-			t.Errorf("FAILED, Expected: %v, Got: %v", test.expectedErr, gotErr)
-		}
+		assert.Equal(t, tc.err, err, "TEST[%d], failed.\n%s", i, tc.desc)
 	}
 }
 
 func TestSetKey_SetGaugeError(t *testing.T) {
-	k := gofr.New()
+	app := gofr.New()
 	m := New(mockStore{})
 
-	r := httptest.NewRequest("POST", "http://dummy", nil)
+	r := httptest.NewRequest(http.MethodPost, "http://dummy", nil)
 
 	req := request.NewHTTPRequest(r)
-	c := gofr.NewContext(nil, req, k)
+	ctx := gofr.NewContext(nil, req, app)
 	mockMetric := metrics.NewMockMetric(gomock.NewController(t))
-	c.Metric = mockMetric
+	ctx.Metric = mockMetric
 
 	expErr := errors.Error("error case")
 	mockMetric.EXPECT().SetGauge(gomock.Any(), gomock.Any()).Return(expErr)
 
-	_, err := m.SetKey(c)
-	if !reflect.DeepEqual(err, expErr) {
-		t.Errorf("expected error %v, got %v", expErr, err)
-	}
+	_, err := m.SetKey(ctx)
+	assert.Equal(t, expErr, err)
 }
 
 func TestSetKey_InvalidBodyCounterError(t *testing.T) {
-	k := gofr.New()
+	app := gofr.New()
 	m := New(mockStore{})
 	r := httptest.NewRequest(http.MethodPost, "http://dummy", bytes.NewReader([]byte(`{`)))
 	req := request.NewHTTPRequest(r)
-	c := gofr.NewContext(nil, req, k)
+	ctx := gofr.NewContext(nil, req, app)
 	mockMetric := metrics.NewMockMetric(gomock.NewController(t))
-	c.Metric = mockMetric
+	ctx.Metric = mockMetric
 
 	mockMetric.EXPECT().SetGauge(gomock.Any(), gomock.Any()).Return(nil)
 
 	expErr := errors.Error("error case")
 	mockMetric.EXPECT().IncCounter(gomock.Any()).Return(expErr)
 
-	_, err := m.SetKey(c)
-	if !reflect.DeepEqual(err, expErr) {
-		t.Errorf("expected error %v, got %v", expErr, err)
-	}
+	_, err := m.SetKey(ctx)
+	assert.Equal(t, expErr, err)
 }
 
 func TestSetKey_IncCounterError(t *testing.T) {
 	tcs := []struct {
+		desc string
 		body []byte
 	}{
-		{[]byte(`{"`)},
-		{[]byte(`{"someKey":"someValue"}`)},
-		{[]byte(`{"someKey1":"someValue1"}`)},
+		{"invalid body", []byte(`{"`)},
+		{"error key", []byte(`{"someKey":"someValue"}`)},
+		{"valid key", []byte(`{"someKey1":"someValue1"}`)},
 	}
 
-	k := gofr.New()
+	app := gofr.New()
 	m := New(mockStore{})
 	mockMetric := metrics.NewMockMetric(gomock.NewController(t))
-	k.Metric = mockMetric
+	app.Metric = mockMetric
 	expErr := errors.Error("error case")
+
 	mockMetric.EXPECT().SetGauge(gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
 	mockMetric.EXPECT().IncCounter(gomock.Any()).Return(nil)
 	mockMetric.EXPECT().IncCounter(gomock.Any(), gomock.Any()).Return(expErr).AnyTimes()
 
 	for i, tc := range tcs {
-		r := httptest.NewRequest("POST", "http://dummy", bytes.NewReader(tc.body))
+		r := httptest.NewRequest(http.MethodPost, "http://dummy", bytes.NewReader(tc.body))
 		req := request.NewHTTPRequest(r)
-		c := gofr.NewContext(nil, req, k)
+		ctx := gofr.NewContext(nil, req, app)
 
-		_, err := m.SetKey(c)
-		if !reflect.DeepEqual(err, expErr) {
-			t.Errorf("TESTCASE[%v] expected error %v, got %v", i, expErr, err)
-		}
+		_, err := m.SetKey(ctx)
+		assert.Equal(t, expErr, err, "TEST[%d], failed.\n%s", i, tc.desc)
 	}
 }
 

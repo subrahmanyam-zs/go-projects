@@ -5,13 +5,13 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/gocql/gocql"
-	"github.com/stretchr/testify/assert"
-
 	"developer.zopsmart.com/go/gofr/pkg/datastore"
 	"developer.zopsmart.com/go/gofr/pkg/datastore/pubsub/kafka"
 	"developer.zopsmart.com/go/gofr/pkg/gofr/config"
 	awssns "developer.zopsmart.com/go/gofr/pkg/notifier/aws-sns"
+
+	"github.com/gocql/gocql"
+	"github.com/stretchr/testify/assert"
 )
 
 func Test_cassandraConfigFromEnv(t *testing.T) {
@@ -114,13 +114,15 @@ func Test_kafkaConfigFromEnv(t *testing.T) {
 		MaxRetry:          10,
 		InitialOffsets:    kafka.OffsetOldest,
 		GroupID:           "testing-dev-consumer",
+		DisableAutoCommit: false,
 	}
 	kafkaConfig := kafkaConfigFromEnv(&config.MockConfig{
 		Data: map[string]string{
-			"KAFKA_HOSTS": "Host:2008,Host:2009",
-			"KAFKA_TOPIC": "test-topics",
-			"APP_NAME":    "testing",
-			"APP_VERSION": "dev",
+			"KAFKA_HOSTS":              "Host:2008,Host:2009",
+			"KAFKA_TOPIC":              "test-topics",
+			"APP_NAME":                 "testing",
+			"APP_VERSION":              "dev",
+			"KAFKA_AUTOCOMMIT_DISABLE": "false",
 		},
 	})
 
@@ -233,7 +235,7 @@ func Test_dynamoDBConfigFromEnv(t *testing.T) {
 	input := &config.MockConfig{
 		Data: map[string]string{
 			"DYNAMODB_REGION":            "ap-south-1",
-			"DYNAMODB_ENDPOINT_URL":      "http://localhost:8000",
+			"DYNAMODB_ENDPOINT_URL":      "http://localhost:2021",
 			"DYNAMODB_ACCESS_KEY_ID":     "access-key-id",
 			"DYNAMODB_SECRET_ACCESS_KEY": "access-key",
 			"DYNAMODB_CONN_RETRY":        "2",
@@ -242,7 +244,7 @@ func Test_dynamoDBConfigFromEnv(t *testing.T) {
 
 	expConfig := datastore.DynamoDBConfig{
 		Region:            "ap-south-1",
-		Endpoint:          "http://localhost:8000",
+		Endpoint:          "http://localhost:2021",
 		AccessKeyID:       "access-key-id",
 		SecretAccessKey:   "access-key",
 		ConnRetryDuration: 2,
@@ -274,6 +276,40 @@ func Test_GetBoolEnv(t *testing.T) {
 	}
 }
 
+func Test_getElasticSearchConfigFromEnv(t *testing.T) {
+	testcases := []struct {
+		input  Config
+		output datastore.ElasticSearchCfg
+	}{
+		{
+			&config.MockConfig{Data: map[string]string{"ELASTIC_SEARCH_HOST": "localhost",
+				"ELASTIC_SEARCH_PORT": "2012", "ELASTIC_SEARCH_CONN_RETRY": "20"}},
+			datastore.ElasticSearchCfg{Host: "localhost", Ports: []int{2012}, ConnectionRetryDuration: 20},
+		},
+		{
+			&config.MockConfig{Data: map[string]string{"ELASTIC_SEARCH_HOST": "localhost",
+				"ELASTIC_SEARCH_PORT": "2012,2011,2010", "ELASTIC_SEARCH_CONN_RETRY": "20"}},
+			datastore.ElasticSearchCfg{Host: "localhost", Ports: []int{2012, 2011, 2010}, ConnectionRetryDuration: 20},
+		},
+		{
+			&config.MockConfig{Data: map[string]string{"ELASTIC_SEARCH_HOST": "localhost",
+				"ELASTIC_SEARCH_PORT": "2012,2011,abc,2010", "ELASTIC_SEARCH_CONN_RETRY": "20"}},
+			datastore.ElasticSearchCfg{Host: "localhost", Ports: []int{2012, 2011, 2010}, ConnectionRetryDuration: 20},
+		},
+		{
+			&config.MockConfig{Data: map[string]string{"ELASTIC_SEARCH_CONN_RETRY": "20", "ELASTIC_CLOUD_ID": "sample-cloud-id"}},
+			datastore.ElasticSearchCfg{Ports: []int{}, CloudID: "sample-cloud-id", ConnectionRetryDuration: 20},
+		},
+	}
+
+	for i, tc := range testcases {
+		output := elasticSearchConfigFromEnv(tc.input)
+
+		if !reflect.DeepEqual(output, tc.output) {
+			t.Errorf("[TESTCASE%v] Failed.\nExpected:%v\nGot: %v", i+1, tc.output, output)
+		}
+	}
+}
 func Test_AWSSNSConfigFromEnv(t *testing.T) {
 	expectedConfig := awssns.Config{
 		AccessKeyID:     "AKIswe",

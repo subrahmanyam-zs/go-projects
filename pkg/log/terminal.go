@@ -1,5 +1,6 @@
 package log
 
+//nolint:staticcheck //using golang.org/x/term deprecates the terminal usage
 import (
 	"io"
 	"os"

@@ -5,8 +5,12 @@ import (
 	"io"
 	"testing"
 
-	"github.com/jinzhu/gorm"
 	"github.com/jmoiron/sqlx"
+
+	"gorm.io/driver/mysql"
+	"gorm.io/gorm"
+	"gorm.io/gorm/logger"
+
 	"developer.zopsmart.com/go/gofr/pkg"
 	"developer.zopsmart.com/go/gofr/pkg/gofr/config"
 	"developer.zopsmart.com/go/gofr/pkg/gofr/types"
@@ -50,7 +54,18 @@ func TestDataStore_GORM(t *testing.T) {
 
 	{
 		ds := new(DataStore)
-		ds.SetORM(GORMClient{DB: new(gorm.DB)})
+		c := config.NewGoDotEnvProvider(log.NewMockLogger(io.Discard), "../../configs")
+		cfg := &DBConfig{
+			HostName: c.Get("DB_HOST"),
+			Username: c.Get("DB_USER"),
+			Password: c.Get("DB_PASSWORD"),
+			Database: c.Get("DB_NAME"),
+			Port:     c.Get("DB_PORT"),
+			Dialect:  c.Get("DB_DIALECT"),
+		}
+
+		client, _ := NewORM(cfg)
+		ds.SetORM(client)
 
 		db := ds.GORM()
 		if db == nil {
@@ -108,6 +123,9 @@ func TestDataStore_SQLX(t *testing.T) {
 	}
 }
 
+// TestDataStore_DB tests the behavior of ds.DB() when DB connection is not established.
+// It tests, whether it will panic or throw error. For example when /.well-known/health-check api pings DB for its status
+// it shouldn't panic if the DB connection is not established.
 func TestDataStore_DB(t *testing.T) {
 	{
 		ds := new(DataStore)
@@ -121,11 +139,18 @@ func TestDataStore_DB(t *testing.T) {
 
 	{
 		ds := new(DataStore)
-		ds.SetORM(GORMClient{DB: new(gorm.DB)})
-		db := ds.DB()
 
-		if db.DB != nil {
-			t.Errorf("FAILED, Expected the db object to be nil, Got: %v", db)
+		// passing incorrect dsn will not establish a db connection. But gorm.ConnPool will not be nil.
+		// passing new(gorm.DB) panics, as gorm.ConnPool will be nil.
+		dsn := "incorrect DSN"
+
+		gdb, _ := gorm.Open(mysql.Open(dsn), &gorm.Config{Logger: logger.Default.LogMode(logger.Silent)})
+
+		ds.SetORM(GORMClient{DB: gdb})
+
+		db := ds.GORM()
+		if db == nil {
+			t.Error("FAILED, Expected the db object to be initialized, Got: nil")
 		}
 	}
 
@@ -147,6 +172,7 @@ func TestDataStore_DB(t *testing.T) {
 			t.Errorf("FAILED, Expected the db object to be nil, Got: %v", db)
 		}
 	}
+
 	{
 		ds := new(DataStore)
 		ds.ORM = new(sql.DB)

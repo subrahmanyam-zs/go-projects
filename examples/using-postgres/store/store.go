@@ -9,75 +9,83 @@ import (
 	"developer.zopsmart.com/go/gofr/pkg/gofr"
 )
 
-type Model struct{}
+type customer struct{}
 
+// New is factory function for store layer
 func New() Store {
-	return &Model{}
+	return customer{}
 }
 
 type Store interface {
-	Get(c *gofr.Context) (*[]model.Customer, error)
-	GetByID(c *gofr.Context, id int) (*model.Customer, error)
-	Update(c *gofr.Context, customer model.Customer) (*model.Customer, error)
-	Create(c *gofr.Context, customer model.Customer) (*model.Customer, error)
-	Delete(c *gofr.Context, id int) error
+	Get(ctx *gofr.Context) ([]model.Customer, error)
+	GetByID(ctx *gofr.Context, id int) (model.Customer, error)
+	Update(ctx *gofr.Context, customer model.Customer) (model.Customer, error)
+	Create(ctx *gofr.Context, customer model.Customer) (model.Customer, error)
+	Delete(ctx *gofr.Context, id int) error
 }
 
-func (m Model) Get(c *gofr.Context) (*[]model.Customer, error) {
+func (c customer) Get(ctx *gofr.Context) ([]model.Customer, error) {
+	rows, err := ctx.DB().QueryContext(ctx, "SELECT * FROM customers")
+	if err != nil {
+		return nil, errors.DB{Err: err}
+	}
+
+	defer func() {
+		_ = rows.Close()
+		_ = rows.Err() // or modify return value
+	}()
+
 	customers := make([]model.Customer, 0)
 
-	var customer model.Customer
-	rows, err := c.DB().Query("SELECT * FROM customers")
-	if err != nil {
-		return nil, errors.DB{Err: err}
-	}
-
 	for rows.Next() {
-		rows.Scan(&customer.ID, &customer.Name)
-		customers = append(customers, customer)
-	}
+		var c model.Customer
 
-	return &customers, nil
-}
-
-func (m Model) GetByID(c *gofr.Context, id int) (*model.Customer, error) {
-	var customer model.Customer
-
-	err := c.DB().QueryRow(" SELECT * FROM customers where id=$1", id).Scan(&customer.ID, &customer.Name)
-
-	if err == sql.ErrNoRows {
-		return nil, errors.EntityNotFound{
-			Entity: "customer",
-			ID:     fmt.Sprint(id),
+		err := rows.Scan(&c.ID, &c.Name)
+		if err != nil {
+			return nil, err
 		}
+
+		customers = append(customers, c)
 	}
 
-	return &customer, nil
+	return customers, nil
 }
 
-func (m Model) Update(c *gofr.Context, customer model.Customer) (*model.Customer, error) {
-	_, err := c.DB().Exec("UPDATE customers SET name = $1 WHERE id = $2", customer.Name, customer.ID)
+func (c customer) GetByID(ctx *gofr.Context, id int) (model.Customer, error) {
+	var resp model.Customer
+
+	err := ctx.DB().QueryRowContext(ctx, " SELECT * FROM customers where id=$1", id).Scan(&resp.ID, &resp.Name)
+	if err == sql.ErrNoRows {
+		return model.Customer{}, errors.EntityNotFound{Entity: "customer", ID: fmt.Sprint(id)}
+	}
+
+	return resp, nil
+}
+
+func (c customer) Update(ctx *gofr.Context, cust model.Customer) (model.Customer, error) {
+	_, err := ctx.DB().ExecContext(ctx, "UPDATE customers SET name=$1 WHERE id=$2", cust.Name, cust.ID)
 	if err != nil {
-		return nil, errors.DB{Err: err}
+		return model.Customer{}, errors.DB{Err: err}
 	}
 
-	return m.GetByID(c, customer.ID)
+	return cust, nil
 }
 
-func (m Model) Create(c *gofr.Context, customer model.Customer) (*model.Customer, error) {
-	_, err := c.DB().Exec("INSERT INTO customers(name) VALUES($1)", customer.Name)
+func (c customer) Create(ctx *gofr.Context, cust model.Customer) (model.Customer, error) {
+	var resp model.Customer
 
+	err := ctx.DB().QueryRowContext(ctx, "INSERT INTO customers(name) VALUES($1) RETURNING id, name", cust.Name).Scan(
+		&resp.ID, &resp.Name,
+	)
 	if err != nil {
-		return nil, errors.DB{Err: err}
+		return model.Customer{}, errors.DB{Err: err}
 	}
 
-	var lastID int
-	err = c.DB().QueryRow(`SELECT MAX(ID) AS MAX_ID FROM customers`).Scan(&lastID)
-	return m.GetByID(c, lastID)
+	return resp, nil
 }
 
-func (m Model) Delete(c *gofr.Context, id int) error {
-	_, err := c.DB().Exec("DELETE FROM customers where id=$1", id)
+func (c customer) Delete(ctx *gofr.Context, id int) error {
+	_, err := ctx.DB().ExecContext(ctx, "DELETE FROM customers where id=$1", id)
 	if err != nil {
 		return errors.DB{Err: err}
 	}

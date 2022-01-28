@@ -10,12 +10,15 @@ import (
 	"io"
 	"net"
 	"net/http"
+	"net/http/httptrace"
 	"strings"
 	"sync"
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
-	"go.opencensus.io/plugin/ochttp"
+
+	"go.opentelemetry.io/contrib/instrumentation/net/http/httptrace/otelhttptrace"
+	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 
 	"developer.zopsmart.com/go/gofr/pkg/errors"
 	"developer.zopsmart.com/go/gofr/pkg/log"
@@ -36,8 +39,14 @@ type httpService struct {
 	contentType   responseType
 	sp            surgeProtector
 	numOfRetries  int
+	mu            sync.Mutex
 
 	cache *cachedHTTPService
+
+	// CustomRetry enables the custom retry logic to make service calls
+	// arguments: logger, error, response status-code, attempt count
+	// returns whether framework should retry service call or not
+	CustomRetry func(logger log.Logger, err error, statusCode, attemptCount int) bool
 }
 
 type responseType int
@@ -97,10 +106,15 @@ func (h *httpService) call(ctx context.Context, method, target string, params ma
 		)
 
 		for i := 0; i <= h.numOfRetries; i++ {
-			resp, err = h.Do(req.WithContext(ctx)) //nolint:bodyclose // body is being closed after call response is logged
-
+			resp, err = h.Do(req) //nolint:bodyclose // body is being closed after call response is logged
 			if resp != nil {
 				statusCode = resp.StatusCode
+			}
+
+			if h.CustomRetry != nil {
+				if retry := h.CustomRetry(h.logger, err, statusCode, i+1); retry {
+					continue
+				}
 			}
 
 			if err != nil {
@@ -122,6 +136,8 @@ func (h *httpService) call(ctx context.Context, method, target string, params ma
 			return nil, err
 		}
 
+		h.mu.Lock()
+
 		switch resp.Header.Get("content-type") {
 		case "application/xml":
 			h.contentType = XML
@@ -130,6 +146,8 @@ func (h *httpService) call(ctx context.Context, method, target string, params ma
 		default:
 			h.contentType = JSON
 		}
+
+		h.mu.Unlock()
 
 		h.logCall(&callLog{CorrelationID: correlationID, Method: method, URI: h.url + "/" + target,
 			ResponseCode: resp.StatusCode, Params: params, AppData: appData}, headers, start, authorizationHeader)
@@ -161,10 +179,14 @@ func (h *httpService) preCall(method, target, correlationID string, params, appD
 		statusCode = http.StatusUnauthorized
 	}
 
+	h.mu.Lock()
+
 	if !h.isHealthy {
 		err = ErrServiceDown{URL: h.url}
 		statusCode = http.StatusInternalServerError
 	}
+
+	h.mu.Unlock()
 
 	if err != nil {
 		httpServiceResponse.WithLabelValues(h.url+"/"+target, method, fmt.Sprintf("%d", statusCode)).Observe(time.Since(start).Seconds())
@@ -206,7 +228,9 @@ func (h *httpService) createReq(ctx context.Context, method, target string, para
 		uri = h.url
 	}
 
-	req, err := http.NewRequest(method, uri, bytes.NewBuffer(body))
+	ctx = httptrace.WithClientTrace(ctx, otelhttptrace.NewClientTrace(ctx))
+
+	req, err := http.NewRequestWithContext(ctx, method, uri, bytes.NewBuffer(body))
 	if err != nil {
 		return nil, FailedRequest{URL: h.url, Err: err}
 	}
@@ -226,7 +250,7 @@ func (h *httpService) createReq(ctx context.Context, method, target string, para
 	}
 
 	// query parameters is required for GET,POST and PUT method
-	if (method == "GET" || method == "POST" || method == "PUT" || method == "PATCH") && params != nil {
+	if (method == http.MethodGet || method == http.MethodPost || method == http.MethodPut || method == http.MethodPatch) && params != nil {
 		encodeQueryParameters(req, params)
 	}
 
@@ -237,7 +261,12 @@ func (h *httpService) setHeadersFromContext(ctx context.Context, req *http.Reque
 	// add all the mandatory headers to the request
 	if val := ctx.Value(middleware.CorrelationIDKey); val != nil {
 		correlationID, _ := val.(string)
-		req.Header.Add("X-Correlation-Id", correlationID)
+		req.Header.Add("X-Correlation-ID", correlationID)
+	}
+
+	if val := ctx.Value(middleware.B3TraceIDKey); val != nil {
+		b3TraceID, _ := val.(string)
+		req.Header.Add("X-B3-TraceID", b3TraceID)
 	}
 
 	if val := ctx.Value(middleware.ClientIPKey); val != nil {
@@ -313,7 +342,7 @@ func encodeQueryParameters(req *http.Request, params map[string]interface{}) {
 
 func (h *httpService) SetConnectionPool(maxConnections int, idleConnectionTimeout time.Duration) {
 	t := http.Transport{MaxIdleConns: maxConnections, IdleConnTimeout: idleConnectionTimeout}
-	octr := &ochttp.Transport{Base: &t}
+	octr := otelhttp.NewTransport(&t)
 	h.Timeout = idleConnectionTimeout
 	cl := &http.Client{Transport: octr}
 	h.Client = cl
@@ -336,14 +365,14 @@ func (h *httpService) SetSurgeProtectorOptions(isEnabled bool, customHeartbeatUR
 				go h.sp.checkHealth(h.url, h.healthCh)
 
 				for ok := range h.healthCh {
-					h.sp.mu.Lock()
+					h.mu.Lock()
 					// If the circuit is open, the circuitOpenCount metric value will be increased otherwise, value will not change
 					if !ok && h.isHealthy {
 						circuitOpenCount.WithLabelValues(h.url).Inc()
 					}
 
 					h.isHealthy = ok
-					h.sp.mu.Unlock()
+					h.mu.Unlock()
 				}
 			}()
 		})

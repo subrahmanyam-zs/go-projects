@@ -5,6 +5,8 @@ import (
 	"os"
 	"testing"
 
+	"developer.zopsmart.com/go/gofr/cmd/gofr/migration"
+
 	"github.com/golang/mock/gomock"
 )
 
@@ -17,10 +19,11 @@ func Test_populateEntityFile(t *testing.T) {
 	_ = os.Mkdir(projectDirectory, os.ModePerm)
 	_ = os.Chdir(projectDirectory)
 
-	testFile, _ := os.OpenFile("test.go", os.O_CREATE|os.O_RDONLY, 0666)
-	mainFile, _ := os.OpenFile("main.go", os.O_RDONLY, 0666)
+	testFile, _ := os.OpenFile("test.go", os.O_CREATE|os.O_RDONLY, migration.RWMode)
+	mainFile, _ := os.OpenFile("main.go", os.O_RDONLY, migration.RWMode)
 
 	ctrl := gomock.NewController(t)
+
 	defer func() {
 		ctrl.Finish()
 
@@ -79,9 +82,10 @@ func Test_createModel(t *testing.T) {
 	projectDirectory := dir + "/testProject"
 	_ = os.Mkdir(projectDirectory, os.ModePerm)
 	_ = os.Chdir(projectDirectory)
-	testFile, _ := os.OpenFile("testRead.go", os.O_CREATE|os.O_RDONLY, 0666)
+	testFile, _ := os.OpenFile("testRead.go", os.O_CREATE|os.O_RDONLY, migration.RWMode)
 
 	ctrl := gomock.NewController(t)
+
 	defer func() {
 		ctrl.Finish()
 
@@ -126,6 +130,7 @@ func Test_createModel(t *testing.T) {
 
 func Test_populateInterfaceFiles(t *testing.T) {
 	currDir, _ := os.Getwd()
+
 	defer func() {
 		_ = os.Chdir(currDir)
 	}()
@@ -135,7 +140,7 @@ func Test_populateInterfaceFiles(t *testing.T) {
 	_ = os.Mkdir(projectDirectory, os.ModePerm)
 	_ = os.Chdir(projectDirectory)
 
-	testFile, _ := os.OpenFile("test.go", os.O_CREATE|os.O_RDONLY, 0666)
+	testFile, _ := os.OpenFile("test.go", os.O_CREATE|os.O_RDONLY, migration.RWMode)
 
 	tests := []struct {
 		name    string

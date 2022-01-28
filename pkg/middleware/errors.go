@@ -9,16 +9,18 @@ func (e Error) Error() string {
 }
 
 const (
-	ErrInvalidToken       = Error("invalid_token")
-	ErrInvalidRequest     = Error("invalid_request")
-	ErrServiceDown        = Error("service_unavailable")
-	ErrInvalidHeader      = Error("invalid_header")
-	ErrMissingHeader      = Error("missing_header")
-	ErrUnauthorised       = Error("missing_permission")
-	ErrUnauthenticated    = Error("failed_auth")
+	ErrInvalidToken    = Error("invalid_token")
+	ErrInvalidRequest  = Error("invalid_request")
+	ErrServiceDown     = Error("service_unavailable")
+	ErrInvalidHeader   = Error("invalid_header")
+	ErrMissingHeader   = Error("missing_header")
+	ErrUnauthorised    = Error("missing_permission")
+	ErrUnauthenticated = Error("failed_auth")
 )
 
 func GetDescription(err error) (description string, statusCode int) {
+	var authErr = "Authorization error"
+
 	switch err {
 	case ErrInvalidToken:
 		description = "The access token is invalid or has expired"
@@ -36,12 +38,12 @@ func GetDescription(err error) (description string, statusCode int) {
 		description = "Invalid Authorization header"
 		statusCode = http.StatusBadRequest
 	case ErrUnauthorised:
-		description = "Authorization error"
+		description = authErr
 		statusCode = http.StatusForbidden
 	case ErrUnauthenticated:
-		description = "Authorization error"
+		description = authErr
 		statusCode = http.StatusUnauthorized
 	}
 
-	return
+	return description, statusCode
 }

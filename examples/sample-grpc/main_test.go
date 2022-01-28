@@ -9,6 +9,7 @@ import (
 
 	grpc2 "developer.zopsmart.com/go/gofr/examples/sample-grpc/handler/grpc"
 	"developer.zopsmart.com/go/gofr/pkg/gofr/request"
+
 	"google.golang.org/grpc"
 )
 
@@ -16,32 +17,39 @@ func TestIntegration(t *testing.T) {
 	go main()
 	time.Sleep(time.Second * 5)
 
-	tcs := []struct {
-		method             string
-		endpoint           string
-		expectedStatusCode int
-		body               []byte
+	tests := []struct {
+		desc       string
+		method     string
+		endpoint   string
+		statusCode int
+		body       []byte
 	}{
-		{"GET", "/example?id=1", 200, nil},
-		{"GET", "/example?id=2", 404, nil},
+		{"get success", http.MethodGet, "/example?id=1", http.StatusOK, nil},
+		{"get non existent entity", http.MethodGet, "/example?id=2", http.StatusNotFound, nil},
+		{"unregistered update route", http.MethodPut, "/example", http.StatusNotFound, []byte(`{}`)},
 	}
 
-	for _, tc := range tcs {
+	for i, tc := range tests {
 		req, _ := request.NewMock(tc.method, "http://localhost:9093/"+tc.endpoint, bytes.NewBuffer(tc.body))
 		c := http.Client{}
 
-		resp, _ := c.Do(req)
-
-		if resp != nil && resp.StatusCode != tc.expectedStatusCode {
-			t.Errorf("Failed.\tExpected %v\tGot %v\n", tc.expectedStatusCode, resp.StatusCode)
+		resp, err := c.Do(req)
+		if err != nil {
+			t.Errorf("TEST[%v] Failed.\tHTTP request encountered Err: %v\n%s", i, err, tc.desc)
+			continue
 		}
+
+		if resp.StatusCode != tc.statusCode {
+			t.Errorf("TEST[%v] Failed.\tExpected %v\tGot %v\n%s", i, tc.statusCode, resp.StatusCode, tc.desc)
+		}
+
+		_ = resp.Body.Close()
 	}
 
 	testClient(t)
 }
 
 func testClient(t *testing.T) {
-	conn := new(grpc.ClientConn)
 	conn, err := grpc.Dial("localhost:10000", grpc.WithInsecure())
 	if err != nil {
 		t.Errorf("did not connect: %s", err)
@@ -51,10 +59,12 @@ func testClient(t *testing.T) {
 	defer conn.Close()
 
 	c := grpc2.NewExampleServiceClient(conn)
+
 	_, err = c.Get(context.TODO(), &grpc2.ID{Id: "1"})
 	if err != nil {
 		t.Errorf("FAILED, Expected: %v, Got: %v", nil, err)
 	}
+
 	_, err = c.Get(context.TODO(), &grpc2.ID{Id: "2"})
 	if err == nil {
 		t.Errorf("FAILED, Expected: %v, Got: %v", nil, err)

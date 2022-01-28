@@ -34,17 +34,17 @@ type Config struct {
 //nolint // The declared global variable can be accessed across multiple functions
 var (
 	notifierReceiveCount = prometheus.NewCounterVec(prometheus.CounterOpts{
-		Name: "thanos_notifier_receive_count",
+		Name: "zs_notifier_receive_count",
 		Help: "Total number of subscribe operation",
 	}, []string{"topic"})
 
 	notifierSuccessCount = prometheus.NewCounterVec(prometheus.CounterOpts{
-		Name: "thanos_notifier_success_count",
+		Name: "zs_notifier_success_count",
 		Help: "Total number of successful subscribe operation",
 	}, []string{"topic"})
 
 	notifierFailureCount = prometheus.NewCounterVec(prometheus.CounterOpts{
-		Name: "thanos_notifier_failure_count",
+		Name: "zs_notifier_failure_count",
 		Help: "Total number of failed subscribe operation",
 	}, []string{"topic"})
 )
@@ -67,7 +67,6 @@ func New(c *Config) (notifier.Notifier, error) {
 }
 
 func (s *SNS) Publish(value interface{}) (err error) {
-
 	data, ok := value.([]byte)
 	if !ok {
 		data, err = json.Marshal(value)
@@ -82,10 +81,10 @@ func (s *SNS) Publish(value interface{}) (err error) {
 	}
 
 	_, err = s.sns.Publish(input)
-
 	if err != nil {
 		return err
 	}
+
 	return nil
 }
 

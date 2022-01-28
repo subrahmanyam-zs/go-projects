@@ -16,7 +16,7 @@ type Store interface {
 type employee struct{}
 
 // New returns Employee core
-// nolint:golint // employee should not be exposed
+// nolint:revive // employee should not be exposed
 func New() employee {
 	return employee{}
 }
@@ -28,7 +28,11 @@ func (e employee) Get(c *gofr.Context) ([]entity.Employee, error) {
 	if err != nil {
 		return nil, errors.DB{Err: err}
 	}
-	defer rows.Close()
+
+	defer func() {
+		_ = rows.Err()
+		_ = rows.Close()
+	}()
 
 	for rows.Next() {
 		var employee entity.Employee

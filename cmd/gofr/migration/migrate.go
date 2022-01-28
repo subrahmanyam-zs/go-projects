@@ -10,7 +10,7 @@ import (
 )
 
 // Migrate either runs UP or DOWN migration based in the `method` specified
-// More on Database Migration: https://teams.microsoft.com/l/entity/com.microsoft.teamspace.tab.wiki/tab::e40e17da-4c17-4ba6-97cc-17f88d0ad69d?context=%7B%22subEntityId%22%3A%22%7B%5C%22pageId%5C%22%3A6%2C%5C%22sectionId%5C%22%3A7%2C%5C%22origin%5C%22%3A2%7D%22%2C%22channelId%22%3A%2219%3A4e48475dc6764a6e920947f0fb5443f1%40thread.tacv2%22%7D&tenantId=4943e38c-6dd4-428c-886d-24932bc2d5de
+// More on Database Migration: https://docs.zopsmart.com/doc/gofr-migrations-lOHnVKrsfi
 func Migrate(app string, database db.DBDriver, migrations map[string]db.Migrator, method string, logger log.Logger) error {
 	if database == nil {
 		return &errors.Response{Reason: "no database specified"}

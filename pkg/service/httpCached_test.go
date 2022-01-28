@@ -176,7 +176,7 @@ func TestGetHeaders(t *testing.T) {
 		// output
 		headers map[string]string
 	}{
-		{nil, "", map[string]string{"X-Correlation-Id": "123"}},
+		{nil, "", map[string]string{"X-Correlation-ID": "123"}},
 		{map[string]string{"a": "abc"}, "", map[string]string{"a": "abc", "X-CorrelationId": "123"}},
 		{nil, "123",
 			map[string]string{"X-CorrelationId": "123", "Authorization": "123"}},
@@ -196,8 +196,8 @@ func TestGetHeaders(t *testing.T) {
 }
 
 func Test_GetHeaders_All(t *testing.T) {
-	expectedHeaders := map[string]string{"X-Correlation-Id": "123", "True-Client-IP": "127.0.0.1",
-		"X-Zopsmart-Channel": "api", "X-Authenticated-UserId": "990", "X-Zopsmart-Tenant": "zopsmart"}
+	expectedHeaders := map[string]string{"X-Correlation-ID": "123", "True-Client-IP": "127.0.0.1",
+		"X-Zopsmart-Channel": "api", "X-Authenticated-UserId": "990", "X-Zopsmart-Tenant": "zopsmart", "X-B3-TraceID": "123"}
 
 	ctx := context.TODO()
 	ctx = context.WithValue(ctx, middleware.CorrelationIDKey, "123")
@@ -205,6 +205,7 @@ func Test_GetHeaders_All(t *testing.T) {
 	ctx = context.WithValue(ctx, middleware.ZopsmartChannelKey, "api")
 	ctx = context.WithValue(ctx, middleware.AuthenticatedUserIDKey, "990")
 	ctx = context.WithValue(ctx, middleware.ZopsmartTenantKey, "zopsmart")
+	ctx = context.WithValue(ctx, middleware.B3TraceIDKey, "123")
 
 	headers := cachedHTTPService{httpService: &httpService{}}.getHeaders(ctx, nil)
 

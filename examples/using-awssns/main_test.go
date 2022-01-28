@@ -1,7 +1,8 @@
+//go:build !integration
+
 package main
 
 import (
-	"fmt"
 	"net/http"
 	"testing"
 	"time"
@@ -21,27 +22,22 @@ func TestIntegration(t *testing.T) {
 		expectedStatusCode int
 		body               []byte
 	}{
-		{method: http.MethodPost, endpoint: "publish", expectedStatusCode: 201, body: []byte(`{"name": "GOFR", "message":  "hi"}`)},
-		{method: http.MethodGet, endpoint: "subscribe", expectedStatusCode: 200, body: nil},
+		{http.MethodPost, "publish", http.StatusCreated, []byte(`{"name": "GOFR", "message":  "hi"}`)},
+		{http.MethodGet, "subscribe", http.StatusOK, nil},
 	}
 
 	for i, tc := range tests {
-		tc := tc
-		i := i
-		t.Run(fmt.Sprintf("Test %v", i+1), func(t *testing.T) {
-			req, _ := request.NewMock(tc.method, tc.endpoint, nil)
-			c := http.Client{}
+		req, _ := request.NewMock(tc.method, "http://localhost:8080/"+tc.endpoint, http.NoBody)
+		c := http.Client{}
 
-			resp, _ := c.Do(req)
+		resp, err := c.Do(req)
+		if err != nil {
+			t.Errorf("TEST %v: error while making request err, %v", i+1, err)
+			continue
+		}
 
-			if resp != nil {
-				assert.Equal(t, tc.expectedStatusCode, resp.StatusCode, "Test %v: Failed.\tExpected %v\tGot %v\n", i+1, tc.expectedStatusCode, resp.StatusCode)
-			}
+		assert.Equal(t, tc.expectedStatusCode, resp.StatusCode, "Test %v: Failed.\n", i+1)
 
-			if resp != nil {
-				resp.Body.Close()
-			}
-
-		})
+		_ = resp.Body.Close()
 	}
 }

@@ -1,24 +1,17 @@
 package gofr
 
 import (
-	"net/http"
 	"os"
 
 	"developer.zopsmart.com/go/gofr/pkg/log"
-	"go.opencensus.io/trace"
+
+	"go.opentelemetry.io/otel/trace"
 )
 
 type cmdApp struct {
-	Router      CMDRouter
-	metricSvr   *metricServer
-	context     *Context
-	tracingSpan *trace.Span
-}
-
-type metricServer struct {
-	server *http.Server
-	port   int
-	route  string
+	Router  CMDRouter
+	server  *server
+	context *Context
 }
 
 func (app *cmdApp) Start(logger log.Logger) {
@@ -31,8 +24,8 @@ func (app *cmdApp) Start(logger log.Logger) {
 		}
 	}
 
-	// start the metric server
-	app.metricSvr.server = metricsServer(logger, app.metricSvr.port, app.metricSvr.route)
+	// starts the HTTP server which is used for metrics and healthCheck endpoints.
+	go app.server.Start(app.context.Logger)
 
 	h := app.Router.handler(command)
 	if h == nil {
@@ -47,5 +40,5 @@ func (app *cmdApp) Start(logger log.Logger) {
 		app.context.resp.Respond(data, nil)
 	}
 
-	app.tracingSpan.End()
+	trace.SpanFromContext(app.context).End()
 }

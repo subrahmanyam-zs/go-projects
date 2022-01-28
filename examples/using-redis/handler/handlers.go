@@ -8,37 +8,41 @@ import (
 	"developer.zopsmart.com/go/gofr/pkg/gofr"
 )
 
-type Config struct {
+type config struct {
 	store store.Store
 }
 
-func New(c store.Store) *Config {
-	return &Config{
-		store: c,
+// New is factory function for config
+//nolint:revive // handler should not be used without proper initilization with required dependency
+func New(s store.Store) config {
+	return config{
+		store: s,
 	}
 }
 
-// SetKey is a handler function of type gofr.Handler, it sets keys
-func (m Config) SetKey(c *gofr.Context) (interface{}, error) {
+//nolint:gocognit // SetKey is a handler function of type gofr.Handler, it sets keys
+func (c config) SetKey(ctx *gofr.Context) (interface{}, error) {
+	const size = 64
+
 	input := make(map[string]string)
 
-	length, err := strconv.ParseFloat(c.Header("Content-Length"), 64)
+	length, err := strconv.ParseFloat(ctx.Header("Content-Length"), size)
 	if err != nil {
 		length = 0
 	}
 
-	err = c.Metric.SetGauge(ReqContentLengthGauge, length)
+	err = ctx.Metric.SetGauge(ReqContentLengthGauge, length)
 	if err != nil {
 		return nil, err
 	}
 
-	if err := c.Bind(&input); err != nil {
-		err = c.Metric.IncCounter(InvalidBodyCounter)
+	if err = ctx.Bind(&input); err != nil {
+		err = ctx.Metric.IncCounter(InvalidBodyCounter)
 		if err != nil {
 			return nil, err
 		}
 
-		err = c.Metric.IncCounter(NumberOfSetsCounter, "failed")
+		err = ctx.Metric.IncCounter(NumberOfSetsCounter, "failed")
 		if err != nil {
 			return nil, err
 		}
@@ -47,10 +51,10 @@ func (m Config) SetKey(c *gofr.Context) (interface{}, error) {
 	}
 
 	for key, value := range input {
-		if err := m.store.Set(c, key, value, 0); err != nil {
-			c.Logger.Error("got error: ", err)
+		if err = c.store.Set(ctx, key, value, 0); err != nil {
+			ctx.Logger.Error("got error: ", err)
 
-			err = c.Metric.IncCounter(NumberOfSetsCounter, "failed")
+			err = ctx.Metric.IncCounter(NumberOfSetsCounter, "failed")
 			if err != nil {
 				return nil, err
 			}
@@ -59,7 +63,7 @@ func (m Config) SetKey(c *gofr.Context) (interface{}, error) {
 		}
 	}
 
-	err = c.Metric.IncCounter(NumberOfSetsCounter, "succeeded")
+	err = ctx.Metric.IncCounter(NumberOfSetsCounter, "succeeded")
 	if err != nil {
 		return nil, err
 	}
@@ -68,14 +72,14 @@ func (m Config) SetKey(c *gofr.Context) (interface{}, error) {
 }
 
 // GetKey is a handler function of type gofr.Handler, it fetches keys
-func (m Config) GetKey(c *gofr.Context) (interface{}, error) {
+func (c config) GetKey(ctx *gofr.Context) (interface{}, error) {
 	// fetch the path parameter as specified in the route
-	key := c.PathParam("key")
+	key := ctx.PathParam("key")
 	if key == "" {
 		return nil, errors.MissingParam{Param: []string{"key"}}
 	}
 
-	value, err := m.store.Get(c, key)
+	value, err := c.store.Get(ctx, key)
 	if err != nil {
 		return nil, err
 	}
@@ -87,15 +91,15 @@ func (m Config) GetKey(c *gofr.Context) (interface{}, error) {
 }
 
 // DeleteKey is a handler function of type gofr.Handler, it deletes keys
-func (m Config) DeleteKey(c *gofr.Context) (interface{}, error) {
+func (c config) DeleteKey(ctx *gofr.Context) (interface{}, error) {
 	// fetch the path parameter as specified in the route
-	key := c.PathParam("key")
+	key := ctx.PathParam("key")
 	if key == "" {
 		return nil, errors.MissingParam{Param: []string{"key"}}
 	}
 
-	if err := m.store.Delete(c, key); err != nil {
-		c.Logger.Errorf("err: ", err)
+	if err := c.store.Delete(ctx, key); err != nil {
+		ctx.Logger.Errorf("err: ", err)
 		return nil, deleteErr{}
 	}
 

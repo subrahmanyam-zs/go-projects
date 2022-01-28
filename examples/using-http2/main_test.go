@@ -1,7 +1,6 @@
 package main
 
 import (
-	"bytes"
 	"crypto/tls"
 	"net/http"
 	"testing"
@@ -14,34 +13,33 @@ func TestServerRun(t *testing.T) {
 	go main()
 	time.Sleep(3 * time.Second)
 
-	//nolint: gosec, TLS InsecureSkipVerify set true.
+	// nolint:gosec // TLS InsecureSkipVerify set true.
 	tr := &http.Transport{
 		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
 	}
 
 	tcs := []struct {
-		id                 int
-		method             string
-		endpoint           string
-		expectedStatusCode int
-		body               []byte
+		desc       string
+		endpoint   string
+		statusCode int
 	}{
-		{1, "GET", "https://localhost:1449/home", 200, nil},
+		{"get succuss", "/home", http.StatusOK},
+		{"get unknown endpoint", "/unknown", http.StatusNotFound},
 	}
-	for _, tc := range tcs {
-		req, _ := request.NewMock(tc.method, tc.endpoint, bytes.NewBuffer(tc.body))
+	for i, tc := range tcs {
+		req, _ := request.NewMock(http.MethodGet, "https://localhost:1449"+tc.endpoint, nil)
 		c := http.Client{Transport: tr}
 
-		resp, _ := c.Do(req)
-
-		if resp == nil {
-			t.Errorf("Test %v: Failed \t got nil response", tc.id)
+		resp, err := c.Do(req)
+		if err != nil {
+			t.Errorf("TEST[%v] Failed.\tHTTP request encountered Err: %v\n%s", i, err, tc.desc)
+			continue
 		}
 
-		if resp != nil && resp.StatusCode != tc.expectedStatusCode {
-			t.Errorf("Test %v: Failed.\tExpected %v\tGot %v\n", tc.id, tc.expectedStatusCode, resp.StatusCode)
+		if resp.StatusCode != tc.statusCode {
+			t.Errorf("TEST[%v] Failed.\tExpected %v\tGot %v\n%s", i, tc.statusCode, resp.StatusCode, tc.desc)
 		}
 
-		resp.Body.Close()
+		_ = resp.Body.Close()
 	}
 }

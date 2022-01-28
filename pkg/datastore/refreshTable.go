@@ -6,18 +6,20 @@ import (
 	"encoding/csv"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/dynamodb"
 	"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbattribute"
+
+	"gorm.io/gorm"
 )
 
 const (
-	msSQL = "mssql"
+	msSQL = "sqlserver"
 	mySQL = "mysql"
 	pgSQL = "postgres"
 )
@@ -35,7 +37,7 @@ func NewSeeder(db *DataStore, directoryPath string) *Seeder {
 	dialect := ""
 
 	if v != nil {
-		dialect = db.GORM().Dialect().GetName()
+		dialect = db.GORM().Dialector.Name()
 	}
 
 	return &Seeder{DataStore: db, path: directoryPath, dialect: dialect}
@@ -70,10 +72,14 @@ func (d *Seeder) ClearTable(t tester, tableName string) {
 }
 
 func (d *Seeder) populateTable(t tester, tableName string, records [][]string) {
-	d.resetIdentitySequence(t, tableName, true)
-	txn, _ := d.GORM().DB().Begin()
-
 	var err error
+
+	d.resetIdentitySequence(t, tableName, true)
+
+	txn := getTxn(d.GORM())
+	if txn == nil {
+		return
+	}
 
 	// this indicates if a table has identity column or not
 	identityInsert := false
@@ -142,7 +148,7 @@ func (d *Seeder) resetIdentitySequence(t tester, tableName string, beforeTransac
 		}
 	}
 
-	if _, err := d.GORM().DB().Exec(q); err != nil {
+	if err := d.GORM().Exec(q).Error; err != nil {
 		t.Errorf("Unable to reset identity. got err: %v", err)
 	}
 }
@@ -151,9 +157,11 @@ func (d *Seeder) resetIdentitySequence(t tester, tableName string, beforeTransac
 // values to the identity columns
 func getIdentityInsert(txn *sql.Tx, tableName string) (bool, error) {
 	var name string
+
 	// query the information schema to identify if the tables has an identity
 	_ = txn.QueryRow(`SELECT TABLE_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE 
-		COLUMNPROPERTY(object_id(TABLE_SCHEMA+'.'+TABLE_NAME), COLUMN_NAME, 'IsIdentity') = 1 AND TABLE_NAME = ?`, tableName).Scan(&name)
+		COLUMNPROPERTY(object_id(TABLE_SCHEMA+'.'+TABLE_NAME), COLUMN_NAME, 'IsIdentity') = 1 AND TABLE_NAME = @table`,
+		sql.Named("table", tableName)).Scan(&name)
 
 	identityInsert := false
 
@@ -210,7 +218,7 @@ func (d *Seeder) getQueryFromRecords(records [][]string, tableName string) strin
 	return query
 }
 
-func (d *Seeder) getCassandraQueryFromRecords(records [][]string, tableName string) (query string, rows []interface{}) {
+func (d *Seeder) getCassandraQueryFromRecords(records [][]string, tableName string) (query string, rows []interface{}, err error) {
 	columns := records[0]
 	columnsStr := " (\"" + strings.Join(columns, "\",\"") + "\")"
 
@@ -222,17 +230,86 @@ func (d *Seeder) getCassandraQueryFromRecords(records [][]string, tableName stri
 	qRowsStr := strings.Join(qRows, ",")
 	query = "BEGIN BATCH"
 
-	for i := 1; i < len(records); i++ {
-		for j := range records[i] {
-			rows = append(rows, records[i][j])
-		}
+	schema, err := d.Cassandra.Session.KeyspaceMetadata(d.Cassandra.config.Keyspace)
+	if err != nil {
+		return "", nil, err
+	}
+	// types contains mapping of columns to their types
+	types := make(map[string]string)
+	for _, col := range schema.Tables[tableName].Columns {
+		types[col.Name] = col.Validator
+	}
 
+	rows, err = marshalRecords(records, types)
+	if err != nil {
+		return "", nil, err
+	}
+
+	for i := 0; i < len(records)-1; i++ {
 		query += " insert into " + tableName + columnsStr + " values(" + qRowsStr + ");"
 	}
 
 	query += " APPLY BATCH"
 
-	return
+	return query, rows, nil
+}
+
+// nolint:gocyclo,gocognit // cannot break down the function further
+func marshalRecords(records [][]string, types map[string]string) ([]interface{}, error) {
+	columns := records[0]
+	rows := make([]interface{}, len(columns)*(len(records)-1))
+	// type casting all values by columns
+	for col := range columns {
+		switch types[columns[col]] {
+		case "double":
+			const bitSize = 64
+			// marshaling whole row for double type
+			for row := 1; row < len(records); row++ {
+				f, err := strconv.ParseFloat(records[row][col], bitSize)
+				if err != nil {
+					return nil, err
+				}
+
+				rows[col+(row-1)*(len(columns))] = f
+			}
+		case "timestamp":
+			const layout = "2006-01-02 15:04:05"
+
+			for row := 1; row < len(records); row++ {
+				t, err := time.Parse(layout, records[row][col])
+				if err != nil {
+					return nil, err
+				}
+
+				rows[col+(row-1)*(len(columns))] = t
+			}
+		case "time":
+			for row := 1; row < len(records); row++ {
+				t, err := time.ParseDuration(records[row][col])
+				if err != nil {
+					return nil, err
+				}
+
+				rows[col+(row-1)*(len(columns))] = t
+			}
+		case "boolean":
+			for row := 1; row < len(records); row++ {
+				t, err := strconv.ParseBool(records[row][col])
+				if err != nil {
+					return nil, err
+				}
+
+				rows[col+(row-1)*(len(columns))] = t
+			}
+		default:
+			// marshaling whole row for other types
+			for row := 1; row < len(records); row++ {
+				rows[col+(row-1)*(len(columns))] = records[row][col]
+			}
+		}
+	}
+
+	return rows, nil
 }
 
 // check the type is int or float type or not
@@ -379,7 +456,11 @@ func (d *Seeder) RefreshCassandra(t tester, tableNames ...string) {
 			return
 		}
 
-		query, rows := d.getCassandraQueryFromRecords(records, tableName)
+		query, rows, err := d.getCassandraQueryFromRecords(records, tableName)
+		if err != nil {
+			t.Error(err)
+			return
+		}
 
 		err = d.Cassandra.Session.Query(query, rows...).Exec()
 		if err != nil {
@@ -482,37 +563,56 @@ func (d *Seeder) RefreshDynamoDB(t tester, tableNames ...string) {
 	for _, tableName := range tableNames {
 		fileLoc := fmt.Sprintf("%s/%s.json", d.path, tableName)
 
-		raw, err := ioutil.ReadFile(fileLoc)
+		raw, err := os.ReadFile(fileLoc)
 		if err != nil {
 			t.Errorf("Got error reading file: %s", err)
 
 			return
 		}
 
-		var items []map[string]interface{}
+		putItem(d, t, tableName, raw)
+	}
+}
 
-		err = json.Unmarshal(raw, &items)
+func putItem(d *Seeder, t tester, tableName string, raw []byte) {
+	var items []map[string]interface{}
+
+	err := json.Unmarshal(raw, &items)
+	if err != nil {
+		t.Error(err)
+
+		return
+	}
+
+	for _, item := range items {
+		av, err := dynamodbattribute.MarshalMap(item)
 		if err != nil {
-			t.Error(err)
-
-			return
+			t.Errorf("Got error while marshaling map: %s", err)
 		}
 
-		for _, item := range items {
-			av, err := dynamodbattribute.MarshalMap(item)
-			if err != nil {
-				t.Errorf("Got error while marshalling map: %s", err)
-			}
+		input := &dynamodb.PutItemInput{
+			Item:      av,
+			TableName: aws.String(tableName),
+		}
 
-			input := &dynamodb.PutItemInput{
-				Item:      av,
-				TableName: aws.String(tableName),
-			}
-
-			_, err = d.DynamoDB.PutItem(input)
-			if err != nil {
-				t.Errorf("Got error while calling PutItem: %s", err)
-			}
+		_, err = d.DynamoDB.PutItem(input)
+		if err != nil {
+			t.Errorf("Got error while calling PutItem: %s", err)
 		}
 	}
+}
+
+// getTxn returns a transaction
+func getTxn(db *gorm.DB) *sql.Tx {
+	d, err := db.DB()
+	if err != nil {
+		return nil
+	}
+
+	txn, err := d.Begin()
+	if err != nil {
+		return nil
+	}
+
+	return txn
 }

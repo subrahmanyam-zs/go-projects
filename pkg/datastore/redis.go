@@ -2,22 +2,22 @@ package datastore
 
 import (
 	"context"
+	"crypto/tls"
 	"fmt"
 	"os"
 	"strings"
 	"time"
 
+	"github.com/go-redis/redis/extra/redisotel"
+	"github.com/go-redis/redis/v8"
 	"github.com/prometheus/client_golang/prometheus"
+
+	"go.opentelemetry.io/otel/trace"
 
 	"developer.zopsmart.com/go/gofr/pkg"
 	"developer.zopsmart.com/go/gofr/pkg/gofr/types"
 	"developer.zopsmart.com/go/gofr/pkg/log"
 	"developer.zopsmart.com/go/gofr/pkg/middleware"
-	"go.opencensus.io/trace"
-
-	"github.com/go-redis/redis/extra/rediscensus"
-
-	"github.com/go-redis/redis/v8"
 )
 
 // Redis is an abstraction that embeds the UniversalClient from go-redis/redis
@@ -52,11 +52,14 @@ var (
 // configuration as defined in go-redis/redis. User defined config can be provided by populating the Options field.
 type RedisConfig struct {
 	HostName                string
+	Password                string
 	Port                    string
+	SSL                     bool
 	ConnectionRetryDuration int
 	Options                 *redis.Options
 }
 
+// nolint:gocognit // cannot reduce complexity without affecting readability.
 // NewRedis connects to Redis if the given config is correct, otherwise returns the error
 func NewRedis(logger log.Logger, config RedisConfig) (Redis, error) {
 	if config.Options != nil {
@@ -69,7 +72,15 @@ func NewRedis(logger log.Logger, config RedisConfig) (Redis, error) {
 		config.Options.Addr = config.HostName + ":" + config.Port
 	}
 
-	_, span := trace.StartSpan(context.Background(), "Redis")
+	config.Options.Password = config.Password
+
+	// nolint:gosec //  using TLS 1.0
+	// If SSL is enabled add TLS Config
+	if config.SSL {
+		config.Options.TLSConfig = &tls.Config{}
+	}
+
+	span := trace.SpanFromContext(context.Background())
 	defer span.End()
 
 	rc := redis.NewClient(config.Options)
@@ -81,15 +92,15 @@ func NewRedis(logger log.Logger, config RedisConfig) (Redis, error) {
 
 	rc.AddHook(&rLog)
 
-	rc.AddHook(rediscensus.TracingHook{})
+	rc.AddHook(redisotel.TracingHook{})
 
 	if err := rc.Ping(context.Background()).Err(); err != nil {
 		// Close the redis connection
 		_ = rc.Close()
-		return redisClient{config: config}, err
+		return &redisClient{config: config}, err
 	}
 
-	return redisClient{Client: rc, config: config}, nil
+	return &redisClient{Client: rc, config: config}, nil
 }
 
 // NewRedisFromEnv reads the config from environment variables and connects to redis if the config is correct,
@@ -99,9 +110,16 @@ func NewRedisFromEnv(options *redis.Options) (Redis, error) {
 	// pushing deprecated feature count to prometheus
 	middleware.PushDeprecatedFeature("NewRedisFromEnv")
 
+	ssl := false
+	if strings.EqualFold(os.Getenv("REDIS_SSL"), "true") {
+		ssl = true
+	}
+
 	config := RedisConfig{
 		HostName: os.Getenv("REDIS_HOST"),
 		Port:     os.Getenv("REDIS_PORT"),
+		Password: os.Getenv("REDIS_PASSWORD"),
+		SSL:      ssl,
 	}
 
 	if options != nil {
@@ -119,10 +137,10 @@ func NewRedisCluster(clusterOptions *redis.ClusterOptions) (Redis, error) {
 		return nil, err
 	}
 
-	return redisClusterClient{ClusterClient: rcc, config: RedisConfig{HostName: strings.Join(clusterOptions.Addrs, ",")}}, nil
+	return &redisClusterClient{ClusterClient: rcc, config: RedisConfig{HostName: strings.Join(clusterOptions.Addrs, ",")}}, nil
 }
 
-func (r redisClient) HealthCheck() types.Health {
+func (r *redisClient) HealthCheck() types.Health {
 	resp := types.Health{
 		Name:   pkg.Redis,
 		Status: pkg.StatusDown,
@@ -140,11 +158,43 @@ func (r redisClient) HealthCheck() types.Health {
 	}
 
 	resp.Status = pkg.StatusUp
+	resp.Details = r.getInfoInMap()
 
 	return resp
 }
 
-func (r redisClusterClient) HealthCheck() types.Health {
+// getInfoInMap runs the INFO command on redis and returns a structured map divided by sections of redis response.
+func (r *redisClient) getInfoInMap() map[string]map[string]string {
+	info, _ := r.Client.Info(context.Background(), "all").Result()
+
+	result := make(map[string]map[string]string)
+	parts := strings.Split(info, "\r\n")
+
+	var currentSection string
+
+	for _, p := range parts {
+		// Take care of empty lines
+		if p == "" {
+			continue
+		}
+
+		// Take care of section headers
+		if strings.HasPrefix(p, "#") {
+			currentSection = strings.ToLower(strings.TrimPrefix(p, "# "))
+			result[currentSection] = make(map[string]string)
+
+			continue
+		}
+
+		// Normal lines
+		splits := strings.Split(p, ":")
+		result[currentSection][splits[0]] = splits[1]
+	}
+
+	return result
+}
+
+func (r *redisClusterClient) HealthCheck() types.Health {
 	resp := types.Health{
 		Name:   pkg.Redis,
 		Status: pkg.StatusDown,
@@ -166,11 +216,11 @@ func (r redisClusterClient) HealthCheck() types.Health {
 	return resp
 }
 
-func (r redisClient) IsSet() bool {
+func (r *redisClient) IsSet() bool {
 	return r.Client != nil // will return true when client is set
 }
 
-func (r redisClusterClient) IsSet() bool {
+func (r *redisClusterClient) IsSet() bool {
 	return r.ClusterClient != nil // will return true when client is set
 }
 
@@ -192,7 +242,7 @@ func (l *QueryLogger) AfterProcess(ctx context.Context, cmd redis.Cmder) error {
 	l.DataStore = pkg.Redis
 	dur := endTime.Sub(l.StartTime).Seconds()
 
-	l.monitorRedis(s ,dur)
+	l.monitorRedis(s, dur)
 
 	return nil
 }
@@ -213,6 +263,7 @@ func (l *QueryLogger) AfterProcessPipeline(ctx context.Context, cmds []redis.Cmd
 		query = strings.TrimSuffix(query, "]")
 		l.Query[i] = query
 	}
+
 	query := strings.Split(l.Query[0], " ")
 
 	l.Duration = endTime.Sub(l.StartTime).Microseconds()
@@ -220,12 +271,12 @@ func (l *QueryLogger) AfterProcessPipeline(ctx context.Context, cmds []redis.Cmd
 
 	dur := endTime.Sub(l.StartTime).Seconds()
 
-	l.monitorRedis(query ,dur)
+	l.monitorRedis(query, dur)
 
 	return nil
 }
 
-func (l *QueryLogger) monitorRedis(query []string,duration float64) {
+func (l *QueryLogger) monitorRedis(query []string, duration float64) {
 	l.Logger.Debug(l)
 	// push stats to prometheus
 	redisStats.WithLabelValues(query[0], l.Hosts).Observe(duration)

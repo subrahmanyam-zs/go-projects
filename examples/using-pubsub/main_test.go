@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"io"
 	"net/http"
-	"os"
 	"strings"
 	"testing"
 	"time"
@@ -14,52 +13,53 @@ import (
 	"developer.zopsmart.com/go/gofr/pkg/gofr/request"
 )
 
-// nolint, need to wait for topic to be created so retry logic is to be added
+//nolint:gocognit // need to wait for topic to be created so retry logic is to be added
 func TestServerRun(t *testing.T) {
-	topic := os.Getenv("KAFKA_TOPIC")
-	os.Setenv("KAFKA_TOPIC", "kafka-pubsub")
-
-	defer os.Setenv("KAFKA_TOPIC", topic)
+	t.Setenv("KAFKA_TOPIC", "kafka-pubsub")
 
 	go main()
 	time.Sleep(3 * time.Second)
 
-	tcs := []struct {
-		id                 int
-		method             string
-		endpoint           string
-		expectedResponse   string
-		expectedStatusCode int
+	tests := []struct {
+		desc       string
+		method     string
+		endpoint   string
+		resp       string
+		statusCode int
 	}{
-		{1, "GET", "http://localhost:9112/pub?id=1", "", 200},
-		{2, "GET", "http://localhost:9112/sub", "1", 200},
+		{"publish", http.MethodGet, "http://localhost:9112/pub?id=1", "", http.StatusOK},
+		{"subscribe", http.MethodGet, "http://localhost:9112/sub", "1", http.StatusOK},
 	}
 
-	for _, tc := range tcs {
+	for i, tc := range tests {
 		req, _ := request.NewMock(tc.method, tc.endpoint, nil)
 		c := http.Client{}
 
-		for i := 0; i < 5; i++ {
-			resp, _ := c.Do(req)
+		for j := 0; j < 5; j++ {
+			resp, err := c.Do(req)
+			if err != nil {
+				t.Errorf("TEST[%v] Failed.\tHTTP request encountered Err: %v\n%s", i, err, tc.desc)
+				continue
+			}
 
-			if resp != nil && resp.StatusCode != 200 {
+			if resp.StatusCode != http.StatusOK {
 				// retry is required since, creation of topic takes time
 				if checkRetry(resp.Body) {
 					time.Sleep(5 * time.Second)
 					continue
 				}
 
-				t.Errorf("Test %v: Failed.\tExpected %v\tGot %v\n", tc.id, 200, resp.StatusCode)
+				t.Errorf("Testcase[%v] FAILED.\tExpected %v\tGot %v\n%s", i, http.StatusOK, resp.StatusCode, tc.desc)
 
-				return
+				break
 			}
 
-			if resp != nil && resp.StatusCode != tc.expectedStatusCode {
-				t.Errorf("Test %v: Failed.\tExpected %v\tGot %v\n", tc.id, tc.expectedStatusCode, resp.StatusCode)
+			if resp.StatusCode != tc.statusCode {
+				t.Errorf("Testcase[%v] FAILED.\tExpected %v\tGot %v\n%s", i, tc.statusCode, resp.StatusCode, tc.desc)
 			}
 
 			// checks whether bind avro.Unmarshal functionality works fine
-			if tc.expectedResponse != "" && resp.Body != nil {
+			if tc.resp != "" && resp.Body != nil {
 				body, _ := io.ReadAll(resp.Body)
 
 				m := struct {
@@ -67,12 +67,12 @@ func TestServerRun(t *testing.T) {
 				}{}
 				_ = json.Unmarshal(body, &m)
 
-				if m.Data.ID != tc.expectedResponse {
-					t.Errorf("Expected: %v, Got: %v", tc.expectedResponse, m.Data.ID)
+				if m.Data.ID != tc.resp {
+					t.Errorf("Testcase[%v] FAILED.\tExpected: %v, Got: %v\n%s", i, tc.resp, m.Data.ID, tc.desc)
 				}
 			}
 
-			resp.Body.Close()
+			_ = resp.Body.Close()
 
 			break
 		}

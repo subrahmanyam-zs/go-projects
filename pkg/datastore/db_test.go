@@ -4,12 +4,10 @@ import (
 	"errors"
 	"io"
 	"net"
-	"reflect"
 	"testing"
 
 	"developer.zopsmart.com/go/gofr/pkg"
 	"developer.zopsmart.com/go/gofr/pkg/gofr/config"
-	"developer.zopsmart.com/go/gofr/pkg/gofr/types"
 	"developer.zopsmart.com/go/gofr/pkg/log"
 )
 
@@ -63,9 +61,8 @@ func TestNewORM(t *testing.T) {
 			return
 		}
 
-		var users []string
-
-		if err := db.LogMode(true).Table("user").Pluck("user", &users).Error; err != nil {
+		err = db.Exec("SELECT User FROM mysql.user").Error
+		if err != nil {
 			t.Errorf("FAILED, Could not run sql command, got error: %v\n", err)
 		}
 	}
@@ -179,11 +176,6 @@ func TestDataStore_SQL_SQLX_HealthCheck(t *testing.T) {
 		Database: c.Get("DB_NAME"), Port: c.Get("DB_PORT"), Dialect: c.Get("DB_DIALECT"),
 	}
 
-	expectedResponse := types.Health{
-		Name:     pkg.SQL,
-		Database: dbConfig.Database,
-	}
-
 	testcases := []struct {
 		host   string
 		status string
@@ -194,14 +186,13 @@ func TestDataStore_SQL_SQLX_HealthCheck(t *testing.T) {
 
 	for i, v := range testcases {
 		dbConfig.HostName = v.host
-		expectedResponse.Status = v.status
 
 		clientSQL, _ := NewORM(&dbConfig)
 		dsSQL := DataStore{gorm: clientSQL}
 
 		healthCheck := dsSQL.SQLHealthCheck()
-		if reflect.DeepEqual(healthCheck, expectedResponse) {
-			t.Errorf("[TESTCASE%d]SQL Failed. Expected: %v\n Got: %v", i+1, expectedResponse, healthCheck)
+		if healthCheck.Status != v.status {
+			t.Errorf("[TESTCASE%d]SQL Failed. Expected status: %v\n Got: %v", i+1, v.status, healthCheck)
 		}
 
 		// connecting to SQLX
@@ -209,8 +200,8 @@ func TestDataStore_SQL_SQLX_HealthCheck(t *testing.T) {
 		dsSQLX := DataStore{sqlx: clientSQLX}
 
 		healthCheck = dsSQLX.SQLXHealthCheck()
-		if reflect.DeepEqual(healthCheck, expectedResponse) {
-			t.Errorf("[TESTCASE%d]SQLX Failed. Expected: %v\n Got: %v", i+1, expectedResponse, healthCheck)
+		if healthCheck.Status != v.status {
+			t.Errorf("[TESTCASE%d]SQLX Failed. Expected status: %v\n Got: %v", i+1, v.status, healthCheck)
 		}
 	}
 }
@@ -232,7 +223,10 @@ func Test_SQL_SQLX_HealthCheck_Down(t *testing.T) {
 		clientSQL, _ := NewORM(&dbConfig)
 		dsSQL := DataStore{gorm: clientSQL}
 
-		clientSQL.Close()
+		db, _ := clientSQL.DB.DB()
+
+		// db connected but goes down in between
+		db.Close()
 
 		healthCheck := dsSQL.SQLHealthCheck()
 		if healthCheck.Status != pkg.StatusDown {

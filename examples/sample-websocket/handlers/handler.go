@@ -5,20 +5,26 @@ import (
 	"developer.zopsmart.com/go/gofr/pkg/gofr/template"
 )
 
-func WSHandler(c *gofr.Context) (i interface{}, err error) {
-	if c.WebSocketConnection != nil {
+func WSHandler(ctx *gofr.Context) (interface{}, error) {
+	var (
+		mt      int
+		message []byte
+		err     error
+	)
+
+	if ctx.WebSocketConnection != nil {
 		for {
-			mt, message, err := c.WebSocketConnection.ReadMessage()
+			mt, message, err = ctx.WebSocketConnection.ReadMessage()
 			if err != nil {
-				c.Logger.Error("read:", err)
+				ctx.Logger.Error("read:", err)
 				break
 			}
 
-			c.Logger.Logf("recv: %v", string(message))
+			ctx.Logger.Logf("recv: %v", string(message))
 
-			err = c.WebSocketConnection.WriteMessage(mt, message)
+			err = ctx.WebSocketConnection.WriteMessage(mt, message)
 			if err != nil {
-				c.Logger.Error("write:", err)
+				ctx.Logger.Error("write:", err)
 				break
 			}
 		}
@@ -27,6 +33,6 @@ func WSHandler(c *gofr.Context) (i interface{}, err error) {
 	return nil, err
 }
 
-func HomeHandler(c *gofr.Context) (interface{}, error) {
+func HomeHandler(ctx *gofr.Context) (interface{}, error) {
 	return template.Template{File: "home.html", Type: template.HTML}, nil
 }

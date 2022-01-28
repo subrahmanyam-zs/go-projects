@@ -5,21 +5,21 @@ import (
 	"fmt"
 	"net/http/httptest"
 	"net/url"
-	"reflect"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+
 	"developer.zopsmart.com/go/gofr/pkg/errors"
 	"developer.zopsmart.com/go/gofr/pkg/gofr"
 	"developer.zopsmart.com/go/gofr/pkg/gofr/request"
 )
 
 func TestHelloWorldHandler(t *testing.T) {
-	c := gofr.NewContext(nil, nil, nil)
+	ctx := gofr.NewContext(nil, nil, nil)
 
-	resp, err := HelloWorld(c)
+	resp, err := HelloWorld(ctx)
 	if err != nil {
-		t.Errorf("FAILED, got error: %v", err)
+		t.Errorf("FAILED, Expected: %v, Got: %v", nil, err)
 	}
 
 	expected := "Hello World!"
@@ -32,48 +32,36 @@ func TestHelloWorldHandler(t *testing.T) {
 
 func TestHelloNameHandler(t *testing.T) {
 	tests := []struct {
-		name     string
-		expected string
+		desc string
+		name string
+		resp string
 	}{
-		{
-			name:     "SomeName",
-			expected: "Hello SomeName",
-		},
-		{
-			name:     "Firstname Lastname",
-			expected: "Hello Firstname Lastname",
-		},
+		{"hello without lastname", "SomeName", "Hello SomeName"},
+		{"hello with lastname", "Firstname Lastname", "Hello Firstname Lastname"},
 	}
 
-	for _, test := range tests {
-		r := httptest.NewRequest("GET", "http://dummy/hello?name="+url.QueryEscape(test.name), nil)
+	for i, tc := range tests {
+		r := httptest.NewRequest("GET", "http://dummy/hello?name="+url.QueryEscape(tc.name), nil)
 		req := request.NewHTTPRequest(r)
-		c := gofr.NewContext(nil, req, nil)
+		ctx := gofr.NewContext(nil, req, nil)
 
-		resp, err := HelloName(c)
-		if err != nil {
-			t.Errorf("FAILED, got error: %v", err)
-		}
+		resp, err := HelloName(ctx)
 
-		got := fmt.Sprintf("%v", resp)
-		if got != test.expected {
-			t.Errorf("FAILED, Expected: %v, Got: %v", test.expected, got)
-		}
+		assert.Equal(t, nil, err, "TEST[%d], failed.\n%s", i, tc.desc)
+
+		assert.Equal(t, tc.resp, resp, "TEST[%d], failed.\n%s", i, tc.desc)
 	}
 }
 
 func TestJSONHandler(t *testing.T) {
-	c := gofr.NewContext(nil, nil, nil)
+	ctx := gofr.NewContext(nil, nil, nil)
 
-	res, err := JSONHandler(c)
+	res, err := JSONHandler(ctx)
 	if err != nil {
 		t.Errorf("FAILED, got error: %v", err)
 	}
 
-	expected := resp{
-		Name:    "Vikash",
-		Company: "ZopSmart",
-	}
+	expected := resp{Name: "Vikash", Company: "ZopSmart"}
 
 	var got resp
 
@@ -83,15 +71,39 @@ func TestJSONHandler(t *testing.T) {
 		t.Errorf("FAILED, got error: %v", err)
 	}
 
-	if !reflect.DeepEqual(expected, got) {
-		t.Errorf("FAILED, Expected: %v, Got: %v", expected, got)
+	assert.Equal(t, expected, got)
+}
+
+func TestUserHandler(t *testing.T) {
+	tests := []struct {
+		desc string
+		name string
+		resp interface{}
+		err  error
+	}{
+		{"UserHandler success", "Vikash", resp{Name: "Vikash", Company: "ZopSmart"}, nil},
+		{"UserHandler fail", "ABC", nil, errors.EntityNotFound{Entity: "user", ID: "ABC"}},
+	}
+
+	for i, tc := range tests {
+		r := httptest.NewRequest("GET", "http://dummy", nil)
+		req := request.NewHTTPRequest(r)
+
+		ctx := gofr.NewContext(nil, req, nil)
+		ctx.SetPathParams(map[string]string{"name": tc.name})
+
+		resp, err := UserHandler(ctx)
+
+		assert.Equal(t, tc.err, err, "TEST[%d], failed.\n%s", i, tc.desc)
+
+		assert.Equal(t, tc.resp, resp, "TEST[%d], failed.\n%s", i, tc.desc)
 	}
 }
 
 func TestErrorHandler(t *testing.T) {
-	c := gofr.NewContext(nil, nil, nil)
+	ctx := gofr.NewContext(nil, nil, nil)
 
-	res, err := ErrorHandler(c)
+	res, err := ErrorHandler(ctx)
 	if res != nil {
 		t.Errorf("FAILED, expected nil, got: %v", res)
 	}
@@ -102,17 +114,15 @@ func TestErrorHandler(t *testing.T) {
 		Reason:     "unknown error occurred",
 	}
 
-	if !assert.Equal(t, exp, err) {
-		t.Errorf("FAILED, exp: %v, got: %v", exp, err)
-	}
+	assert.Equal(t, exp, err)
 }
 
 func TestHelloLogHandler(t *testing.T) {
 	r := httptest.NewRequest("GET", "http://dummy/log", nil)
 	req := request.NewHTTPRequest(r)
-	c := gofr.NewContext(nil, req, nil)
+	ctx := gofr.NewContext(nil, req, nil)
 
-	res, err := HelloLogHandler(c)
+	res, err := HelloLogHandler(ctx)
 	if res != "Logging OK" {
 		t.Errorf("Logging Failed due to : %v", err)
 	}

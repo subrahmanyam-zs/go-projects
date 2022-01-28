@@ -1,61 +1,104 @@
 package gofr
 
 import (
+	"context"
 	"strings"
 
-	"contrib.go.opencensus.io/exporter/stackdriver"
-	zkExporter "contrib.go.opencensus.io/exporter/zipkin"
-	zk "github.com/openzipkin/zipkin-go"
-	zkHTTP "github.com/openzipkin/zipkin-go/reporter/http"
-	"go.opencensus.io/trace"
+	cloudtrace "github.com/GoogleCloudPlatform/opentelemetry-operations-go/exporter/trace"
+
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/exporters/zipkin"
+	"go.opentelemetry.io/otel/propagation"
+	"go.opentelemetry.io/otel/sdk/resource"
+	"go.opentelemetry.io/otel/sdk/trace"
+	semconv "go.opentelemetry.io/otel/semconv/v1.4.0"
+
+	"developer.zopsmart.com/go/gofr/pkg/errors"
 )
 
 type exporter struct {
 	name    string
-	host    string
-	port    string
+	url     string
 	appName string
 }
 
-func TraceExporter(appName, exporterName, exporterHost, exporterPort string) trace.Exporter {
-	exporterName = strings.ToLower(exporterName)
+func tracerProvider(c Config) (err error) {
+	appName := c.GetOrDefault("APP_NAME", "gofr")
+	exporterName := strings.ToLower(c.Get("TRACER_EXPORTER"))
+
 	e := exporter{
 		name:    exporterName,
-		host:    exporterHost,
-		port:    exporterPort,
+		url:     c.Get("TRACER_URL"),
 		appName: appName,
 	}
 
+	var tp *trace.TracerProvider
+
 	switch exporterName {
 	case "zipkin":
-		return e.getZipkinExporter()
+		tp, err = e.getZipkinExporter(c)
 	case "gcp":
-		return getGCPExporter(exporterHost)
+		tp, err = getGCPExporter(c)
 	default:
-		return nil
+		return errors.Error("invalid exporter")
 	}
+
+	if err != nil {
+		return
+	}
+
+	otel.SetTracerProvider(tp)
+	otel.SetTextMapPropagator(propagation.NewCompositeTextMapPropagator(propagation.TraceContext{}, propagation.Baggage{}))
+
+	return
 }
 
-func (e *exporter) getZipkinExporter() trace.Exporter {
-	localEndpoint, err := zk.NewEndpoint(e.appName, e.host)
+func (e *exporter) getZipkinExporter(c Config) (*trace.TracerProvider, error) {
+	url := e.url + "/api/v2/spans"
+
+	exporter, err := zipkin.New(url)
 	if err != nil {
-		return nil
+		return nil, err
 	}
 
-	url := "http://" + e.host + ":" + e.port + "/api/v2/spans"
-	reporter := zkHTTP.NewReporter(url)
-	ze := zkExporter.NewExporter(reporter, localEndpoint)
+	batcher := trace.NewBatchSpanProcessor(exporter)
 
-	return ze
+	r, err := getResource(c)
+	if err != nil {
+		return nil, err
+	}
+
+	tp := trace.NewTracerProvider(trace.WithSampler(trace.AlwaysSample()), trace.WithSpanProcessor(batcher), trace.WithResource(r))
+
+	return tp, nil
 }
 
-func getGCPExporter(projectID string) trace.Exporter {
-	exporter, err := stackdriver.NewExporter(stackdriver.Options{
-		ProjectID: projectID,
-	})
+func getGCPExporter(c Config) (*trace.TracerProvider, error) {
+	exporter, err := cloudtrace.New(cloudtrace.WithProjectID(c.Get("GCP_PROJECT_ID")))
 	if err != nil {
-		return nil
+		return nil, err
 	}
 
-	return exporter
+	r, err := getResource(c)
+	if err != nil {
+		return nil, err
+	}
+
+	tp := trace.NewTracerProvider(
+		trace.WithSampler(trace.AlwaysSample()),
+		trace.WithBatcher(exporter),
+		trace.WithResource(r))
+
+	return tp, nil
+}
+
+func getResource(c Config) (*resource.Resource, error) {
+	attributes := []attribute.KeyValue{
+		attribute.String(string(semconv.TelemetrySDKLanguageKey), "go"),
+		attribute.String(string(semconv.TelemetrySDKVersionKey), c.GetOrDefault("APP_VERSION", "Dev")),
+		attribute.String(string(semconv.ServiceNameKey), c.GetOrDefault("APP_NAME", "Gofr-App")),
+	}
+
+	return resource.New(context.Background(), resource.WithAttributes(attributes...))
 }

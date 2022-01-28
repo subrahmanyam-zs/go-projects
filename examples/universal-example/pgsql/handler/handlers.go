@@ -11,7 +11,7 @@ type employee struct {
 	store store.Store
 }
 
-//nolint:golint //employee should not get accessed, without initialization of store.Employee
+//nolint:revive //employee should not get accessed, without initialization of store.Employee
 func New(s store.Store) employee {
 	return employee{
 		store: s,

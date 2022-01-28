@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"net/http"
 	"net/http/httptest"
 	"os"
 	"testing"
@@ -10,14 +11,14 @@ import (
 )
 
 func TestTemplateHandler(t *testing.T) {
-	k := gofr.New()
+	app := gofr.New()
 	rootPath, _ := os.Getwd()
-	k.TemplateDir = rootPath + "/../templates"
-	r := httptest.NewRequest("GET", "http://dummy/test", nil)
+	app.TemplateDir = rootPath + "/../templates"
+	r := httptest.NewRequest(http.MethodGet, "http://dummy/test", nil)
 	req := request.NewHTTPRequest(r)
 
-	c := gofr.NewContext(nil, req, k)
-	if _, err := FileHandler(c); err != nil {
+	ctx := gofr.NewContext(nil, req, app)
+	if _, err := FileHandler(ctx); err != nil {
 		t.Errorf("FAILED, got error: %v", err)
 	}
 }

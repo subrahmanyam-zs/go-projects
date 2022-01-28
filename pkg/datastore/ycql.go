@@ -9,6 +9,7 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/yugabyte/gocql"
+
 	"developer.zopsmart.com/go/gofr/pkg"
 	"developer.zopsmart.com/go/gofr/pkg/gofr/types"
 	"developer.zopsmart.com/go/gofr/pkg/log"

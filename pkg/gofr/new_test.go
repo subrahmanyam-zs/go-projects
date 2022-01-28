@@ -67,7 +67,7 @@ func Test_initializeDynamoDB(t *testing.T) {
 				"DYNAMODB_ENDPOINT_URL":      "",
 				"DYNAMODB_CONN_RETRY":        "2",
 			}},
-			"couldn't connect to DynamoDB",
+			"DynamoDB could not be initialized",
 		},
 		{
 			config.NewGoDotEnvProvider(log.NewMockLogger(io.Discard), "../../configs"),
@@ -165,40 +165,29 @@ func Test_initializeDB(t *testing.T) {
 }
 
 func Test_InitializeElasticsearch(t *testing.T) {
-	c := config.NewGoDotEnvProvider(log.NewMockLogger(new(bytes.Buffer)), "../../configs")
-	host := c.Get("ELASTIC_SEARCH_HOST")
-	port := c.Get("ELASTIC_SEARCH_PORT")
-	user := c.Get("ELASTIC_SEARCH_USER")
-	pass := c.Get("ELASTIC_SEARCH_PASS")
-
 	testcases := []struct {
-		host        string
-		port        string
-		user        string
-		pass        string
+		config      Config
 		expectedLog string
 	}{
-		{"", "", "", "", ""},
-		{"incorrect-url", "7", "", "", "could not connect to Elasticsearch"},
-		{host, port, user, pass, "connected to Elasticsearch, HOST: " + host + ", PORT: " + port},
+		{&config.MockConfig{Data: map[string]string{"ELASTIC_SEARCH_HOST": "", "ELASTIC_SEARCH_PORT": "",
+			"ELASTIC_CLOUD_ID": ""}}, ""},
+		{&config.MockConfig{Data: map[string]string{"ELASTIC_SEARCH_HOST": "localhost",
+			"ELASTIC_SEARCH_PORT": "2012"}}, "connected to elasticsearch"},
+		{&config.MockConfig{Data: map[string]string{"ELASTIC_SEARCH_HOST": "localhost",
+			"ELASTIC_SEARCH_PORT": "2012", "ELASTIC_CLOUD_ID": "elastic-cloud-id"}},
+			"could not connect to elasticsearch"},
 	}
 
-	for i, v := range testcases {
+	for i, tc := range testcases {
 		b := new(bytes.Buffer)
-		logger := log.NewMockLogger(b)
 
-		var conf = config.MockConfig{
-			Data: map[string]string{"ELASTIC_SEARCH_HOST": v.host, "ELASTIC_SEARCH_PORT": v.port,
-				"ELASTIC_SEARCH_USER": v.user, "ELASTIC_SEARCH_PASS": v.pass},
-		}
+		k := NewWithConfig(tc.config)
+		k.Logger = log.NewMockLogger(b)
 
-		k := NewWithConfig(&conf)
-		k.Logger = logger
+		initializeElasticsearch(tc.config, k)
 
-		initializeElasticsearch(&conf, k)
-
-		if !strings.Contains(b.String(), v.expectedLog) {
-			t.Errorf("[TESTCASE%d]Failed. Got %v\tExpected %v\n", i+1, b.String(), v.expectedLog)
+		if !strings.Contains(b.String(), tc.expectedLog) {
+			t.Errorf("[TESTCASE%v] Failed.\nExpected: %v\nGot: %v", i+1, tc.expectedLog, b.String())
 		}
 	}
 }
@@ -315,6 +304,10 @@ func Test_getYcqlConfigs(t *testing.T) {
 }
 
 func Test_PubSub(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping testing in short mode")
+	}
+
 	b := new(bytes.Buffer)
 	logger := log.NewMockLogger(b)
 	conf := config.NewGoDotEnvProvider(logger, "../../configs")
@@ -510,19 +503,5 @@ func Test_GofrCMDConfig(t *testing.T) {
 	k := NewCMD()
 	if k.Redis == nil {
 		t.Errorf("expected redis to be connected through configs")
-	}
-}
-
-// This function verifies that metric server is starting successfully or not, when NewCMD is called.
-func Test_GofrCMDMetricServer(t *testing.T) {
-	b := new(bytes.Buffer)
-	logger := log.NewMockLogger(b)
-	k := NewCMD()
-	k.cmd.metricSvr.port = 12221
-	k.Logger = logger
-	k.Start()
-
-	if k.cmd.metricSvr.server == nil || strings.Contains(b.String(), "error in metrics server") {
-		t.Errorf("failed to start the metric server")
 	}
 }

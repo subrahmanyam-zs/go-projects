@@ -181,10 +181,9 @@ func elasticSearchRetry(c *datastore.ElasticSearchCfg, k *Gofr) {
 
 		var err error
 
-		k.Elasticsearch, err = datastore.NewElasticsearchClient(c)
-
+		k.Elasticsearch, err = datastore.NewElasticsearchClient(k.Logger, c)
 		if err == nil {
-			k.Logger.Info("ElasticSearch initialized successfully")
+			k.Logger.Infof("connected to elasticsearch, HOST: %s, PORT: %v\n", c.Host, c.Ports)
 
 			break
 		}

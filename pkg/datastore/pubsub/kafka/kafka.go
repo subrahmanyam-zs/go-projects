@@ -11,16 +11,22 @@ import (
 
 	"github.com/Shopify/sarama"
 	"github.com/prometheus/client_golang/prometheus"
+
+	"golang.org/x/net/context"
+
 	"developer.zopsmart.com/go/gofr/pkg"
 	"developer.zopsmart.com/go/gofr/pkg/datastore/pubsub"
 	"developer.zopsmart.com/go/gofr/pkg/datastore/pubsub/avro"
 	"developer.zopsmart.com/go/gofr/pkg/errors"
 	"developer.zopsmart.com/go/gofr/pkg/gofr/types"
 	"developer.zopsmart.com/go/gofr/pkg/log"
-	"golang.org/x/net/context"
 )
 
-const ErrConsumeMsg = errors.Error("error while consuming the message")
+const (
+	ErrConsumeMsg       = errors.Error("error while consuming the message")
+	SASLTypeSCRAMSHA512 = "SCRAM-SHA-512"
+	errInvalidMechanism = errors.Error("Invalid SASL Mechanism")
+)
 
 type Kafka struct {
 	config *Config
@@ -89,6 +95,9 @@ type Config struct {
 	Offsets []pubsub.TopicPartition
 
 	InitialOffsets int64
+
+	// This config will allow application to disable kafka consumer auto commit
+	DisableAutoCommit bool
 }
 
 type SASLConfig struct {
@@ -148,6 +157,7 @@ func NewKafkaFromEnv() (*Kafka, error) {
 	topic := os.Getenv("KAFKA_TOPIC") // CSV string
 	user := os.Getenv("KAFKA_SASL_USER")
 	password := os.Getenv("KAFKA_SASL_PASS")
+	mechanism := os.Getenv("KAFKA_SASL_MECHANISM")
 
 	// converting the CSV string to slice of string
 	topics := strings.Split(topic, ",")
@@ -155,8 +165,9 @@ func NewKafkaFromEnv() (*Kafka, error) {
 	config := &Config{
 		Brokers: hosts,
 		SASL: SASLConfig{
-			User:     user,
-			Password: password,
+			User:      user,
+			Password:  password,
+			Mechanism: mechanism,
 		},
 		Topics: topics,
 	}
@@ -196,6 +207,10 @@ func New(config *Config, logger log.Logger) (*Kafka, error) {
 	_ = prometheus.Register(publishFailureCount)
 	_ = prometheus.Register(publishSuccessCount)
 	_ = prometheus.Register(publishTotalCount)
+
+	if config.SASL.Mechanism != SASLTypeSCRAMSHA512 && config.SASL.User != "" {
+		return nil, errInvalidMechanism
+	}
 
 	populateOffsetTopic(config)
 	convertKafkaConfig(config)
@@ -303,6 +318,10 @@ func convertKafkaConfig(config *Config) {
 		config.Config.Producer.Retry.Max = config.MaxRetry
 	}
 
+	if config.DisableAutoCommit {
+		config.Config.Consumer.Offsets.AutoCommit.Enable = false
+	}
+
 	if config.RetryFrequency > 0 {
 		config.Config.Producer.Retry.Backoff = time.Duration(config.RetryFrequency)
 	}
@@ -368,6 +387,13 @@ func processSASLConfigs(s SASLConfig, conf *sarama.Config) {
 		conf.Net.TLS.Config = &tls.Config{
 			InsecureSkipVerify: true, //nolint:gosec // TLS InsecureSkipVerify set true.
 		}
+
+		if s.Mechanism == SASLTypeSCRAMSHA512 {
+			conf.Net.SASL.Mechanism = sarama.SASLMechanism(s.Mechanism)
+			conf.Net.SASL.SCRAMClientGeneratorFunc = func() sarama.SCRAMClient {
+				return &XDGSCRAMClient{HashGeneratorFcn: SHA512}
+			}
+		}
 	}
 }
 
@@ -411,11 +437,8 @@ func (k *Kafka) PublishEventWithOptions(key string, value interface{}, headers m
 	}
 
 	message := &sarama.ProducerMessage{
-
 		Topic:     options.Topic,
-		Offset:    int64(options.Offset),
 		Partition: int32(options.Partition),
-
 		Value:     sarama.ByteEncoder(valBytes),
 		Key:       sarama.StringEncoder(key),
 		Timestamp: options.Timestamp,
@@ -423,7 +446,6 @@ func (k *Kafka) PublishEventWithOptions(key string, value interface{}, headers m
 	}
 
 	_, _, err = k.Producer.SendMessage(message)
-
 	if err != nil {
 		publishFailureCount.WithLabelValues(message.Topic, k.config.GroupID).Inc()
 
@@ -482,10 +504,15 @@ func (k *Kafka) subscribeMessage() (*pubsub.Message, error) {
 	headers := make(map[string]string, len(msg.Headers))
 
 	for _, v := range msg.Headers {
-		if string(v.Key) != "" && string(v.Value) != "" {
+		if len(v.Key) != 0 && len(v.Value) != 0 {
 			headers[string(v.Key)] = string(v.Value)
 		}
 	}
+
+	// Mark the message as read for autocommit to work
+	k.Consumer.ConsumerGroupHandler.mu.Lock()
+	k.Consumer.ConsumerGroupHandler.consumerGroupSession.MarkMessage(msg, "")
+	k.Consumer.ConsumerGroupHandler.mu.Unlock()
 
 	return &pubsub.Message{
 		Topic:     msg.Topic,
@@ -609,6 +636,7 @@ type ConsumerHandler struct {
 	consumerGroupSession sarama.ConsumerGroupSession
 	offsets              []pubsub.TopicPartition
 	initialiseOffset     sync.Once
+	mu                   sync.Mutex
 }
 
 // setOffset set the starting offset of all the partition in the topic.
@@ -653,7 +681,9 @@ func (consumer *ConsumerHandler) ConsumeClaim(
 	for {
 		select {
 		case message := <-claim.Messages():
+			consumer.mu.Lock()
 			consumer.consumerGroupSession = session
+			consumer.mu.Unlock()
 			consumer.msg <- message
 
 		case <-session.Context().Done():
@@ -685,8 +715,15 @@ func (kl kafkaLogger) Println(v ...interface{}) {
 // The commits are performed asynchronously at intervals specified in Sarama
 // Consumer.Offsets.AutoCommit
 func (k *Kafka) CommitOffset(offsets pubsub.TopicPartition) {
+	k.Consumer.ConsumerGroupHandler.mu.Lock()
 	k.Consumer.ConsumerGroupHandler.consumerGroupSession.MarkOffset(
 		offsets.Topic, int32(offsets.Partition), offsets.Offset+1, "")
+
+	if k.config.DisableAutoCommit {
+		k.Consumer.ConsumerGroupHandler.consumerGroupSession.Commit()
+	}
+
+	k.Consumer.ConsumerGroupHandler.mu.Unlock()
 }
 
 func (k *Kafka) HealthCheck() types.Health {

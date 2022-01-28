@@ -13,25 +13,33 @@ func TestServerValidation(t *testing.T) {
 	go main()
 	time.Sleep(3 * time.Second)
 
-	testcases := []struct {
-		method             string
-		endpoint           string
-		expectedStatusCode int
-		body               []byte
+	tests := []struct {
+		desc       string
+		method     string
+		endpoint   string
+		statusCode int
+		body       []byte
 	}{
-		{"POST", "phone", 201, []byte(`{"phone":"+912123456789098", "email": "c.r@yahoo.com"}`)},
-		{"POST", "phone", 500, nil},
-		{"POST", "phone2", 404, nil},
-		{"GET", "phone", 404, nil},
+		{"create success case", http.MethodPost, "phone", http.StatusCreated, []byte(`{"phone":"+912123456789098", "email": "c.r@yahoo.com"}`)},
+		{"create fail case", http.MethodPost, "phone", http.StatusInternalServerError, nil},
+		{"invalid endpoint", http.MethodPost, "phone2", http.StatusNotFound, nil},
+		{"invalid route", http.MethodGet, "phone", http.StatusMethodNotAllowed, nil},
 	}
 
-	for index, tc := range testcases {
+	for i, tc := range tests {
 		req, _ := request.NewMock(tc.method, "http://localhost:9010/"+tc.endpoint, bytes.NewBuffer(tc.body))
 		c := http.Client{}
 
-		resp, _ := c.Do(req)
-		if resp != nil && resp.StatusCode != tc.expectedStatusCode {
-			t.Errorf("Test Case: %v \tFailed.\tExpected %v\tGot %v\n", index+1, tc.expectedStatusCode, resp.StatusCode)
+		resp, err := c.Do(req)
+		if err != nil {
+			t.Errorf("TEST[%v] Failed.\tHTTP request encountered Err: %v\n%s", i, err, tc.desc)
+			continue
 		}
+
+		if resp.StatusCode != tc.statusCode {
+			t.Errorf("TEST[%v] Failed.\tExpected %v\tGot %v\n%s", i, tc.statusCode, resp.StatusCode, tc.desc)
+		}
+
+		_ = resp.Body.Close()
 	}
 }

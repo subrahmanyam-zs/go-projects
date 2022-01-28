@@ -2,14 +2,14 @@ package gofr
 
 import (
 	"context"
-	"errors"
 	"os"
 	"strconv"
 	"strings"
-
-	"go.opencensus.io/trace"
+	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
+
+	"go.opentelemetry.io/otel"
 
 	"developer.zopsmart.com/go/gofr/pkg"
 	"developer.zopsmart.com/go/gofr/pkg/datastore"
@@ -20,24 +20,24 @@ import (
 	"developer.zopsmart.com/go/gofr/pkg/gofr/request"
 	"developer.zopsmart.com/go/gofr/pkg/gofr/responder"
 	"developer.zopsmart.com/go/gofr/pkg/log"
+	"developer.zopsmart.com/go/gofr/pkg/middleware"
 	awssns "developer.zopsmart.com/go/gofr/pkg/notifier/aws-sns"
 )
 
+// nolint:gochecknoglobals // need to declare global variable to push metrics
+var (
+	frameworkInfo = prometheus.NewGaugeVec(prometheus.GaugeOpts{
+		Name: "zs_info",
+		Help: "Gauge to count the pods running for each service and framework version",
+	}, []string{"app", "framework"})
+
+	_ = prometheus.Register(frameworkInfo)
+)
+
 func New() (k *Gofr) {
-	var (
-		logger       = log.NewLogger()
-		configFolder string
-	)
+	logger := log.NewLogger()
 
-	if _, err := os.Stat("./configs"); err == nil {
-		configFolder = "./configs"
-	} else if _, err := os.Stat("../configs"); err == nil {
-		configFolder = "../configs"
-	} else {
-		configFolder = "../../configs"
-	}
-
-	return NewWithConfig(config.NewGoDotEnvProvider(logger, configFolder))
+	return NewWithConfig(config.NewGoDotEnvProvider(logger, getConfigFolder()))
 }
 
 //nolint:gocognit  // It's a sequence of initialization. Easier to understand this way.
@@ -67,11 +67,6 @@ func NewWithConfig(c Config) (k *Gofr) {
 		logger.Warnf("APP_NAME is not set.'%v' will be used in logs", pkg.DefaultAppName)
 	}
 
-	frameworkInfo := prometheus.NewGaugeVec(prometheus.GaugeOpts{
-		Name: "zs_info",
-		Help: "Gauge to count the pods running for each service and framework version",
-	}, []string{"app", "framework"})
-	_ = prometheus.Register(frameworkInfo)
 	frameworkInfo.WithLabelValues(appName+"-"+appVers, "gofr-"+log.GofrVersion).Set(1)
 
 	s := NewServer(c, gofr)
@@ -108,7 +103,8 @@ func NewWithConfig(c Config) (k *Gofr) {
 	s.initializeMetricServerConfig(c)
 
 	// If Tracing is set, Set tracing
-	_ = enableTracing(c)
+	enableTracing(c, logger)
+
 	initializeDataStores(c, gofr)
 
 	initializeNotifiers(c, gofr)
@@ -175,86 +171,49 @@ func initializeAvro(c *avro.Config, k *Gofr) {
 }
 
 func NewCMD() *Gofr {
-	var (
-		configFolder string
-		err          error
-	)
+	c := config.NewGoDotEnvProvider(log.NewLogger(), getConfigFolder())
+	gofr := NewWithConfig(c)
+	cmdApp := &cmdApp{Router: NewCMDRouter()}
 
-	if _, err = os.Stat("./configs"); err == nil {
-		configFolder = "./configs"
-	} else if _, err = os.Stat("../configs"); err == nil {
-		configFolder = "../configs"
-	} else {
-		configFolder = "../../configs"
-	}
+	gofr.cmd = cmdApp
+	cmdApp.server = gofr.Server
 
-	c := config.NewGoDotEnvProvider(log.NewLogger(), configFolder)
-	// Here we do things based on what is provided by Config, eg LOG_LEVEL etc.
-	logger := log.NewLogger()
-	cmdApp := &cmdApp{Router: NewCMDRouter(), metricSvr: &metricServer{route: defaultMetricsRoute}}
-	gofr := &Gofr{
-		Logger: logger,
-		cmd:    cmdApp,
-		Config: c, // need to be set for using gofr.Config.Get() method
-	}
+	go func() {
+		const pushDuration = 10
 
-	appVers := c.Get("APP_VERSION")
-	if appVers == "" {
-		logger.Warnf("APP_VERSION is not set. '%v' will be used in logs", pkg.DefaultAppVersion)
-	}
+		for {
+			middleware.PushSystemStats()
 
-	appName := c.Get("APP_NAME")
-	if appName == "" {
-		logger.Warnf("APP_NAME is not set.'%v' will be used in logs", pkg.DefaultAppName)
-	}
-
-	frameworkInfo := prometheus.NewGaugeVec(prometheus.GaugeOpts{
-		Name: "zs_info",
-		Help: "Gauge to count the pods running for each service and framework version",
-	}, []string{"app", "framework"})
-	_ = prometheus.Register(frameworkInfo)
-	frameworkInfo.WithLabelValues(appName+"-"+appVers, "gofr-"+log.GofrVersion).Set(1)
-
-	if cmdApp.metricSvr.port, err = strconv.Atoi(c.Get("METRIC_PORT")); err != nil {
-		cmdApp.metricSvr.port = defaultMetricsPort
-	}
-
-	if route := c.Get("METRIC_ROUTE"); route != "" {
-		route = strings.TrimPrefix(route, "/")
-		cmdApp.metricSvr.route = "/" + route
-	}
+			time.Sleep(time.Second * pushDuration)
+		}
+	}()
 
 	cmdApp.context = NewContext(&responder.CMD{}, request.NewCMDRequest(), gofr)
+
+	tracer := otel.Tracer("gofr")
+
 	// Start tracing span
-	ctx, tSpan := trace.StartSpan(context.Background(), "CMD")
+	ctx, _ := tracer.Start(context.Background(), "CMD")
+
 	cmdApp.context.Context = ctx
-	cmdApp.tracingSpan = tSpan
-
-	// If Tracing is set, Set tracing
-	_ = enableTracing(c)
-	initializeDataStores(c, gofr)
-
-	initializeNotifiers(c, gofr)
 
 	return gofr
 }
 
-func enableTracing(c Config) error {
-	// If Tracing is set, Set tracing
-	exporter := TraceExporter(
-		c.GetOrDefault("APP_NAME", "gofr"),
-		c.Get("TRACER_EXPORTER"),
-		c.Get("TRACER_NAME"),
-		c.Get("TRACER_PORT"),
-	)
-	if exporter == nil {
-		return errors.New("could not create exporter")
+func enableTracing(c Config, logger log.Logger) {
+	// If Tracing is set, initialize tracing
+	if c.Get("TRACER_URL") == "" && c.Get("TRACER_EXPORTER") == "" && c.Get("GCP_PROJECT_ID") == "" {
+		return
 	}
 
-	trace.RegisterExporter(exporter)
-	trace.ApplyConfig(trace.Config{DefaultSampler: trace.AlwaysSample()})
+	err := tracerProvider(c)
+	if err != nil {
+		logger.Errorf("tracing is not enabled. Error %v", err)
 
-	return nil
+		return
+	}
+
+	logger.Infof("tracing is enabled on: %v", c.Get("TRACER_URL"))
 }
 
 // initializeDataStores initializes the Gofr struct with all the data stores for which
@@ -309,10 +268,17 @@ func initializeDynamoDB(c Config, k *Gofr) {
 // initializeRedis initializes the Redis client in the Gofr struct if the Redis configuration is set
 // in the environment, in case of an error, it logs the error
 func initializeRedis(c Config, k *Gofr) {
+	ssl := false
+	if strings.EqualFold(c.Get("REDIS_SSL"), "true") {
+		ssl = true
+	}
+
 	rc := datastore.RedisConfig{
 		HostName:                c.Get("REDIS_HOST"),
+		Password:                c.Get("REDIS_PASSWORD"),
 		Port:                    c.Get("REDIS_PORT"),
 		ConnectionRetryDuration: getRetryDuration(c.Get("REDIS_CONN_RETRY")),
+		SSL:                     ssl,
 	}
 
 	if rc.HostName != "" || rc.Port != "" {
@@ -334,9 +300,9 @@ func initializeRedis(c Config, k *Gofr) {
 	}
 }
 
+// nolint:gocognit //breaks code readability
 // initializeDB initializes the ORM object in the Gofr struct if the DB configuration is set
 // in the environment, in case of an error, it logs the error
-// nolint:gocognit // breaking down function will reduce readability
 func initializeDB(c Config, k *Gofr) {
 	dc := datastore.DBConfig{
 		HostName:          c.Get("DB_HOST"),
@@ -567,26 +533,26 @@ func getYcqlConfigs(c Config) datastore.CassandraCfg {
 }
 
 func initializeElasticsearch(c Config, k *Gofr) {
-	elasticSearchCfg := getElasticSearchConfigFromEnv(c)
+	elasticSearchCfg := elasticSearchConfigFromEnv(c)
 
-	if elasticSearchCfg.Host == "" || elasticSearchCfg.Port == 0 {
+	if (elasticSearchCfg.Host == "" || len(elasticSearchCfg.Ports) == 0) && elasticSearchCfg.CloudID == "" {
 		return
 	}
 
 	var err error
 
-	k.Elasticsearch, err = datastore.NewElasticsearchClient(&elasticSearchCfg)
+	k.Elasticsearch, err = datastore.NewElasticsearchClient(k.Logger, &elasticSearchCfg)
 	k.DatabaseHealth = append(k.DatabaseHealth, k.ElasticsearchHealthCheck)
 
 	if err != nil {
-		k.Logger.Errorf("could not connect to Elasticsearch, HOST: %s, PORT: %v, Error: %v\n", elasticSearchCfg.Host, elasticSearchCfg.Port, err)
+		k.Logger.Errorf("could not connect to elasticsearch, HOST: %s, PORT: %v, Error: %v\n", elasticSearchCfg.Host, elasticSearchCfg.Ports, err)
 
 		go elasticSearchRetry(&elasticSearchCfg, k)
 
 		return
 	}
 
-	k.Logger.Infof("connected to Elasticsearch, HOST: %s, PORT: %v\n", elasticSearchCfg.Host, elasticSearchCfg.Port)
+	k.Logger.Infof("connected to elasticsearch, HOST: %s, PORT: %v\n", elasticSearchCfg.Host, elasticSearchCfg.Ports)
 }
 
 func initializeSolr(c Config, k *Gofr) {
@@ -603,21 +569,23 @@ func initializeSolr(c Config, k *Gofr) {
 
 func initializeNotifiers(c Config, k *Gofr) {
 	notifierBackend := c.Get("NOTIFIER_BACKEND")
+
 	if notifierBackend == "" {
 		return
 	}
 
-	switch notifierBackend {
-	case "SNS":
+	if notifierBackend == "SNS" {
 		initializeAwsSNS(c, k)
 	}
 }
 func initializeAwsSNS(c Config, k *Gofr) {
-
 	awsConfig := awsSNSConfigFromEnv(c)
+
 	var err error
+
 	k.Notifier, err = awssns.New(&awsConfig)
 	k.DatabaseHealth = append(k.DatabaseHealth, k.Notifier.HealthCheck)
+
 	if err != nil {
 		k.Logger.Errorf("AWS SNS could not be initialized, error: %v\n", err)
 
@@ -627,4 +595,16 @@ func initializeAwsSNS(c Config, k *Gofr) {
 	}
 
 	k.Logger.Infof("AWS SNS initialized")
+}
+
+func getConfigFolder() (configFolder string) {
+	if _, err := os.Stat("./configs"); err == nil {
+		configFolder = "./configs"
+	} else if _, err = os.Stat("../configs"); err == nil {
+		configFolder = "../configs"
+	} else {
+		configFolder = "../../configs"
+	}
+
+	return
 }

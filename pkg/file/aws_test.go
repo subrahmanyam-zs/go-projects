@@ -2,12 +2,14 @@ package file
 
 import (
 	"context"
-	"io/ioutil"
+	"io"
+	"net/http"
 	"strings"
 	"testing"
 
 	"github.com/aws/aws-sdk-go-v2/service/s3"
-	"github.com/bmizerany/assert"
+	"github.com/stretchr/testify/assert"
+
 	"developer.zopsmart.com/go/gofr/pkg/errors"
 )
 
@@ -16,7 +18,7 @@ type mockClient struct{}
 func (mc *mockClient) GetObject(ctx context.Context, params *s3.GetObjectInput, optFns ...func(*s3.Options)) (*s3.GetObjectOutput, error) {
 	switch *params.Bucket {
 	case "test-bucket-zs":
-		return &s3.GetObjectOutput{Body: ioutil.NopCloser(strings.NewReader("Successful fetch"))}, nil
+		return &s3.GetObjectOutput{Body: io.NopCloser(strings.NewReader("Successful fetch"))}, nil
 	default:
 		return nil, errors.InvalidParam{Param: []string{"bucket"}}
 	}
@@ -54,14 +56,18 @@ func TestAws_fetch(t *testing.T) {
 		err error
 	}{
 		{&aws{fileName: "aws.txt", fileMode: APPEND, client: m, bucketName: "test-bucket-zs"}, nil},
-		{&aws{fileName: "aws.txt", fileMode: READ, client: m, bucketName: "random-bucket"}, errors.InvalidParam{Param: []string{"bucket"}}},
+		{&aws{fileName: "aws.txt", fileMode: READ, client: m, bucketName: "random-bucket"},
+			&errors.Response{StatusCode: http.StatusInternalServerError, Code: "S3_ERROR", Reason: "Incorrect value for parameter: bucket"}},
 	}
 
 	for i, tc := range tests {
 		l := newLocalFile(tc.cfg.fileName, tc.cfg.fileMode)
+
 		_ = l.Open()
+
 		err := tc.cfg.fetch(l.FD)
-		assert.Equal(t, tc.err, err, i)
+
+		assert.IsType(t, tc.err, err, i)
 
 		_ = l.Close()
 	}
@@ -73,15 +79,18 @@ func TestAws_push(t *testing.T) {
 		cfg *aws
 		err error
 	}{
-		{&aws{fileName: "aws.txt", fileMode: READWRITE, client: m, bucketName: "random-bucket"}, errors.InvalidParam{Param: []string{"bucket"}}},
+		{&aws{fileName: "aws.txt", fileMode: READWRITE, client: m, bucketName: "random-bucket"},
+			&errors.Response{StatusCode: http.StatusInternalServerError, Code: "S3_ERROR", Reason: "Incorrect value for parameter: bucket"}},
 		{&aws{fileName: "awstest.txt", fileMode: READ, client: m, bucketName: "test-bucket-zs"}, nil},
 	}
 
 	for i, tc := range tests {
 		l := newLocalFile(tc.cfg.fileName, tc.cfg.fileMode)
 		_ = l.Open()
+
 		err := tc.cfg.push(l.FD)
-		assert.Equal(t, tc.err, err, i)
+
+		assert.IsType(t, tc.err, err, i)
 
 		_ = l.Close()
 	}

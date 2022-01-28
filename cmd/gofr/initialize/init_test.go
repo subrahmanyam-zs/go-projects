@@ -60,6 +60,7 @@ func Test_createProject(t *testing.T) {
 	var h Handler
 
 	currDir, _ := os.Getwd()
+
 	defer func() {
 		_ = os.Chdir(currDir)
 	}()

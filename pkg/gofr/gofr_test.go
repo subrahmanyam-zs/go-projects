@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/assert"
+
 	"developer.zopsmart.com/go/gofr/pkg/gofr/config"
 	"developer.zopsmart.com/go/gofr/pkg/gofr/request"
 	"developer.zopsmart.com/go/gofr/pkg/gofr/types"
@@ -30,10 +31,10 @@ func TestGofr_ServeHTTP_TextResponse(t *testing.T) {
 		headerKey string
 		headerVal string
 	}{
-		{"GET", "/hello", "Hello World!", "content-type", "text/plain"},               // Example 1
-		{"PUT", "/hello", "Hello World!", "content-type", "text/plain"},               // Example 1
-		{"POST", "/hello", "Hello World!", "content-type", "text/plain"},              // Example 1
-		{"GET", "/params?name=Vikash", "Hello Vikash!", "content-type", "text/plain"}, // Example 2 with query parameters
+		{http.MethodGet, "/hello", "Hello World!", "content-type", "text/plain"},               // Example 1
+		{http.MethodPut, "/hello", "Hello World!", "content-type", "text/plain"},               // Example 1
+		{http.MethodPost, "/hello", "Hello World!", "content-type", "text/plain"},              // Example 1
+		{http.MethodGet, "/params?name=Vikash", "Hello Vikash!", "content-type", "text/plain"}, // Example 2 with query parameters
 	}
 
 	k := New()
@@ -128,7 +129,7 @@ func TestGofr_EnableSwaggerUI(t *testing.T) {
 	k.EnableSwaggerUI()
 
 	w := httptest.NewRecorder()
-	r, _ := request.NewMock("GET", "/swagger", nil)
+	r, _ := request.NewMock(http.MethodGet, "/swagger", nil)
 
 	k.Server.Router.ServeHTTP(w, r)
 
@@ -185,17 +186,17 @@ func TestGofr_Patch(t *testing.T) {
 	}
 
 	// Create a server with PATCH routes
-	k := New()
+	app := New()
 	// Added contextInjector middleware
-	k.Server.Router.Use(k.Server.contextInjector)
+	app.Server.Router.Use(app.Server.contextInjector)
 
-	k.Server.ValidateHeaders = false
+	app.Server.ValidateHeaders = false
 
-	k.PATCH("/patch", func(c *Context) (interface{}, error) {
+	app.PATCH("/patch", func(c *Context) (interface{}, error) {
 		return "success", nil
 	})
 
-	k.PATCH("/error", func(c *Context) (interface{}, error) {
+	app.PATCH("/error", func(c *Context) (interface{}, error) {
 		return nil, errors.New("sample")
 	})
 
@@ -203,7 +204,7 @@ func TestGofr_Patch(t *testing.T) {
 		rr := httptest.NewRecorder()
 		r := httptest.NewRequest(http.MethodPatch, tc.target, nil)
 
-		k.Server.Router.ServeHTTP(rr, r)
+		app.Server.Router.ServeHTTP(rr, r)
 
 		assert.Equal(t, rr.Code, tc.expectedCode)
 	}

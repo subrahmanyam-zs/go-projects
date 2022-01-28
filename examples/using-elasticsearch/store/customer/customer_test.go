@@ -1,160 +1,177 @@
 package customer
 
 import (
-	"errors"
+	"bytes"
+	"encoding/json"
 	"net/http"
+	"os"
 	"testing"
 
-	"github.com/olivere/elastic/v6"
+	"github.com/stretchr/testify/assert"
+
 	"developer.zopsmart.com/go/gofr/examples/using-elasticsearch/model"
-	errors2 "developer.zopsmart.com/go/gofr/pkg/errors"
+	"developer.zopsmart.com/go/gofr/pkg/datastore"
+	"developer.zopsmart.com/go/gofr/pkg/errors"
 	"developer.zopsmart.com/go/gofr/pkg/gofr"
 	"developer.zopsmart.com/go/gofr/pkg/gofr/request"
+	"developer.zopsmart.com/go/gofr/pkg/log"
 )
 
-func initializeElasticsearchClient() (*Customer, *gofr.Context) {
-	var c Customer
+// creating the index 'customers' and populating data to use it in tests
+func TestMain(m *testing.M) {
+	app := gofr.New()
 
-	k := gofr.New()
-	req, _ := http.NewRequest("GET", "/customer/1", nil)
+	const mapping = `{"settings": {
+		"number_of_shards": 1},
+	"mappings": {
+		"_doc": {
+			"properties": {
+				"id": {"type": "text"},
+				"name": {"type": "text"},
+				"city": {"type": "text"}
+			}}}}`
+
+	es := app.Elasticsearch
+
+	_, err := es.Indices.Delete([]string{index}, es.Indices.Delete.WithIgnoreUnavailable(true))
+	if err != nil {
+		app.Logger.Errorf("error deleting index: %s", err.Error())
+	}
+
+	_, err = es.Indices.Create(index,
+		es.Indices.Create.WithBody(bytes.NewReader([]byte(mapping))),
+		es.Indices.Create.WithPretty(),
+	)
+	if err != nil {
+		app.Logger.Errorf("error creating index: %s", err.Error())
+	}
+
+	insert(app.Logger, model.Customer{ID: "1", Name: "Henry", City: "Bangalore"}, es)
+	insert(app.Logger, model.Customer{ID: "2", Name: "Bitsy", City: "Mysore"}, es)
+	insert(app.Logger, model.Customer{ID: "3", Name: "Magic", City: "Bangalore"}, es)
+
+	os.Exit(m.Run())
+}
+
+func insert(logger log.Logger, customer model.Customer, es datastore.Elasticsearch) {
+	body, _ := json.Marshal(customer)
+
+	_, err := es.Index(
+		index,
+		bytes.NewReader(body),
+		es.Index.WithRefresh("true"),
+		es.Index.WithPretty(),
+		es.Index.WithDocumentID(customer.ID),
+	)
+	if err != nil {
+		logger.Errorf("error inserting documents: %s", err.Error())
+	}
+}
+
+func initializeElasticsearchClient() (*store, *gofr.Context) {
+	store := New()
+
+	app := gofr.New()
+	req, _ := http.NewRequest(http.MethodGet, "/customers/_search", nil)
 	r := request.NewHTTPRequest(req)
-	context := gofr.NewContext(nil, r, k)
-	context.Context = req.Context()
+	ctx := gofr.NewContext(nil, r, app)
+	ctx.Context = req.Context()
 
-	return &c, context
+	return &store, ctx
 }
 
 func TestCustomer_Get(t *testing.T) {
-	testCases := []struct {
+	tests := []struct {
+		desc string
 		name string
-		err  error
+		resp []model.Customer
 	}{
-		{"", nil},
-		{"Miracle", nil},
+		{"get success", "Henry", []model.Customer{{ID: "1", Name: "Henry", City: "Bangalore"}}},
+		{"get non existent entity", "Random", nil},
+		{"get multiple entities", "", []model.Customer{
+			{ID: "1", Name: "Henry", City: "Bangalore"},
+			{ID: "2", Name: "Bitsy", City: "Mysore"},
+			{ID: "3", Name: "Magic", City: "Bangalore"},
+		}},
 	}
 
-	for i, v := range testCases {
-		m, context := initializeElasticsearchClient()
-		_, _ = m.Create(context, model.Customer{Name: "Miracle"})
+	for i, tc := range tests {
+		store, ctx := initializeElasticsearchClient()
 
-		_, err := m.Get(context, v.name)
+		resp, err := store.Get(ctx, tc.name)
 
-		if err != v.err {
-			t.Errorf("[TESTCASE%d]Failed.Got: %v\tExpected: %v\n", i+1, err, v.err)
-		}
-	}
-}
+		assert.Equal(t, nil, err, "TEST[%d], failed.\n%s", i, tc.desc)
 
-func TestCustomer_GetByIDMissingId(t *testing.T) {
-	expectedErr := errors.New("missing required fields: [Id]")
-	m, context := initializeElasticsearchClient()
-	_, err := m.GetByID(context, "")
-
-	if err.Error() != expectedErr.Error() {
-		t.Errorf("Failed.Got: %v\tExpected: %v\n", err, expectedErr)
-	}
-}
-
-func TestCustomer_GetByIDNotFound(t *testing.T) {
-	expectedError := elastic.Error{Status: 404, Details: nil}
-	m, context := initializeElasticsearchClient()
-	_, err := m.GetByID(context, "RpxS9W8BvEf544")
-	dbErr, _ := err.(errors2.DB)
-	e, ok := dbErr.Err.(*elastic.Error)
-
-	if !ok && e.Status != expectedError.Status {
-		t.Errorf("Failed.Got: %v\tExpected: %v\n", err, expectedError)
+		assert.Equal(t, tc.resp, resp, "TEST[%d], failed.\n%s", i, tc.desc)
 	}
 }
 
 func TestCustomer_GetByID(t *testing.T) {
-	m, context := initializeElasticsearchClient()
-	_, err := m.GetByID(context, customerID)
+	tests := []struct {
+		desc string
+		id   string
+		err  error
+		resp model.Customer
+	}{
+		{"get by id success", "1", nil, model.Customer{ID: "1", Name: "Henry", City: "Bangalore"}},
+		{"get by id fail", "", errors.EntityNotFound{Entity: "customer", ID: ""}, model.Customer{}},
+	}
 
-	if err != nil {
-		t.Errorf("Expected nil in GetById, Got %v", err)
+	for i, tc := range tests {
+		store, ctx := initializeElasticsearchClient()
+
+		resp, err := store.GetByID(ctx, tc.id)
+
+		assert.Equal(t, tc.err, err, "TEST[%d], failed.\n%s", i, tc.desc)
+
+		assert.Equal(t, tc.resp, resp, "TEST[%d], failed.\n%s", i, tc.desc)
 	}
 }
 
 func TestCustomer_Create(t *testing.T) {
-	testCases := []struct {
-		customer model.Customer
-		err      error
-	}{
-		{model.Customer{}, nil},
-		{model.Customer{Name: "Eron"}, nil},
-	}
+	var (
+		input, expResp model.Customer
+	)
 
-	for i, v := range testCases {
-		m, context := initializeElasticsearchClient()
-		_, err := m.Create(context, v.customer)
+	input = model.Customer{ID: "4", Name: "Elon", City: "Chandigarh"}
+	expResp = model.Customer{ID: "4", Name: "Elon", City: "Chandigarh"}
 
-		if err != v.err {
-			t.Errorf("[TESTCASE%d]Failed.Got: %v\tExpected: %v\n", i+1, err, v.err)
-		}
-	}
+	store, ctx := initializeElasticsearchClient()
+	resp, err := store.Create(ctx, input)
+
+	assert.Equal(t, nil, err)
+
+	assert.Equal(t, expResp, resp)
 }
 
 func TestCustomer_Update(t *testing.T) {
-	testCases := []struct {
-		customer model.Customer
-		id       string
-		err      error
+	tests := []struct {
+		desc  string
+		id    string
+		input model.Customer
+		err   error
+		resp  model.Customer
 	}{
-		{model.Customer{Name: "Heu"}, customerID, nil},
-		{model.Customer{Name: "Marc"}, customerID, nil},
+		{"update existent entity", "4", model.Customer{ID: "4", Name: "Elon", City: "Bangalore"}, nil,
+			model.Customer{ID: "4", Name: "Elon", City: "Bangalore"}},
+		{"update non existent entity", "444", model.Customer{ID: "444", Name: "Musk", City: "Bangalore"}, nil,
+			model.Customer{ID: "444", Name: "Musk", City: "Bangalore"}},
 	}
 
-	for i, v := range testCases {
-		m, context := initializeElasticsearchClient()
-		_, err := m.Update(context, v.customer, v.id)
+	for i, tc := range tests {
+		store, ctx := initializeElasticsearchClient()
+		resp, err := store.Update(ctx, tc.input, tc.id)
 
-		if err != v.err {
-			t.Errorf("[TESTCASE%d]Failed.Got: %v\tExpected: %v\n", i+1, err, v.err)
-		}
-	}
-}
+		assert.Equal(t, tc.err, err, "TEST[%d], failed.\n%s", i, tc.desc)
 
-func TestCustomer_UpdateError(t *testing.T) {
-	testCases := []struct {
-		customer model.Customer
-		id       string
-		err      elastic.Error
-	}{
-		{model.Customer{Name: "Magic"}, "RpxS9W8BvEf-ncpuarrhwK", elastic.Error{Status: 404}},
-		{model.Customer{Name: "Eron"}, "", elastic.Error{Status: 400}},
-	}
-
-	for i, v := range testCases {
-		m, context := initializeElasticsearchClient()
-		_, err := m.Update(context, v.customer, v.id)
-		dbErr, _ := err.(errors2.DB)
-		e, ok := dbErr.Err.(*elastic.Error)
-
-		if !ok && e.Status != v.err.Status {
-			t.Errorf("[TESTCASE %d]Failed.Got: %v\tExpected: %v\n", i+1, err, v.err)
-		}
-	}
-}
-
-func TestCustomer_DeleteError(t *testing.T) {
-	expectedErr := elastic.Error{Status: 404}
-	m, context := initializeElasticsearchClient()
-
-	err := m.Delete(context, "yu6545343")
-	dbErr, _ := err.(errors2.DB)
-	e, ok := dbErr.Err.(*elastic.Error)
-
-	if !ok || e.Status != expectedErr.Status {
-		t.Errorf("Failed.Got: %v\tExpected: %v\n", err, expectedErr)
+		assert.Equal(t, tc.resp, resp, "TEST[%d], failed.\n%s", i, tc.desc)
 	}
 }
 
 func TestCustomer_Delete(t *testing.T) {
-	m, context := initializeElasticsearchClient()
-	err := m.Delete(context, customerID)
+	store, ctx := initializeElasticsearchClient()
 
-	if err != nil {
-		t.Errorf("Expected successful delete but got: %v", err)
-	}
+	err := store.Delete(ctx, "1")
+
+	assert.Equal(t, nil, err)
 }

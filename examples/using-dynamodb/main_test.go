@@ -15,7 +15,7 @@ import (
 )
 
 func TestMain(m *testing.M) {
-	k := gofr.New()
+	app := gofr.New()
 
 	table := "person"
 	input := &dynamodb.CreateTableInput{
@@ -29,9 +29,9 @@ func TestMain(m *testing.M) {
 		TableName:             aws.String(table),
 	}
 
-	_, err := k.DynamoDB.CreateTable(input)
+	_, err := app.DynamoDB.CreateTable(input)
 	if err != nil {
-		k.Logger.Errorf("Failed creation of table %v, %v", table, err)
+		app.Logger.Errorf("Failed creation of table %v, %v", table, err)
 	}
 
 	os.Exit(m.Run())
@@ -41,26 +41,36 @@ func TestIntegration(t *testing.T) {
 	go main()
 	time.Sleep(2 * time.Second)
 
-	tcs := []struct {
-		method        string
-		endpoint      string
-		expStatusCode int
-		body          []byte
+	tests := []struct {
+		desc       string
+		method     string
+		endpoint   string
+		statusCode int
+		body       []byte
 	}{
-		{http.MethodPost, "person", http.StatusCreated, []byte(`{"id":"1", "name":  "gofr", "email": "gofr@zopsmart.com"}`)},
-		{http.MethodGet, "person/1", http.StatusOK, nil},
-		{http.MethodPut, "person/1", http.StatusOK, []byte(`{"id":"1", "name":  "gofr1", "email": "gofrone@zopsmart.com"}`)},
-		{http.MethodDelete, "person/1", http.StatusNoContent, nil},
+		{"create success case", http.MethodPost, "person", http.StatusCreated,
+			[]byte(`{"id":"1", "name":  "gofr", "email": "gofr@zopsmart.com"}`)},
+		{"get success case", http.MethodGet, "person/1", http.StatusOK, nil},
+		{"update success case", http.MethodPut, "person/1", http.StatusOK,
+			[]byte(`{"id":"1", "name":  "gofr1", "email": "gofrone@zopsmart.com"}`)},
+		{"delete success case", http.MethodDelete, "person/1", http.StatusNoContent, nil},
 	}
 
-	for i, tc := range tcs {
+	for i, tc := range tests {
 		req, _ := request.NewMock(tc.method, "http://localhost:9091/"+tc.endpoint, bytes.NewBuffer(tc.body))
 
 		cl := http.Client{}
-		resp, _ := cl.Do(req)
 
-		if resp != nil && resp.StatusCode != tc.expStatusCode {
-			t.Errorf("Testcase[%v] Failed.\tExpected %v\tGot %v\n", i, tc.expStatusCode, resp.StatusCode)
+		resp, err := cl.Do(req)
+		if err != nil {
+			t.Errorf("TEST[%v] Failed.\tHTTP request encountered Err: %v\n%s", i, err, tc.desc)
+			continue
 		}
+
+		if resp.StatusCode != tc.statusCode {
+			t.Errorf("TEST[%v] Failed.\tExpected %v\tGot %v\n%s", i, tc.statusCode, resp.StatusCode, tc.desc)
+		}
+
+		_ = resp.Body.Close()
 	}
 }

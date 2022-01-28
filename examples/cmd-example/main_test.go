@@ -7,7 +7,6 @@ import (
 )
 
 func Test_Main(t *testing.T) {
-
 	openAPIData := `<!DOCTYPE html>
 <html>
 <head>

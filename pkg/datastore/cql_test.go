@@ -10,6 +10,7 @@ import (
 	"testing"
 
 	"github.com/gocql/gocql"
+
 	"developer.zopsmart.com/go/gofr/pkg"
 	"developer.zopsmart.com/go/gofr/pkg/gofr/config"
 	"developer.zopsmart.com/go/gofr/pkg/gofr/types"

@@ -2,10 +2,12 @@ package gofr
 
 import (
 	"bytes"
+	"net/http"
 	"strings"
 	"testing"
 
 	"developer.zopsmart.com/go/gofr/pkg/log"
+
 	"google.golang.org/grpc"
 )
 
@@ -14,7 +16,7 @@ func TestRPCLog_String(t *testing.T) {
 		ID:           "123",
 		StartTime:    "2020-01-01T12:12:12",
 		ResponseTime: 100,
-		Method:       "GET",
+		Method:       http.MethodGet,
 	}
 
 	expected := `{"id":"123","startTime":"2020-01-01T12:12:12","responseTime":100,"method":"GET"}`

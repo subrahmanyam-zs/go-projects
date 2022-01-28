@@ -6,25 +6,26 @@ import (
 	"developer.zopsmart.com/go/gofr/pkg/gofr"
 )
 
-type Customer struct {
+type handler struct {
 	store store.Customer
 }
 
 // New initializes the consumer layer
-func New(s store.Customer) *Customer {
-	return &Customer{store: s}
+//nolint:revive // handler should not be used without proper initilization with required dependency
+func New(s store.Customer) handler {
+	return handler{store: s}
 }
 
 // List lists the customers based on the parameters sent in the query
-func (customer Customer) List(c *gofr.Context) (interface{}, error) {
-	id := c.Param("id")
+func (h handler) List(ctx *gofr.Context) (interface{}, error) {
+	id := ctx.Param("id")
 	if id == "" {
 		return nil, errors.MissingParam{Param: []string{"id"}}
 	}
 
-	filter := store.Filter{ID: id, Name: c.Param("name")}
+	filter := store.Filter{ID: id, Name: ctx.Param("name")}
 
-	resp, err := customer.store.List(c, "customer", filter)
+	resp, err := h.store.List(ctx, "customer", filter)
 
 	if err != nil {
 		return nil, err
@@ -34,10 +35,10 @@ func (customer Customer) List(c *gofr.Context) (interface{}, error) {
 }
 
 // Create creates a document in the customer collection
-func (customer Customer) Create(c *gofr.Context) (interface{}, error) {
+func (h handler) Create(ctx *gofr.Context) (interface{}, error) {
 	var model store.Model
 
-	err := c.Bind(&model)
+	err := ctx.Bind(&model)
 	if err != nil {
 		return nil, errors.InvalidParam{Param: []string{"body"}}
 	}
@@ -46,14 +47,14 @@ func (customer Customer) Create(c *gofr.Context) (interface{}, error) {
 		return nil, errors.InvalidParam{Param: []string{"name"}}
 	}
 
-	return nil, customer.store.Create(c, "customer", model)
+	return nil, h.store.Create(ctx, "customer", model)
 }
 
 // Update updates a document in the customer collection
-func (customer Customer) Update(c *gofr.Context) (interface{}, error) {
+func (h handler) Update(ctx *gofr.Context) (interface{}, error) {
 	var model store.Model
 
-	err := c.Bind(&model)
+	err := ctx.Bind(&model)
 	if err != nil {
 		return nil, errors.InvalidParam{Param: []string{"body"}}
 	}
@@ -66,14 +67,14 @@ func (customer Customer) Update(c *gofr.Context) (interface{}, error) {
 		return nil, errors.InvalidParam{Param: []string{"id"}}
 	}
 
-	return nil, customer.store.Update(c, "customer", model)
+	return nil, h.store.Update(ctx, "customer", model)
 }
 
 // Delete deletes a document in the customer collection
-func (customer Customer) Delete(c *gofr.Context) (interface{}, error) {
+func (h handler) Delete(ctx *gofr.Context) (interface{}, error) {
 	var model store.Model
 
-	err := c.Bind(&model)
+	err := ctx.Bind(&model)
 	if err != nil {
 		return nil, errors.InvalidParam{Param: []string{"body"}}
 	}
@@ -82,5 +83,5 @@ func (customer Customer) Delete(c *gofr.Context) (interface{}, error) {
 		return nil, errors.InvalidParam{Param: []string{"id"}}
 	}
 
-	return nil, customer.store.Delete(c, "customer", model)
+	return nil, h.store.Delete(ctx, "customer", model)
 }

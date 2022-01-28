@@ -5,16 +5,14 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"net/http"
 	"os"
 	"strconv"
 	"strings"
 	"testing"
-
-	"developer.zopsmart.com/go/gofr/pkg/gofr/config"
 )
 
 func TestLogLevel(t *testing.T) {
-	c := config.MockConfig{}
 	testcases := []struct {
 		level  string
 		output string
@@ -23,12 +21,8 @@ func TestLogLevel(t *testing.T) {
 		{"fatal", "WARN"}, // when log level is set to FATAL, WARN or DEBUG log must not be logged
 	}
 
-	level := c.Get("LOG_LEVEL")
-
-	defer os.Setenv("LOG_LEVEL", level)
-
 	for i, v := range testcases {
-		_ = os.Setenv("LOG_LEVEL", v.level)
+		t.Setenv("LOG_LEVEL", v.level)
 
 		b := new(bytes.Buffer)
 		l := NewMockLogger(b)
@@ -219,7 +213,7 @@ func TestPerformanceLogMessage(t *testing.T) {
 		Method   string `json:"method"`
 		URI      string `json:"uri"`
 		Duration int64  `json:"duration"`
-	}{"GET", "/dummy", 1}
+	}{http.MethodGet, "/dummy", 1}
 
 	b := new(bytes.Buffer)
 	logger := NewMockLogger(b)

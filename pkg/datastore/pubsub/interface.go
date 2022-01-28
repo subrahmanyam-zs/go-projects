@@ -4,6 +4,7 @@ import (
 	"time"
 
 	eventhub "github.com/Azure/azure-event-hubs-go/v3"
+
 	"developer.zopsmart.com/go/gofr/pkg/gofr/types"
 )
 
@@ -22,7 +23,6 @@ type Message struct {
 type PublishOptions struct {
 	Topic     string    // default: reads topic from config, else empty string
 	Partition int       // default: 0
-	Offset    int       // default: 0
 	Timestamp time.Time // default: current timestamp
 }
 

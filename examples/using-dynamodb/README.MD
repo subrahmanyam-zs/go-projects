@@ -1,11 +1,13 @@
 ## DynamoDB with Gofr
 
-DynamoDB is available as web-service, DynamoDB local and docker container. For these example we will user docker container.
+DynamoDB is available as web-service, DynamoDB local and docker container. For these example we will user docker
+container.
 
 </br>Run docker Container using following command:
-> docker run -p 8000:8000 --name gofr-dynamodb -d amazon/dynamodb-local
+> docker run -p 2021:8000 --name gofr-dynamodb -d amazon/dynamodb-local
 
-***Note :*** we have exposed dynamodb service at port 8000 on localhost.So we can perform operations on endpoint-url `http://localhost:8000`. 
+***Note :*** we have exposed dynamodb service at port 2021 on localhost.So we can perform operations on
+endpoint-url `http://localhost:2021`.
 
 <hr> </hr>
 

@@ -7,26 +7,30 @@ import (
 
 func main() {
 	// create the application object
-	k := gofr.New()
-	k.Server.ValidateHeaders = false
+	app := gofr.New()
+
+	app.Server.ValidateHeaders = false
 	// enabling /swagger endpoint for Swagger UI
-	k.EnableSwaggerUI()
+	app.EnableSwaggerUI()
 
 	// add a handler
-	k.GET("/hello-world", handler.HelloWorld)
+	app.GET("/hello-world", handler.HelloWorld)
 
 	// handler can access the parameters from context.
-	k.GET("/hello", handler.HelloName)
+	app.GET("/hello", handler.HelloName)
 
-	// handler function can send response in JSON using c.JSON
-	k.GET("/json", handler.JSONHandler)
+	// handler function can send response in JSON
+	app.GET("/json", handler.JSONHandler)
+
+	// handler returns response based on PathParam
+	app.GET("/user/{name}", handler.UserHandler)
 
 	// Handler function which throws error
-	k.GET("/error", handler.ErrorHandler)
+	app.GET("/error", handler.ErrorHandler)
 
 	// Handler function which uses logging
-	k.GET("/log", handler.HelloLogHandler)
+	app.GET("/log", handler.HelloLogHandler)
 
 	// start the server
-	k.Start()
+	app.Start()
 }

@@ -10,6 +10,7 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/prometheus/client_golang/prometheus"
+
 	"developer.zopsmart.com/go/gofr/pkg/errors"
 )
 
@@ -19,9 +20,10 @@ func ErrorResponse(w http.ResponseWriter, r *http.Request, logger logger, err er
 	reqContentType := r.Header.Get("Content-Type")
 	errByte, _ := json.Marshal(err)
 	errOutput := string(errByte)
+	correlationID := r.Context().Value(CorrelationIDKey)
 
 	if logger != nil {
-		logger.AddData(string(CorrelationIDKey), r.Context().Value(CorrelationIDKey))
+		logger.AddData(string(CorrelationIDKey), correlationID)
 		logger.Errorf("%v", err)
 		// pushing error type to prometheus for 500s only
 		if err.StatusCode == http.StatusInternalServerError {
@@ -45,6 +47,8 @@ func ErrorResponse(w http.ResponseWriter, r *http.Request, logger logger, err er
 	}
 
 	w.Header().Set("Content-Type", contentType)
+	w.Header().Set("X-Correlation-ID", fmt.Sprintf("%v", correlationID))
+
 	w.WriteHeader(err.StatusCode)
 	fmt.Fprintln(w, errOutput)
 }

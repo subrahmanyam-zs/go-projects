@@ -6,12 +6,12 @@ import (
 )
 
 func main() {
-	k := gofr.New()
+	app := gofr.New()
 
-	k.Server.ValidateHeaders = false
+	app.Server.ValidateHeaders = false
 
-	k.POST("/publish", handlers.Publisher)
-	k.GET("/subscribe", handlers.Subscriber)
+	app.POST("/publish", handlers.Publisher)
+	app.GET("/subscribe", handlers.Subscriber)
 
-	k.Start()
+	app.Start()
 }

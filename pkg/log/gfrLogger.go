@@ -6,6 +6,7 @@ import (
 	"io"
 	"os"
 	"runtime/debug"
+	"strconv"
 	"sync"
 )
 
@@ -45,10 +46,17 @@ func (a *appInfo) getAppData() appInfo {
 	return res
 }
 
+// nolint:gocognit // reducing the function length reduces readability
 // log does the actual logging. This function creates the entry message and outputs it in color format
 // in terminal context and gives out json in non terminal context. Also, sends to echo if client is present.
 func (k *logger) log(level level, format string, args ...interface{}) {
-	if rls.level < level {
+	mu.Lock()
+
+	lvl := rls.level
+
+	mu.Unlock()
+
+	if lvl < level {
 		return // No need to do anything if we are not going to log it.
 	}
 
@@ -79,6 +87,11 @@ func (k *logger) log(level level, format string, args ...interface{}) {
 		e.CorrelationID, _ = correlationID.(string)
 	}
 
+	id, err := strconv.Atoi(e.CorrelationID)
+	if err == nil && id == 0 {
+		e.CorrelationID = ""
+	}
+
 	// Deleting the correlationId in case of any duplication.
 	delete(e.App.Data, "correlationID")
 
@@ -87,7 +100,6 @@ func (k *logger) log(level level, format string, args ...interface{}) {
 	} else {
 		_ = json.NewEncoder(k.out).Encode(e)
 	}
-
 }
 
 func isJSON(s interface{}) (ok bool, hashmap map[string]interface{}) {

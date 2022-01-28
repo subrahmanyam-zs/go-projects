@@ -9,11 +9,13 @@ import (
 	"strings"
 	"testing"
 
+	"developer.zopsmart.com/go/gofr/cmd/gofr/migration"
 	"developer.zopsmart.com/go/gofr/pkg/gofr/assert"
 )
 
 func TestCLI(t *testing.T) {
 	currDir, _ := os.Getwd()
+
 	defer func() {
 		_ = os.Chdir(currDir)
 	}()
@@ -46,15 +48,15 @@ func Test_Migrate(t *testing.T) {
 	assert.CMDOutputContains(t, main, "gofr migrate -method=UP -database=gorm", "migrations do not exist")
 	assert.CMDOutputContains(t, main, "gofr migrate -method=UP -database=", "invalid flag: database")
 
-	currDir, _ := os.Getwd()
+	currDir := t.TempDir()
 	_ = os.Chdir(currDir)
-	_ = os.Mkdir("migrateCreateTest", 0777)
-	_ = os.Chdir("migrateCreateTest")
 
+	path, _ := os.MkdirTemp(currDir, "migrateCreateTest")
 	defer func() {
-		_ = os.Chdir(currDir)
-		_ = os.RemoveAll("migrateCreateTest")
+		_ = os.RemoveAll(path)
 	}()
+
+	_ = os.Chdir(path)
 
 	assert.CMDOutputContains(t, main, "gofr migrate create", "provide a name for migration")
 	assert.CMDOutputContains(t, main, "gofr migrate create -name=testMigration", "Migration created")
@@ -65,37 +67,38 @@ func Test_Migrate(t *testing.T) {
 
 	_ = os.Chdir(currDir + "/migrateCreateTest")
 
-	assert.CMDOutputContains(t, main, "gofr migrate -method=UP -database=gorm", "exit status")
+	assert.CMDOutputContains(t, main, "gofr migrate -method=UP -database=gorm", "migrations do not exists")
 
 	_ = os.Chdir(currDir + "/migrateCreateTest")
 
-	assert.CMDOutputContains(t, main, "gofr migrate -method=DOWN -database=gorm", "exit status")
+	assert.CMDOutputContains(t, main, "gofr migrate -method=DOWN -database=gorm", "migrations do not exists")
 
 	_ = os.Chdir(currDir + "/migrateCreateTest")
 
-	assert.CMDOutputContains(t, main, "gofr migrate -method=DOWN -database=mongo", "exit status")
+	assert.CMDOutputContains(t, main, "gofr migrate -method=DOWN -database=mongo", "migrations do not exists")
 
 	_ = os.Chdir(currDir + "/migrateCreateTest")
 
-	assert.CMDOutputContains(t, main, "gofr migrate -method=DOWN -database=cassandra", "exit status")
+	assert.CMDOutputContains(t, main, "gofr migrate -method=DOWN -database=cassandra", "migrations do not exists")
 
 	_ = os.Chdir(currDir + "/migrateCreateTest")
 
-	assert.CMDOutputContains(t, main, "gofr migrate -method=DOWN -database=ycql", "exit status")
+	assert.CMDOutputContains(t, main, "gofr migrate -method=DOWN -database=ycql", "migrations do not exists")
 
 	_ = os.Chdir(currDir + "/migrateCreateTest")
 
-	assert.CMDOutputContains(t, main, "gofr migrate -method=DOWN -database=redis -tag=20200123143215", "exit status")
+	assert.CMDOutputContains(t, main, "gofr migrate -method=DOWN -database=redis -tag=20200123143215", "migrations do not exists")
 }
 
 func Test_CreateMigration(t *testing.T) {
 	currDir, _ := os.Getwd()
+
 	defer func() {
 		_ = os.Chdir(currDir)
 	}()
 
 	_ = os.Chdir(t.TempDir())
-	_ = os.Mkdir("migrationTest", 0777)
+	_ = os.Mkdir("migrationTest", migration.RWXMode)
 	_ = os.Chdir("migrationTest")
 
 	assert.CMDOutputContains(t, main, "gofr migrate create -name=removeColumn", "Migration created: removeColumn")
@@ -142,7 +145,7 @@ paths:
             type: string
             format: uuid
           example: 'good4more'
-        - name: x-correlation-ID
+        - name: X-Correlation-ID
           in: header
           schema:
             type: string
@@ -188,7 +191,7 @@ paths:
             type: string
             format: uuid
           example: 'good4more'
-        - name: x-correlation-ID
+        - name: X-Correlation-ID
           in: header
           schema:
             type: string
@@ -226,6 +229,7 @@ paths:
           description: Sample API Hello with name`
 
 	currDir, _ := os.Getwd()
+
 	defer func() {
 		_ = os.Chdir(currDir)
 	}()
@@ -303,6 +307,7 @@ paths:
           description: Sample API Hello`
 
 	currDir, _ := os.Getwd()
+
 	defer func() {
 		_ = os.Chdir(currDir)
 	}()

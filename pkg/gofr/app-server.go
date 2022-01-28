@@ -11,8 +11,9 @@ import (
 
 	"github.com/gorilla/websocket"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
-	"go.opencensus.io/trace"
 	"golang.org/x/net/context"
+
+	"go.opentelemetry.io/otel/trace"
 
 	"developer.zopsmart.com/go/gofr/pkg/errors"
 	"developer.zopsmart.com/go/gofr/pkg/gofr/request"
@@ -54,7 +55,7 @@ const (
 	defaultMetricsRoute = "/metrics"
 )
 
-//nolint:golint // We do not want anyone using the struct without initialization steps.
+//nolint:revive // We do not want anyone using the struct without initialization steps.
 func NewServer(c Config, gofr *Gofr) *server {
 	s := &server{
 		Router:          NewRouter(),
@@ -82,6 +83,8 @@ func NewServer(c Config, gofr *Gofr) *server {
 
 	// Add NewRelic based on Config
 	appName := c.Get("APP_NAME")
+	appVersion := c.Get("APP_VERSION")
+	tracerExporter := c.Get("TRACER_EXPORTER")
 	nrLicense := c.Get("NEWRELIC_LICENSE")
 
 	if appName != "" && nrLicense != "" {
@@ -91,12 +94,13 @@ func NewServer(c Config, gofr *Gofr) *server {
 	s.Router.Use(s.wsConnCreate)
 	s.Router.Use(s.serverPushFlush)
 	s.Router.Use(middleware.PropagateHeaders)
-	s.Router.Use(middleware.Trace)
+	s.Router.Use(middleware.Trace(appName, appVersion, tracerExporter))
 	s.Router.Use(middleware.CORS(s.mwVars))
 	s.Router.Use(middleware.Logging(gofr.Logger, s.mwVars["LOG_OMIT_HEADERS"]))
 	s.Router.Use(middleware.PrometheusMiddleware)
 
 	s.setupAuth(c, gofr)
+
 	return s
 }
 
@@ -126,8 +130,8 @@ func (s *server) handleMetrics(l log.Logger) {
 
 //nolint:gocognit // reducing the cognitive complexity reduces the readability
 func (s *server) Start(logger log.Logger) {
-	s.Router.Route("GET", "/.well-known/health-check", HealthHandler)
-	s.Router.Route("GET", "/.well-known/heartbeat", HeartBeatHandler)
+	s.Router.Route(http.MethodGet, "/.well-known/health-check", HealthHandler)
+	s.Router.Route(http.MethodGet, "/.well-known/heartbeat", HeartBeatHandler)
 	s.Router.Route(http.MethodGet, "/.well-known/openapi.json", OpenAPIHandler)
 
 	s.handleMetrics(logger)
@@ -148,6 +152,16 @@ func (s *server) Start(logger log.Logger) {
 	s.Router.Use(s.contextInjector)
 	// Catch all route to ensure middleware are run for 404 routes - limitation of gorilla mux router
 	s.Router.CatchAllRoute(func(c *Context) (i interface{}, err error) {
+		// adding extra space to find exact route from routes string.
+		path := fmt.Sprintf("%s ", c.Request().URL.Path)
+		if strings.Contains(fmt.Sprint(s.Router), path) {
+			return nil, &errors.Response{
+				StatusCode: http.StatusMethodNotAllowed,
+				Code:       "Invalid Method",
+				Reason:     fmt.Sprintf("%v method not allowed for Route %v", c.Request().Method, c.req),
+			}
+		}
+
 		return nil, &errors.Response{StatusCode: http.StatusNotFound, Code: "Invalid Route", Reason: fmt.Sprintf("Route %v not found", c.req)}
 	})
 
@@ -226,14 +240,15 @@ func (s *server) contextInjector(inner http.Handler) http.Handler {
 		c.reset(responder.NewContextualResponder(w, r), request.NewHTTPRequest(r))
 		*r = *r.WithContext(ctx.WithValue(r.Context(), appData, &sync.Map{}))
 		c.Context = r.Context()
-		*r = *r.WithContext(ctx.WithValue(c, gofrContextkey, c))
+		*r = *r.WithContext(ctx.WithValue(c.Context, gofrContextkey, c))
 
-		correlationID := r.Header.Get("X-Correlation-Id")
+		correlationID := r.Header.Get("X-B3-TraceID")
 		if correlationID == "" {
-			correlationID = r.Header.Get("X-B3-TraceId")
+			correlationID = r.Header.Get("X-Correlation-ID")
 		}
+
 		if correlationID == "" {
-			correlationID = trace.FromContext(r.Context()).SpanContext().TraceID.String()
+			correlationID = trace.SpanFromContext(r.Context()).SpanContext().TraceID().String()
 		}
 
 		c.Logger = log.NewCorrelationLogger(correlationID)

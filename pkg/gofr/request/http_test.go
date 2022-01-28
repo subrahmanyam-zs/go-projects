@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"io"
+	"net/http"
 	"net/http/httptest"
 	"reflect"
 	"sort"
@@ -228,7 +229,7 @@ func TestHTTP_Body(t *testing.T) {
 	for _, tc := range tcs {
 		var (
 			h   HTTP
-			req = httptest.NewRequest("POST", "http://dummy", tc.reqBody)
+			req = httptest.NewRequest(http.MethodPost, "http://dummy", tc.reqBody)
 		)
 
 		h.req = req
@@ -299,7 +300,7 @@ func TestHTTP_Bind(t *testing.T) {
 	for _, tc := range tcs {
 		var (
 			h   HTTP
-			req = httptest.NewRequest("POST", "http://dummy", tc.reqBody)
+			req = httptest.NewRequest(http.MethodPost, "http://dummy", tc.reqBody)
 		)
 
 		if tc.isXML {
@@ -340,7 +341,7 @@ func TestHTTP_BindStrict(t *testing.T) {
 	for _, tc := range tcs {
 		var (
 			h   HTTP
-			req = httptest.NewRequest("POST", "http://dummy", tc.reqBody)
+			req = httptest.NewRequest(http.MethodPost, "http://dummy", tc.reqBody)
 		)
 
 		if tc.isXML {

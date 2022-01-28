@@ -7,12 +7,14 @@ import (
 )
 
 func main() {
-	k := gofr.New()
-	k.Server.ValidateHeaders = false
+	app := gofr.New()
 
-	h := handler.New(customer.Customer{})
+	app.Server.ValidateHeaders = false
 
-	k.REST("customer", h)
-	k.Server.HTTP.Port = 8001
-	k.Start()
+	store := customer.New()
+	h := handler.New(store)
+
+	app.REST("customer", h)
+
+	app.Start()
 }

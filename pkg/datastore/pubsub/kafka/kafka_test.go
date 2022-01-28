@@ -2,6 +2,8 @@ package kafka
 
 import (
 	"bytes"
+	"crypto/sha512"
+	"crypto/tls"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -14,6 +16,7 @@ import (
 
 	"github.com/Shopify/sarama"
 	"github.com/stretchr/testify/assert"
+
 	"developer.zopsmart.com/go/gofr/pkg"
 	"developer.zopsmart.com/go/gofr/pkg/datastore/pubsub"
 	"developer.zopsmart.com/go/gofr/pkg/datastore/pubsub/avro"
@@ -92,12 +95,15 @@ func TestNewKafkaFromEnv(t *testing.T) {
 		{
 			// error case due to invalid kafka host
 			kafkaHosts := os.Getenv("KAFKA_HOSTS")
-			os.Setenv("KAFKA_HOSTS", "localhost:9999")
+
+			t.Setenv("KAFKA_HOSTS", "localhost:9999")
+
 			_, err := NewKafkaFromEnv()
 			if err == nil {
 				t.Errorf("Failed, expected: %v, got: %v ", brokersErr{}, nil)
 			}
-			os.Setenv("KAFKA_HOSTS", kafkaHosts)
+
+			t.Setenv("KAFKA_HOSTS", kafkaHosts)
 		}
 	}
 }
@@ -114,10 +120,20 @@ func TestNewKafka(t *testing.T) {
 	}{
 		{
 			Config{
-				Brokers:        "localhost:2008,localhost:2009",
-				Topics:         []string{"test-topic"},
-				MaxRetry:       4,
-				RetryFrequency: 300,
+				Brokers:           "localhost:2008,localhost:2009",
+				Topics:            []string{"test-topic"},
+				MaxRetry:          4,
+				RetryFrequency:    300,
+				DisableAutoCommit: true,
+			}, false,
+		},
+		{
+			Config{
+				Brokers:           "localhost:2008,localhost:2009",
+				Topics:            []string{"test-topic"},
+				MaxRetry:          4,
+				RetryFrequency:    300,
+				DisableAutoCommit: false,
 			}, false,
 		},
 		{
@@ -299,6 +315,39 @@ func Test_convertKafkaConfig(t *testing.T) {
 	assert.Equal(t, expectedConfig, kafkaConfig.Config)
 }
 
+func Test_processSASLConfigs(t *testing.T) {
+	expConfig := sarama.NewConfig()
+
+	expConfig.Net.SASL.User = "testuser"
+	expConfig.Net.SASL.Password = "password"
+	expConfig.Net.SASL.Handshake = true
+	expConfig.Net.SASL.Enable = true
+	expConfig.Net.TLS.Enable = true
+	expConfig.Net.TLS.Config = &tls.Config{
+		InsecureSkipVerify: true, //nolint:gosec // TLS InsecureSkipVerify set true.
+	}
+	expConfig.Net.SASL.Mechanism = SASLTypeSCRAMSHA512
+	expConfig.Net.SASL.SCRAMClientGeneratorFunc = func() sarama.SCRAMClient {
+		return &XDGSCRAMClient{HashGeneratorFcn: sha512.New}
+	}
+
+	saslConfig := SASLConfig{
+		User:      "testuser",
+		Password:  "password",
+		Mechanism: SASLTypeSCRAMSHA512,
+	}
+
+	conf := sarama.NewConfig()
+	processSASLConfigs(saslConfig, conf)
+
+	conf.Net.SASL.SCRAMClientGeneratorFunc = nil
+	expConfig.Net.SASL.SCRAMClientGeneratorFunc = nil
+	conf.Producer.Partitioner = nil
+	expConfig.Producer.Partitioner = nil
+
+	assert.Equal(t, expConfig, conf)
+}
+
 func TestKafkaHealthCheck(t *testing.T) {
 	logger := log.NewMockLogger(io.Discard)
 	c := config.NewGoDotEnvProvider(logger, "../../../../configs")
@@ -474,7 +523,7 @@ func PublishMessage(t *testing.T, k *Kafka) {
 func Test_PubSubWithOffset(t *testing.T) {
 	topic := "test-custom-offset"
 	logger := log.NewLogger()
-	c := config.NewGoDotEnvProvider(logger, "../../../configs")
+	c := config.NewGoDotEnvProvider(logger, "../../../../configs")
 	// prereqisite
 	k, err := New(&Config{
 		Brokers:        c.Get("KAFKA_HOSTS"),
@@ -634,7 +683,7 @@ func Test_Println(t *testing.T) {
 
 func TestKafka_SubscribeNilMessage(t *testing.T) {
 	logger := log.NewMockLogger(io.Discard)
-	c := config.NewGoDotEnvProvider(logger, "../../../configs")
+	c := config.NewGoDotEnvProvider(logger, "../../../../configs")
 
 	topic := "test-topic"
 	conn, _ := New(&Config{Brokers: c.Get("KAFKA_HOSTS"), Topics: strings.Split(topic, ",")}, logger)

@@ -7,9 +7,9 @@ package store
 import (
 	reflect "reflect"
 
-	gomock "github.com/golang/mock/gomock"
 	entity "developer.zopsmart.com/go/gofr/examples/universal-example/cassandra/entity"
 	gofr "developer.zopsmart.com/go/gofr/pkg/gofr"
+	gomock "github.com/golang/mock/gomock"
 )
 
 // MockEmployee is a mock of Employee interface

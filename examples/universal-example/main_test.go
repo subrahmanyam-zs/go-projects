@@ -1,3 +1,5 @@
+//go:build !integration
+
 package main
 
 import (
@@ -22,11 +24,11 @@ import (
 )
 
 func TestMain(m *testing.M) {
-	k := gofr.New()
+	app := gofr.New()
 
-	cassandraTableInitialization(k)
+	cassandraTableInitialization(app)
 
-	postgresTableInitialization(k)
+	postgresTableInitialization(app)
 
 	// avro schema registry test server
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -58,6 +60,7 @@ func TestMain(m *testing.M) {
 		os.Setenv("KAFKA_TOPIC", topic)
 	}()
 
+	//nolint:gocritic //os.Exit will exit, and `defer func(){...}(...)`
 	os.Exit(m.Run())
 }
 
@@ -68,14 +71,12 @@ func TestUniversalIntegration(t *testing.T) {
 	time.Sleep(5 * time.Second)
 
 	testDataStores(t)
-
 	testKafkaDataStore(t)
-
 	testEventhub(t)
 }
 
 func testDataStores(t *testing.T) {
-	testcases := []struct {
+	tests := []struct {
 		testID             int
 		method             string
 		endpoint           string
@@ -83,26 +84,26 @@ func testDataStores(t *testing.T) {
 		body               []byte
 	}{
 		// Cassandra
-		{1, "GET", "/cassandra/employee?name=Aman", 200, nil},
-		{2, "POST", "/cassandra/employee", 201,
+		{1, http.MethodGet, "/cassandra/employee?name=Aman", http.StatusOK, nil},
+		{2, http.MethodPost, "/cassandra/employee", http.StatusCreated,
 			[]byte(`{"id": 5, "name": "Sukanya", "phone": "01477", "email":"sukanya@zopsmart.com", "city":"Guwahati"}`)},
-		{3, "GET", "/cassandra/unknown", 404, nil},
+		{3, http.MethodGet, "/cassandra/unknown", http.StatusNotFound, nil},
 		// Redis
-		{4, "GET", "/redis/config/key123", 500, nil},
-		{5, "POST", "/redis/config", 201, []byte(`{}`)},
+		{4, http.MethodGet, "/redis/config/key123", http.StatusInternalServerError, nil},
+		{5, http.MethodPost, "/redis/config", http.StatusCreated, []byte(`{}`)},
 		// Postgres
-		{6, "GET", "/pgsql/employee", 200, nil},
-		{7, "POST", "/pgsql/employee", 201,
+		{6, http.MethodGet, "/pgsql/employee", http.StatusOK, nil},
+		{7, http.MethodPost, "/pgsql/employee", http.StatusCreated,
 			[]byte(`{"id": 5, "name": "Sukanya", "phone": "01477", "email":"sukanya@zopsmart.com", "city":"Guwahati"}`)},
 	}
-	for _, tc := range testcases {
+	for _, tc := range tests {
 		req, _ := request.NewMock(tc.method, "http://localhost:9095"+tc.endpoint, bytes.NewBuffer(tc.body))
-		cl := http.Client{}
-		resp, err := cl.Do(req)
+		client := http.Client{}
 
+		resp, err := client.Do(req)
 		if err != nil {
 			t.Errorf("TestCase[%v] \t FAILED \nGot Error: %v", tc.testID, err)
-			return
+			continue
 		}
 
 		if resp != nil && resp.StatusCode != tc.expectedStatusCode {
@@ -117,18 +118,18 @@ func testDataStores(t *testing.T) {
 
 // nolint:gocognit // can't break the function because of retry logic
 func testKafkaDataStore(t *testing.T) {
-	tcs := []struct {
+	tests := []struct {
 		testID             int
 		method             string
 		endpoint           string
 		expectedResponse   string
 		expectedStatusCode int
 	}{
-		{8, "GET", "http://localhost:9095/avro/pub?id=1", "", 200},
-		{9, "GET", "http://localhost:9095/avro/sub", "1", 200},
+		{8, http.MethodGet, "http://localhost:9095/avro/pub?id=1", "", http.StatusOK},
+		{9, http.MethodGet, "http://localhost:9095/avro/sub", "1", http.StatusOK},
 	}
 
-	for _, tc := range tcs {
+	for _, tc := range tests {
 		req, _ := request.NewMock(tc.method, tc.endpoint, nil)
 		c := http.Client{}
 
@@ -172,18 +173,18 @@ func testKafkaDataStore(t *testing.T) {
 
 //nolint:gocognit // braking down the function will reduce the readability
 func testEventhub(t *testing.T) {
-	testcase := []struct {
+	tests := []struct {
 		testID             int
 		method             string
 		endpoint           string
 		expectedResponse   string
 		expectedStatusCode int
 	}{
-		{10, "GET", "http://localhost:9095/eventhub/pub?id=1", "", 200},
-		{11, "GET", "http://localhost:9095/eventhub/sub", "1", 200},
+		{10, http.MethodGet, "http://localhost:9095/eventhub/pub?id=1", "", http.StatusOK},
+		{11, http.MethodGet, "http://localhost:9095/eventhub/sub", "1", http.StatusOK},
 	}
 
-	for _, tc := range testcase {
+	for _, tc := range tests {
 		req, _ := request.NewMock(tc.method, tc.endpoint, nil)
 		c := http.Client{}
 		resp, _ := c.Do(req)
@@ -193,7 +194,7 @@ func testEventhub(t *testing.T) {
 			// messages without avro would return 200 as we do json.Marshal to a map
 			// messages with avro would return 206 as it would have to go through avro.Marshal
 			// we can't use any avro schema as any schema can be used
-			if resp.StatusCode != 206 {
+			if resp.StatusCode != http.StatusPartialContent {
 				t.Errorf("Test %v: Failed.\tExpected %v\tGot %v\n", tc.testID, tc.expectedStatusCode, resp.StatusCode)
 			}
 		}
@@ -205,7 +206,7 @@ func testEventhub(t *testing.T) {
 }
 
 // Cassandra Table initialization, Remove table if already exists
-func cassandraTableInitialization(k *gofr.Gofr) {
+func cassandraTableInitialization(app *gofr.Gofr) {
 	logger := log.NewLogger()
 	c := config.NewGoDotEnvProvider(logger, "configs")
 
@@ -237,17 +238,17 @@ func cassandraTableInitialization(k *gofr.Gofr) {
 	}
 
 	queryStr := "DROP TABLE IF EXISTS employees"
-	if e := k.Cassandra.Session.Query(queryStr).Exec(); e != nil {
-		k.Logger.Errorf("Got error while dropping the existing table employees: ", e)
+	if e := app.Cassandra.Session.Query(queryStr).Exec(); e != nil {
+		app.Logger.Errorf("Got error while dropping the existing table employees: ", e)
 	}
 
 	queryStr = "CREATE TABLE IF NOT EXISTS employees (id int, name text, phone text, email text, city text, PRIMARY KEY (id) )"
 
-	err = k.Cassandra.Session.Query(queryStr).Exec()
+	err = app.Cassandra.Session.Query(queryStr).Exec()
 	if err != nil {
-		k.Logger.Errorf("Failed creation of Table employees :%v", err)
+		app.Logger.Errorf("Failed creation of Table employees :%v", err)
 	} else {
-		k.Logger.Info("Table employees created Successfully")
+		app.Logger.Info("Table employees created Successfully")
 	}
 }
 

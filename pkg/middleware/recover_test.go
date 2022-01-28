@@ -13,6 +13,7 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/stretchr/testify/assert"
+
 	"developer.zopsmart.com/go/gofr/pkg/log"
 )
 
@@ -231,7 +232,7 @@ func makeRequestPlanet(t *testing.T, handler http.Handler, wg *sync.WaitGroup, t
 			req := httptest.NewRequest("GET", target, nil)
 			data := &sync.Map{}
 			data.Store("Planet", "Earth")
-			req.Header.Add("X-Correlation-Id", "gofrTest-planet")
+			req.Header.Add("X-Correlation-ID", "gofrTest-planet")
 			ctx := context.WithValue(context.WithValue(context.Background(), CorrelationIDKey, "gofrTest-planet"),
 				LogDataKey("appLogData"), data)
 			req = req.WithContext(ctx)
@@ -249,7 +250,7 @@ func makeRequestGalaxy(t *testing.T, handler http.Handler, wg *sync.WaitGroup, t
 			req := httptest.NewRequest("GET", target, nil)
 			data := &sync.Map{}
 			data.Store("Galaxy", "MilkyWay")
-			req.Header.Add("X-Correlation-Id", "gofrTest-galaxy")
+			req.Header.Add("X-Correlation-ID", "gofrTest-galaxy")
 			req = req.WithContext(context.WithValue(context.WithValue(context.Background(), CorrelationIDKey, "gofrTest-galaxy"),
 				LogDataKey("appLogData"), data))
 			handler.ServeHTTP(&MockWriteHandler{}, req)
@@ -286,7 +287,7 @@ func Test_ValidAppLogDataInConcurrentRequest(t *testing.T) {
 	checkLogs(t, b)
 }
 
-// nolint:gocognit  // splitting the code will reduce readability
+// nolint:gocognit // splitting the code will reduce readability
 func checkLogs(t *testing.T, b *Buffer) {
 	if bufLen := len(b.String()); bufLen <= 0 {
 		t.Error("Nothing is logged")
