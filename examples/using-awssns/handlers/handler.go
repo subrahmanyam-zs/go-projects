@@ -15,7 +15,13 @@ func Publisher(c *gofr.Context) (interface{}, error) {
 		return nil, errors.EntityNotFound{}
 	}
 
-	return nil, c.Notifier.Publish(message)
+	attr := map[string]interface{}{
+		"email":   "test@abc.com",
+		"version": 1.1,
+		"key":     []interface{}{1, 1.999, "value"},
+	}
+
+	return nil, c.Notifier.Publish(message, attr)
 }
 
 func Subscriber(c *gofr.Context) (interface{}, error) {

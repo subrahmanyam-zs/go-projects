@@ -42,7 +42,7 @@ func TestPublisherHandler(t *testing.T) {
 
 	for _, tc := range tests {
 		mockService, ctx := initializeTests(t, http.MethodPost, bytes.NewBuffer(tc.body))
-		mockService.EXPECT().Publish(gomock.Any()).Return(tc.wantErr)
+		mockService.EXPECT().Publish(gomock.Any(), gomock.Any()).Return(tc.wantErr)
 
 		_, err := Publisher(ctx)
 

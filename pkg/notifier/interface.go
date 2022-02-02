@@ -14,9 +14,12 @@ type Notifier interface {
 	/*
 		Publish publishes message to the notifier configured.
 				Information like topic is read from configs
-				returns error if publish encounters a failure
+				returns error if publish encounters a failure.
+		Attributes will be attached to original Message
+				and it can be used to filter the messages
+				at subscriber-side.
 	*/
-	Publish(value interface{}) error
+	Publish(value interface{}, attributes map[string]interface{}) error
 
 	/*
 		Subscribe read messages from the Notifier configured.
