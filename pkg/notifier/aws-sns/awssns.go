@@ -2,17 +2,18 @@ package awssns
 
 import (
 	"encoding/json"
-
-	"developer.zopsmart.com/go/gofr/pkg"
-	"developer.zopsmart.com/go/gofr/pkg/errors"
-	"developer.zopsmart.com/go/gofr/pkg/gofr/types"
-	"developer.zopsmart.com/go/gofr/pkg/notifier"
+	"fmt"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/sns"
 	"github.com/prometheus/client_golang/prometheus"
+
+	"developer.zopsmart.com/go/gofr/pkg"
+	"developer.zopsmart.com/go/gofr/pkg/errors"
+	"developer.zopsmart.com/go/gofr/pkg/gofr/types"
+	"developer.zopsmart.com/go/gofr/pkg/notifier"
 )
 
 type SNS struct {
@@ -47,26 +48,29 @@ var (
 		Name: "zs_notifier_failure_count",
 		Help: "Total number of failed subscribe operation",
 	}, []string{"topic"})
-)
 
-func New(c *Config) (notifier.Notifier, error) {
 	_ = prometheus.Register(notifierReceiveCount)
 	_ = prometheus.Register(notifierSuccessCount)
 	_ = prometheus.Register(notifierFailureCount)
+)
 
+func New(c *Config) (notifier.Notifier, error) {
 	sessionConfig := &aws.Config{
 		Region:      aws.String(c.Region),
 		Credentials: credentials.NewStaticCredentials(c.AccessKeyID, c.SecretAccessKey, ""),
 	}
 
-	sess, _ := session.NewSession(sessionConfig)
+	sess, err := session.NewSession(sessionConfig)
+	if err != nil {
+		return nil, err
+	}
 
 	svc := sns.New(sess, nil)
 
 	return &SNS{sns: svc, cfg: c}, nil
 }
 
-func (s *SNS) Publish(value interface{}) (err error) {
+func (s *SNS) Publish(value interface{}, attributes map[string]interface{}) (err error) {
 	data, ok := value.([]byte)
 	if !ok {
 		data, err = json.Marshal(value)
@@ -76,8 +80,9 @@ func (s *SNS) Publish(value interface{}) (err error) {
 	}
 
 	input := &sns.PublishInput{
-		Message:  aws.String(string(data)),
-		TopicArn: aws.String(s.cfg.TopicArn),
+		Message:           aws.String(string(data)),
+		TopicArn:          aws.String(s.cfg.TopicArn),
+		MessageAttributes: getMessageAttributes(attributes),
 	}
 
 	_, err = s.sns.Publish(input)
@@ -174,4 +179,40 @@ func (s *SNS) IsSet() bool {
 	}
 
 	return s.sns != nil
+}
+
+func getMessageAttributes(mp map[string]interface{}) map[string]*sns.MessageAttributeValue {
+	if mp == nil {
+		return nil
+	}
+
+	values := make(map[string]*sns.MessageAttributeValue)
+
+	for key, val := range mp {
+		av := &sns.MessageAttributeValue{}
+
+		var dataType, value string
+
+		switch val.(type) {
+		case int, int64, float64:
+			dataType = "Number"
+			value = fmt.Sprintf("%v", val)
+		case []int64, []float64, []string, []interface{}:
+			dataType = "String.Array"
+
+			data, _ := json.Marshal(val)
+
+			value = string(data)
+		default:
+			dataType = "String"
+			value = fmt.Sprintf("%v", val)
+		}
+
+		av.SetDataType(dataType)
+		av.SetStringValue(value)
+
+		values[key] = av
+	}
+
+	return values
 }

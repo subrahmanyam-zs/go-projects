@@ -161,7 +161,7 @@ func TestSNS_PublishEvent(t *testing.T) {
 	for _, tc := range tests {
 		mockService.EXPECT().Publish(tc.inputPublish).Return(&sns.PublishOutput{}, tc.wantErr)
 
-		err := svc.Publish(tc.inputValue)
+		err := svc.Publish(tc.inputValue, nil)
 
 		assert.ErrorIsf(t, err, tc.wantErr, " %s Expected Error : %v , got %v", tc.desc, tc.wantErr, err)
 	}
@@ -187,7 +187,7 @@ func TestSNS_PublishEventMarshalError(t *testing.T) {
 		wantErr:    fmt.Errorf("json: unsupported type: chan int"),
 	}
 
-	err := svc.Publish(tests.inputValue)
+	err := svc.Publish(tests.inputValue, nil)
 
 	assert.Error(t, err, " %s Expected Error : %v , got %v", tests.desc, tests.wantErr, err)
 }
@@ -275,4 +275,41 @@ func TestSNS_BindError(t *testing.T) {
 	err := svc.Bind(val, &message)
 
 	assert.Error(t, err, "Expected Error but got nothing")
+}
+
+func Test_getMessageAttributes(t *testing.T) {
+	expAttribute := map[string]*sns.MessageAttributeValue{
+		"email": {
+			DataType:    aws.String("String"),
+			StringValue: aws.String("test@abc.com"),
+		},
+		"version": {
+			DataType:    aws.String("Number"),
+			StringValue: aws.String("1.1"),
+		},
+		"values": {
+			DataType:    aws.String("String.Array"),
+			StringValue: aws.String(`["value1",1,1.555,"value2"]`),
+		},
+		"string-values": {
+			DataType:    aws.String("String.Array"),
+			StringValue: aws.String(`["test","testing"]`),
+		},
+		"number-values": {
+			DataType:    aws.String("String.Array"),
+			StringValue: aws.String(`[1,1.2,1.555]`),
+		},
+	}
+
+	attributes := map[string]interface{}{
+		"email":         "test@abc.com",
+		"version":       1.1,
+		"values":        []interface{}{"value1", 1, 1.555, "value2"},
+		"string-values": []string{"test", "testing"},
+		"number-values": []float64{1, 1.2, 1.555},
+	}
+
+	out := getMessageAttributes(attributes)
+
+	assert.Equal(t, out, expAttribute)
 }

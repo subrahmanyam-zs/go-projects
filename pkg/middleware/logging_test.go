@@ -3,6 +3,7 @@ package middleware
 import (
 	"bytes"
 	"context"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -150,19 +151,67 @@ func TestLoggingCorrelationID(t *testing.T) {
 func TestLoggingCorrelationContext(t *testing.T) {
 	b := new(bytes.Buffer)
 	logger := log.NewMockLogger(b)
-
 	handler := Logging(logger, "")(&MockHandler{})
 
-	correlationID := "12bhu987"
+	const correlationID = "b00ff8de800911ec8f6502bfe7568078"
 
-	req := httptest.NewRequest("GET", "/dummy", nil)
-	req.Header.Add("X-Correlation-ID", correlationID)
-	handler.ServeHTTP(MockWriteHandler{}, req)
+	tests := []struct {
+		desc   string
+		header string
+	}{
+		{"set X-Correlation-ID header", "X-Correlation-ID"},
+		{"set X-B3-TraceID header", "X-B3-TraceID"},
+	}
 
-	cID, _ := req.Context().Value(CorrelationIDKey).(string)
+	for i, tc := range tests {
+		req := httptest.NewRequest(http.MethodGet, "/dummy", http.NoBody)
 
-	if cID != correlationID {
-		t.Errorf("correlationID is not present in the request context")
+		req.Header.Add(tc.header, correlationID)
+		handler.ServeHTTP(MockWriteHandler{}, req)
+
+		cID, _ := req.Context().Value(CorrelationIDKey).(string)
+
+		if cID != correlationID {
+			t.Errorf("TEST[%d], failed.\n%s\nCorrelationID is not present in the request context.", i, tc.desc)
+		}
+	}
+}
+
+func TestGetCorrelationID(t *testing.T) {
+	const (
+		correlationIDLength  = 32
+		invalidCorrelationID = "000"
+	)
+
+	nullCorrelationID := fmt.Sprintf("%0*s", correlationIDLength, "")
+
+	tests := []struct {
+		desc   string
+		header string
+		value  string
+	}{
+		{"empty X-Correlation-ID header", "X-Correlation-ID", ""},
+		{"empty X-B3-TraceID header", "X-B3-TraceID", ""},
+		{"invalid CorrelationID for X-Correlation-ID header", "X-Correlation-ID", invalidCorrelationID},
+		{"invalid CorrelationID for X-B3-TraceID header", "X-B3-TraceID", invalidCorrelationID},
+		{"null CorrelationID for X-Correlation-ID header", "X-Correlation-ID", nullCorrelationID},
+		{"null CorrelationID for X-B3-TraceID header", "X-B3-TraceID", nullCorrelationID},
+	}
+
+	for i, tc := range tests {
+		req := httptest.NewRequest(http.MethodGet, "/dummy", http.NoBody)
+		req.Header.Add(tc.header, tc.value)
+
+		correlationID := getCorrelationID(req)
+
+		if correlationID == tc.value {
+			t.Errorf("TEST[%d], failed.\n%s\nExpected valid CorrelationID, Got: %v .", i, tc.desc, tc.value)
+		}
+
+		if req.Header.Get("X-Correlation-ID") == tc.value {
+			t.Errorf("TEST[%d], failed.\n%s\nExpected valid CorrelationID to be set in request header, Got: %v .",
+				i, tc.desc, tc.value)
+		}
 	}
 }
 
