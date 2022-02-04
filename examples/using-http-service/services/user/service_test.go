@@ -1,65 +1,136 @@
 package user
 
 import (
-	"bytes"
-	"context"
 	"encoding/json"
+	"io"
 	"net/http"
 	"testing"
 
+	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
 
 	"developer.zopsmart.com/go/gofr/examples/using-http-service/models"
 	"developer.zopsmart.com/go/gofr/examples/using-http-service/services"
 	"developer.zopsmart.com/go/gofr/pkg/errors"
 	"developer.zopsmart.com/go/gofr/pkg/gofr"
-	httpService "developer.zopsmart.com/go/gofr/pkg/service"
+	"developer.zopsmart.com/go/gofr/pkg/log"
+	svc "developer.zopsmart.com/go/gofr/pkg/service"
 )
 
-type mockBind struct{}
+func initializeTest(t *testing.T) (services.User, mockHTTPService, *gofr.Context) {
+	ctrl := gomock.NewController(t)
+	mock := services.NewMockHTTPService(ctrl)
+	mockSvc := mockHTTPService{MockHTTPService: mock}
+	s := New(mockSvc)
 
-func (m mockBind) Bind(resp []byte, i interface{}) error {
-	err := json.NewDecoder(bytes.NewBuffer(resp)).Decode(&i)
-	return err
+	g := gofr.Gofr{Logger: log.NewMockLogger(io.Discard)}
+	ctx := gofr.NewContext(nil, nil, &g)
+
+	return s, mockSvc, ctx
 }
 
-func (m mockBind) Get(ctx context.Context, api string, params map[string]interface{}) (*httpService.Response, error) {
-	input := []byte(`{"errors":[{"code":"400"}]}`)
-	return &httpService.Response{Body: input, StatusCode: http.StatusBadRequest}, nil
-}
+func TestService_Get(t *testing.T) {
+	s, mockSvc, ctx := initializeTest(t)
 
-func Test_Get(t *testing.T) {
+	var (
+		serviceErr = errors.Error("error from service call")
+
+		serverErr = errors.MultipleErrors{StatusCode: http.StatusInternalServerError, Errors: []error{&errors.Response{
+			Code:     "Internal Server Error",
+			Reason:   "connection timed out",
+			DateTime: errors.DateTime{Value: "2021-11-03T11:01:13.124Z", TimeZone: "IST"},
+		}}}
+
+		errResp = &svc.Response{
+			StatusCode: http.StatusInternalServerError,
+			Body: []byte(`
+		{
+			"errors": [
+				{
+					"code": "Internal Server Error",
+					"reason": "connection timed out",
+					"datetime": {
+						"value": "2021-11-03T11:01:13.124Z",
+						"timezone": "IST"
+					}
+				}
+			]
+		}`),
+		}
+
+		resp = &svc.Response{
+			StatusCode: http.StatusOK,
+			Body: []byte(`
+		{
+    		"data": {
+        		"name": "Vikash",
+        		"company": "ZopSmart"
+    		}
+		}`),
+		}
+	)
+
 	tests := []struct {
-		desc string
-		resp models.User
-		err  error
+		desc     string
+		mockResp *svc.Response // mock response from get call
+		mockErr  error         // mock error from get call
+		output   models.User
+		err      error
 	}{
-		{"call to service.Get throws error", models.User{},
-			errors.MultipleErrors{StatusCode: http.StatusInternalServerError, Errors: []error{errors.Error("core error")}}},
-		{"call to Bind method throws error", models.User{},
-			&errors.Response{StatusCode: http.StatusInternalServerError, Code: "BIND_ERROR", Reason: "failed to bind response from sample service"}},
-		{"success case", models.User{Name: "Vikash", Company: "ZopSmart"}, nil},
+		{"error from get call", nil, serviceErr, models.User{}, serviceErr},
+		{"error response from get call", errResp, nil, models.User{}, serverErr},
+		{"success case", resp, nil, models.User{Name: "Vikash", Company: "ZopSmart"}, nil},
 	}
 
 	for i, tc := range tests {
-		h := New(services.New(i))
+		mockSvc.EXPECT().Get(gomock.Any(), "user/Vikash", nil).Return(tc.mockResp, tc.mockErr)
 
-		ctx := gofr.NewContext(nil, nil, gofr.New())
-		resp, err := h.Get(ctx, "Vikash")
+		output, err := s.Get(ctx, "Vikash")
 
-		assert.Equal(t, tc.err, err, "TEST[%d], failed.\n%s", i, tc.desc)
+		assert.Equal(t, tc.err, err, "TEST[%d], failed.\n%s", i+1, tc.desc)
 
-		assert.Equal(t, tc.resp, resp, "TEST[%d], failed.\n%s", i, tc.desc)
+		assert.Equal(t, tc.output, output, "TEST[%d], failed.\n%s", i+1, tc.desc)
 	}
 }
 
-func Test_DefaultCase(t *testing.T) {
-	h := New(mockBind{})
+func TestService_GetBindError(t *testing.T) {
+	s, mockSvc, ctx := initializeTest(t)
 
-	ctx := gofr.NewContext(nil, nil, gofr.New())
-
-	_, err := h.Get(ctx, "vikash")
-	if err == nil {
-		t.Errorf("failed expected error got nil")
+	var bindErr = &errors.Response{
+		Code:   "Bind Error",
+		Reason: "failed to bind response",
+		Detail: errors.Error("bind error"),
 	}
+
+	tests := []struct {
+		desc     string
+		mockResp *svc.Response // mock response from get call
+	}{
+		{"error in binding error response", &svc.Response{StatusCode: http.StatusBadRequest, Body: []byte(`invalid body`)}},
+		{"error in binding data response", &svc.Response{StatusCode: http.StatusOK, Body: []byte(`invalid body`)}},
+	}
+
+	for i, tc := range tests {
+		mockSvc.EXPECT().Get(gomock.Any(), "user/Vikash", nil).Return(tc.mockResp, nil)
+		mockSvc.EXPECT().Bind(tc.mockResp.Body, gomock.Any()).Return(errors.Error("bind error"))
+
+		output, err := s.Get(ctx, "Vikash")
+
+		assert.Equal(t, bindErr, err, "TEST[%d], failed.\n%s", i, tc.desc)
+
+		assert.Equal(t, models.User{}, output, "TEST[%d], failed.\n%s", i, tc.desc)
+	}
+}
+
+type mockHTTPService struct {
+	*services.MockHTTPService // embed mock of HTTPService interface
+}
+
+// override the Bind method
+func (m mockHTTPService) Bind(resp []byte, i interface{}) error {
+	if err := json.Unmarshal(resp, i); err != nil {
+		return m.MockHTTPService.Bind(resp, i)
+	}
+
+	return nil
 }

@@ -2,6 +2,7 @@ package main
 
 import (
 	"net/http"
+	"net/http/httptest"
 	"testing"
 	"time"
 
@@ -9,6 +10,11 @@ import (
 )
 
 func TestIntegration(t *testing.T) {
+	ts := mockServer(t)
+	defer ts.Close()
+
+	t.Setenv("SAMPLE_API_URL", ts.URL)
+
 	go main()
 	time.Sleep(3 * time.Second)
 
@@ -17,8 +23,9 @@ func TestIntegration(t *testing.T) {
 		endpoint   string
 		statusCode int
 	}{
-		{"get with incomplete endpoint", "user/ ", http.StatusBadRequest},
-		{"get with invalid endpoint", "dummyendpoint", http.StatusNotFound},
+		{"successful get request", "user/Vikash ", http.StatusOK},
+		{"get with incomplete URL", "user/ ", http.StatusBadRequest},
+		{"get with invalid URL", "dummyendpoint", http.StatusNotFound},
 	}
 
 	for i, tc := range tests {
@@ -37,4 +44,23 @@ func TestIntegration(t *testing.T) {
 
 		_ = resp.Body.Close()
 	}
+}
+
+// mockServer mocks sample-api server
+func mockServer(t *testing.T) *httptest.Server {
+	return httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		w.Header().Set("Content-type", "application/json")
+
+		_, err := w.Write([]byte(`{
+				"data": {
+        			"name": "Vikash",
+        			"company": "ZopSmart"
+    			}
+			}`))
+
+		if err != nil {
+			t.Error("error in setting up mock server: failure in writing response")
+		}
+	}))
 }

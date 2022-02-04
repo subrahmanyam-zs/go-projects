@@ -14,7 +14,8 @@ type service struct {
 }
 
 // New is factory function for service layer
-func New(svc services.HTTPService) services.User {
+//nolint:revive // handler should not be used without proper initialization of the required dependency
+func New(svc services.HTTPService) service {
 	return service{svc: svc}
 }
 
@@ -24,28 +25,52 @@ func (s service) Get(ctx *gofr.Context, name string) (models.User, error) {
 		return models.User{}, err
 	}
 
-	switch resp.StatusCode {
-	case http.StatusOK:
-		body := struct {
-			Data models.User `json:"data"`
-		}{}
+	if resp.StatusCode != http.StatusOK {
+		return models.User{}, s.getErrorResponse(resp.Body, resp.StatusCode)
+	}
 
-		err = s.svc.Bind(resp.Body, &body)
-		if err == nil {
-			return body.Data, nil
-		}
-	default:
-		err := errors.MultipleErrors{Errors: []error{&errors.Response{}}}
+	var u models.User
 
-		e := s.svc.Bind(resp.Body, &err)
-		if e == nil {
-			return models.User{}, err
+	data := struct {
+		Data interface{} `json:"data"`
+	}{Data: &u}
+
+	err = s.bind(resp.Body, &data)
+	if err != nil {
+		return models.User{}, err
+	}
+
+	return u, nil
+}
+
+// getErrorResponse unmarshalls the error response and returns it.
+func (s service) getErrorResponse(body []byte, statusCode int) error {
+	resp := struct {
+		Errors []errors.Response `json:"errors"`
+	}{}
+
+	if err := s.bind(body, &resp); err != nil {
+		return err
+	}
+
+	err := errors.MultipleErrors{StatusCode: statusCode}
+	for i := range resp.Errors {
+		err.Errors = append(err.Errors, &resp.Errors[i])
+	}
+
+	return err
+}
+
+// bind unmarshalls response body to data and returns Bind Error if an error occurs.
+func (s service) bind(body []byte, data interface{}) error {
+	err := s.svc.Bind(body, data)
+	if err != nil {
+		return &errors.Response{
+			Code:   "Bind Error",
+			Reason: "failed to bind response",
+			Detail: err,
 		}
 	}
 
-	return models.User{}, &errors.Response{
-		StatusCode: http.StatusInternalServerError,
-		Code:       "BIND_ERROR",
-		Reason:     "failed to bind response from sample service",
-	}
+	return nil
 }

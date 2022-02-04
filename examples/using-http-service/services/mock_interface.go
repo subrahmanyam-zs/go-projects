@@ -5,18 +5,66 @@
 package services
 
 import (
-	"context"
-	"encoding/json"
-	"net/http"
+	context "context"
 	reflect "reflect"
-
-	"developer.zopsmart.com/go/gofr/pkg/errors"
-	"developer.zopsmart.com/go/gofr/pkg/service"
 
 	models "developer.zopsmart.com/go/gofr/examples/using-http-service/models"
 	gofr "developer.zopsmart.com/go/gofr/pkg/gofr"
+	service "developer.zopsmart.com/go/gofr/pkg/service"
 	gomock "github.com/golang/mock/gomock"
 )
+
+// MockHTTPService is a mock of HTTPService interface.
+type MockHTTPService struct {
+	ctrl     *gomock.Controller
+	recorder *MockHTTPServiceMockRecorder
+}
+
+// MockHTTPServiceMockRecorder is the mock recorder for MockHTTPService.
+type MockHTTPServiceMockRecorder struct {
+	mock *MockHTTPService
+}
+
+// NewMockHTTPService creates a new mock instance.
+func NewMockHTTPService(ctrl *gomock.Controller) *MockHTTPService {
+	mock := &MockHTTPService{ctrl: ctrl}
+	mock.recorder = &MockHTTPServiceMockRecorder{mock}
+	return mock
+}
+
+// EXPECT returns an object that allows the caller to indicate expected use.
+func (m *MockHTTPService) EXPECT() *MockHTTPServiceMockRecorder {
+	return m.recorder
+}
+
+// Bind mocks base method.
+func (m *MockHTTPService) Bind(resp []byte, i interface{}) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Bind", resp, i)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// Bind indicates an expected call of Bind.
+func (mr *MockHTTPServiceMockRecorder) Bind(resp, i interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Bind", reflect.TypeOf((*MockHTTPService)(nil).Bind), resp, i)
+}
+
+// Get mocks base method.
+func (m *MockHTTPService) Get(ctx context.Context, api string, params map[string]interface{}) (*service.Response, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Get", ctx, api, params)
+	ret0, _ := ret[0].(*service.Response)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// Get indicates an expected call of Get.
+func (mr *MockHTTPServiceMockRecorder) Get(ctx, api, params interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Get", reflect.TypeOf((*MockHTTPService)(nil).Get), ctx, api, params)
+}
 
 // MockUser is a mock of User interface.
 type MockUser struct {
@@ -54,33 +102,4 @@ func (m *MockUser) Get(ctx *gofr.Context, name string) (models.User, error) {
 func (mr *MockUserMockRecorder) Get(ctx, name interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Get", reflect.TypeOf((*MockUser)(nil).Get), ctx, name)
-}
-
-type MockHTTPService struct {
-	testID int
-}
-
-func New(testID int) MockHTTPService {
-	return MockHTTPService{testID: testID}
-}
-
-func (m MockHTTPService) Get(ctx context.Context, api string, params map[string]interface{}) (*service.Response, error) {
-	if m.testID == 0 {
-		return nil, errors.MultipleErrors{StatusCode: http.StatusInternalServerError, Errors: []error{errors.Error("core error")}}
-	}
-
-	resp := service.Response{
-		Body:       []byte(`{"data":{"name":"Vikash","company":"ZopSmart"}}`),
-		StatusCode: http.StatusOK,
-	}
-
-	return &resp, nil
-}
-
-func (m MockHTTPService) Bind(resp []byte, i interface{}) error {
-	if m.testID == 1 {
-		return errors.Error("bind error")
-	}
-
-	return json.Unmarshal(resp, &i)
 }
