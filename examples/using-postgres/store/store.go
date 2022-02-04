@@ -30,22 +30,24 @@ func (c customer) Get(ctx *gofr.Context) ([]model.Customer, error) {
 		return nil, errors.DB{Err: err}
 	}
 
-	defer func() {
-		_ = rows.Close()
-		_ = rows.Err() // or modify return value
-	}()
+	defer rows.Close()
 
 	customers := make([]model.Customer, 0)
 
 	for rows.Next() {
 		var c model.Customer
 
-		err := rows.Scan(&c.ID, &c.Name)
+		err = rows.Scan(&c.ID, &c.Name)
 		if err != nil {
-			return nil, err
+			return nil, errors.DB{Err: err}
 		}
 
 		customers = append(customers, c)
+	}
+
+	err = rows.Err()
+	if err != nil {
+		return nil, err
 	}
 
 	return customers, nil
