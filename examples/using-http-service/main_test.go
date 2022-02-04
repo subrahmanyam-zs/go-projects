@@ -22,7 +22,7 @@ func TestIntegration(t *testing.T) {
 	}
 
 	for i, tc := range tests {
-		req, _ := request.NewMock(http.MethodGet, "http://localhost:9091/"+tc.endpoint, nil)
+		req, _ := request.NewMock(http.MethodGet, "http://localhost:9096/"+tc.endpoint, nil)
 		c := http.Client{}
 
 		resp, err := c.Do(req)
