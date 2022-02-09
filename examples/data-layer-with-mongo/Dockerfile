@@ -8,5 +8,5 @@ RUN apk add --no-cache tzdata ca-certificates
 COPY /build/main /main
 COPY /configs /configs
 
-EXPOSE 9000
+EXPOSE 9097
 CMD ["/main"]
