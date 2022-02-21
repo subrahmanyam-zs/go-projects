@@ -81,6 +81,29 @@ func setTLSVersion(version string) uint16 {
 	return tls.VersionTLS12
 }
 
+func sqlDBConfigFromEnv(c Config) *datastore.DBConfig {
+	openC, _ := strconv.Atoi(c.Get("DB_MAX_OPEN_CONN"))
+	idleC, _ := strconv.Atoi(c.Get("DB_MAX_IDLE_CONN"))
+	connL, _ := strconv.Atoi(c.Get("DB_MAX_CONN_LIFETIME"))
+
+	return &datastore.DBConfig{
+		HostName:          c.Get("DB_HOST"),
+		Username:          c.Get("DB_USER"),
+		Password:          c.Get("DB_PASSWORD"),
+		Database:          c.Get("DB_NAME"),
+		Port:              c.Get("DB_PORT"),
+		Dialect:           c.Get("DB_DIALECT"),
+		SSL:               c.Get("DB_SSL"),
+		ORM:               c.Get("DB_ORM"),
+		CertificateFile:   c.Get("DB_CERTIFICATE_FILE"),
+		KeyFile:           c.Get("DB_KEY_FILE"),
+		ConnRetryDuration: getRetryDuration(c.Get("DB_CONN_RETRY")),
+		MaxOpenConn:       openC,
+		MaxIdleConn:       idleC,
+		MaxConnLife:       connL,
+	}
+}
+
 // mongoDBConfigFromEnv returns configuration from environment variables to client so it can connect to MongoDB
 func mongoDBConfigFromEnv(c Config) *datastore.MongoConfig {
 	enableSSl, _ := strconv.ParseBool(c.Get("MONGO_DB_ENABLE_SSL"))

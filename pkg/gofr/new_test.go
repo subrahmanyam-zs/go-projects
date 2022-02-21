@@ -150,7 +150,10 @@ func Test_initializeDB(t *testing.T) {
 
 		mockConfig := config.MockConfig{
 			Data: map[string]string{"DB_HOST": tc.host, "DB_USER": c.Get("DB_USER"), "DB_PASSWORD": c.Get("DB_PASSWORD"),
-				"DB_NAME": c.Get("DB_NAME"), "DB_PORT": tc.port, "DB_DIALECT": c.Get("DB_DIALECT"), "DB_ORM": tc.ORM},
+				"DB_NAME": c.Get("DB_NAME"), "DB_PORT": tc.port, "DB_DIALECT": c.Get("DB_DIALECT"), "DB_ORM": tc.ORM,
+				"DB_MAX_OPEN_CONN": c.Get("DB_MAX_OPEN_CONN"), "DB_MAX_IDLE_CONN": c.Get("DB_MAX_IDLE_CONN"),
+				"DB_MAX_CONN_LIFETIME": c.Get("DB_MAX_CONN_LIFETIME"),
+			},
 		}
 
 		k := NewWithConfig(&mockConfig)

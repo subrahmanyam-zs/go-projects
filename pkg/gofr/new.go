@@ -304,23 +304,11 @@ func initializeRedis(c Config, k *Gofr) {
 // initializeDB initializes the ORM object in the Gofr struct if the DB configuration is set
 // in the environment, in case of an error, it logs the error
 func initializeDB(c Config, k *Gofr) {
-	dc := datastore.DBConfig{
-		HostName:          c.Get("DB_HOST"),
-		Username:          c.Get("DB_USER"),
-		Password:          c.Get("DB_PASSWORD"),
-		Database:          c.Get("DB_NAME"),
-		Port:              c.Get("DB_PORT"),
-		Dialect:           c.Get("DB_DIALECT"),
-		SSL:               c.Get("DB_SSL"),
-		ORM:               c.Get("DB_ORM"),
-		CertificateFile:   c.Get("DB_CERTIFICATE_FILE"),
-		KeyFile:           c.Get("DB_KEY_FILE"),
-		ConnRetryDuration: getRetryDuration(c.Get("DB_CONN_RETRY")),
-	}
+	if c.Get("DB_HOST") != "" && c.Get("DB_PORT") != "" {
+		dc := sqlDBConfigFromEnv(c)
 
-	if dc.HostName != "" && dc.Port != "" {
 		if strings.EqualFold(dc.ORM, "SQLX") {
-			db, err := datastore.NewSQLX(&dc)
+			db, err := datastore.NewSQLX(dc)
 			k.SetORM(db)
 
 			k.DatabaseHealth = append(k.DatabaseHealth, k.SQLXHealthCheck)
@@ -329,7 +317,7 @@ func initializeDB(c Config, k *Gofr) {
 				k.Logger.Errorf("could not connect to DB, HOST: %s, PORT: %s, Dialect: %s, error: %v\n",
 					dc.HostName, dc.Port, dc.Dialect, err)
 
-				go sqlxRetry(&dc, k)
+				go sqlxRetry(dc, k)
 
 				return
 			}
@@ -339,7 +327,7 @@ func initializeDB(c Config, k *Gofr) {
 			return
 		}
 
-		db, err := datastore.NewORM(&dc)
+		db, err := datastore.NewORM(dc)
 		k.SetORM(db)
 
 		k.DatabaseHealth = append(k.DatabaseHealth, k.SQLHealthCheck)
@@ -348,7 +336,7 @@ func initializeDB(c Config, k *Gofr) {
 			k.Logger.Errorf("could not connect to DB, HostName: %s, Port: %s, Dialect: %s, error: %v\n",
 				dc.HostName, dc.Port, dc.Dialect, err)
 
-			go ormRetry(&dc, k)
+			go ormRetry(dc, k)
 
 			return
 		}

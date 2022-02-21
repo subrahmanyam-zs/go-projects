@@ -58,6 +58,9 @@ type DBConfig struct {
 	CertificateFile   string
 	KeyFile           string
 	ConnRetryDuration int
+	MaxOpenConn       int
+	MaxIdleConn       int
+	MaxConnLife       int
 }
 
 type GORMClient struct {
@@ -106,18 +109,8 @@ var (
 	_ = prometheus.Register(sqlInUse)
 )
 
-func pushConnMetrics(database, hostname string, db *sql.DB) {
-	for {
-		stats := db.Stats()
-		sqlOpen.WithLabelValues(database, hostname).Set(float64(stats.OpenConnections))
-		sqlIdle.WithLabelValues(database, hostname).Set(float64(stats.Idle))
-		sqlInUse.WithLabelValues(database, hostname).Set(float64(stats.InUse))
-		time.Sleep(pushMetricDuration * time.Millisecond)
-	}
-}
-
 // NewORM returns a new ORM object if the config is correct, otherwise it returns the error thrown
-func NewORM(config *DBConfig) (GORMClient, error) {
+func NewORM(cfg *DBConfig) (GORMClient, error) {
 	validDialects := map[string]bool{
 		"mysql":    true,
 		"mssql":    true,
@@ -125,11 +118,11 @@ func NewORM(config *DBConfig) (GORMClient, error) {
 		"sqlite":   true,
 	}
 
-	if _, ok := validDialects[config.Dialect]; !ok {
-		return GORMClient{config: config}, invalidDialect{}
+	if _, ok := validDialects[cfg.Dialect]; !ok {
+		return GORMClient{config: cfg}, invalidDialect{}
 	}
 
-	connectionStr := formConnectionStr(config)
+	connectionStr := formConnectionStr(cfg)
 
 	var (
 		db  *gorm.DB
@@ -137,9 +130,9 @@ func NewORM(config *DBConfig) (GORMClient, error) {
 		d   gorm.Dialector
 	)
 
-	driverName := registerDialect(config.Dialect)
+	driverName := registerDialect(cfg.Dialect)
 
-	switch config.Dialect {
+	switch cfg.Dialect {
 	case mySQL:
 		d = mysql.New(mysql.Config{DriverName: driverName, DSN: connectionStr})
 	case pgSQL:
@@ -150,20 +143,22 @@ func NewORM(config *DBConfig) (GORMClient, error) {
 		// driverName is not added to the config. Currently, it breaks migrations for sqlserver.
 		d = sqlserver.New(sqlserver.Config{DSN: connectionStr})
 	default:
-		return GORMClient{config: config}, errors.DB{}
+		return GORMClient{config: cfg}, errors.DB{}
 	}
 
 	db, err = dbConnection(d)
 	if err != nil {
-		return GORMClient{config: config}, err
+		return GORMClient{config: cfg}, err
 	}
 
 	sqlDB, err := db.DB()
 	if err == nil {
-		go pushConnMetrics(config.Database, config.HostName, sqlDB)
+		setPoolConnConfigs(cfg, sqlDB)
+
+		go pushConnMetrics(cfg.Database, cfg.HostName, sqlDB)
 	}
 
-	return GORMClient{DB: db, config: config}, err
+	return GORMClient{DB: db, config: cfg}, err
 }
 
 // NewORMFromEnv fetches the config from environment variables and returns a new ORM object if the config was
@@ -182,17 +177,19 @@ type SQLXClient struct {
 }
 
 // NewSQLX returns a new sqlx.DB object if the given config is correct, otherwise throws an error
-func NewSQLX(config *DBConfig) (SQLXClient, error) {
-	connectionStr := formConnectionStr(config)
+func NewSQLX(cfg *DBConfig) (SQLXClient, error) {
+	connectionStr := formConnectionStr(cfg)
 
-	DB, err := sqlx.Connect(config.Dialect, connectionStr)
+	db, err := sqlx.Connect(cfg.Dialect, connectionStr)
 	if err != nil {
-		return SQLXClient{config: config}, err
+		return SQLXClient{config: cfg}, err
 	}
 
-	go pushConnMetrics(config.Database, config.HostName, DB.DB)
+	setPoolConnConfigs(cfg, db.DB)
 
-	return SQLXClient{DB: DB, config: config}, err
+	go pushConnMetrics(cfg.Database, cfg.HostName, db.DB)
+
+	return SQLXClient{DB: db, config: cfg}, nil
 }
 
 // dbConfigFromEnv fetches the DBConfig from environment
@@ -309,4 +306,22 @@ func registerDialect(dialect string) (driverName string) {
 	}
 
 	return
+}
+
+// pushConnMetrics pushes SQL connection pool values to metrics for every 100 millisecond
+func pushConnMetrics(database, hostname string, db *sql.DB) {
+	for {
+		stats := db.Stats()
+		sqlOpen.WithLabelValues(database, hostname).Set(float64(stats.OpenConnections))
+		sqlIdle.WithLabelValues(database, hostname).Set(float64(stats.Idle))
+		sqlInUse.WithLabelValues(database, hostname).Set(float64(stats.InUse))
+		time.Sleep(pushMetricDuration * time.Millisecond)
+	}
+}
+
+// setPoolConnConfigs sets the SQL connection pool values to database/sql pkg
+func setPoolConnConfigs(cfg *DBConfig, db *sql.DB) {
+	db.SetMaxOpenConns(cfg.MaxOpenConn)
+	db.SetMaxIdleConns(cfg.MaxIdleConn)
+	db.SetConnMaxLifetime(time.Duration(cfg.MaxConnLife) * time.Second)
 }

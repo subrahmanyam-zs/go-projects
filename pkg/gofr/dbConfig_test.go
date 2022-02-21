@@ -310,6 +310,7 @@ func Test_getElasticSearchConfigFromEnv(t *testing.T) {
 		}
 	}
 }
+
 func Test_AWSSNSConfigFromEnv(t *testing.T) {
 	expectedConfig := awssns.Config{
 		AccessKeyID:     "AKIswe",
@@ -331,4 +332,43 @@ func Test_AWSSNSConfigFromEnv(t *testing.T) {
 	})
 
 	assert.Equal(t, expectedConfig, snsConfig)
+}
+
+func Test_sqlDBConfigFromEnv(t *testing.T) {
+	var (
+		mc1 = &config.MockConfig{Data: map[string]string{"DB_HOST": "localhost", "DB_USER": "root", "DB_PASSWORD": "root123",
+			"DB_NAME": "mysql", "DB_PORT": "3306", "DB_DIALECT": "mysql", "DB_MAX_OPEN_CONN": "10", "DB_MAX_IDLE_CONN": "10",
+			"DB_CONN_RETRY": "5", "DB_MAX_CONN_LIFETIME": "100"}}
+		mc2 = &config.MockConfig{Data: map[string]string{"DB_HOST": "localhost", "DB_USER": "root", "DB_PASSWORD": "root123",
+			"DB_NAME": "mysql", "DB_PORT": "3306", "DB_DIALECT": "mysql", "DB_MAX_OPEN_CONN": "abc", "DB_MAX_IDLE_CONN": "20",
+			"DB_CONN_RETRY": "5", "DB_MAX_CONN_LIFETIME": "100"}}
+		mc3 = &config.MockConfig{Data: map[string]string{"DB_HOST": "localhost", "DB_USER": "root", "DB_PASSWORD": "root123",
+			"DB_NAME": "mysql", "DB_PORT": "3306", "DB_DIALECT": "mysql", "DB_MAX_OPEN_CONN": "56.78", "DB_MAX_IDLE_CONN": "20.22",
+			"DB_CONN_RETRY": "5", "DB_MAX_CONN_LIFETIME": "100.30"}}
+		c1 = &datastore.DBConfig{HostName: "localhost", Username: "root",
+			Password: "root123", Database: "mysql", Port: "3306", Dialect: "mysql", ConnRetryDuration: 5, MaxOpenConn: 10,
+			MaxIdleConn: 10, MaxConnLife: 100}
+		c2 = &datastore.DBConfig{HostName: "localhost", Username: "root",
+			Password: "root123", Database: "mysql", Port: "3306", Dialect: "mysql", ConnRetryDuration: 5, MaxOpenConn: 0,
+			MaxIdleConn: 20, MaxConnLife: 100}
+		c3 = &datastore.DBConfig{HostName: "localhost", Username: "root",
+			Password: "root123", Database: "mysql", Port: "3306", Dialect: "mysql", ConnRetryDuration: 5, MaxOpenConn: 0,
+			MaxIdleConn: 0, MaxConnLife: 0}
+	)
+
+	testcases := []struct {
+		desc     string
+		input    *config.MockConfig
+		expDBCfg *datastore.DBConfig
+	}{
+		{"valid configs", mc1, c1},
+		{"invalid config for DB_MAX_OPEN_CONN", mc2, c2},
+		{"invalid configs for sql connection pool", mc3, c3},
+	}
+
+	for i, tc := range testcases {
+		cfg := sqlDBConfigFromEnv(tc.input)
+
+		assert.Equal(t, tc.expDBCfg, cfg, "TEST[%d], failed.\n%s", i, tc.desc)
+	}
 }
