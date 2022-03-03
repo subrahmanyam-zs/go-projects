@@ -644,12 +644,12 @@ func TestSeeder_resetIdentitySequence(t *testing.T) {
 			Port:     c.Get("MSSQL_PORT"),
 			Dialect:  "mssql",
 		}, `IF NOT EXISTS
-	(  SELECT [name]
-		FROM sys.tables
-      WHERE [name] = 'dummy'
-   ) CREATE TABLE dummy (id int primary key identity(1,1),
-	   name varchar (50))
-	`, true},
+		(  SELECT [name]
+			FROM sys.tables
+		 WHERE [name] = 'dummy'
+		) CREATE TABLE dummy (id int primary key identity(1,1),
+		 name varchar (50))
+		`, true},
 		{
 			DBConfig{
 				HostName: c.Get("DB_HOST"),
@@ -659,11 +659,11 @@ func TestSeeder_resetIdentitySequence(t *testing.T) {
 				Port:     c.Get("DB_PORT"),
 				Dialect:  mySQL,
 			}, `
- 	   CREATE TABLE IF NOT EXISTS dummy (
-	   id int auto_increment,
-	   name varchar (50),
-	   PRIMARY KEY (id))
-	`, true},
+		 CREATE TABLE IF NOT EXISTS dummy (
+		 id int auto_increment,
+		 name varchar (50),
+		 PRIMARY KEY (id))
+		`, true},
 	}
 
 	for _, tc := range testcases {

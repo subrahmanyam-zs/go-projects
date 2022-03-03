@@ -208,22 +208,22 @@ func dbConfigFromEnv() *DBConfig {
 }
 
 // formConnection string forms a DB connection string based on the DB Dialect and the given configuration
-func formConnectionStr(config *DBConfig) string {
-	switch config.Dialect {
+func formConnectionStr(cfg *DBConfig) string {
+	switch cfg.Dialect {
 	case "postgres":
-		ssl := strings.ToLower(config.SSL)
+		ssl := strings.ToLower(cfg.SSL)
 		if ssl == "" {
-			config.SSL = "disable"
+			cfg.SSL = "disable"
 		}
 
-		return fmt.Sprintf("host=%s port=%s user=%s dbname=%s password=%s sslmode=%s sslkey=%s sslcert=%s",
-			config.HostName, config.Port, config.Username, config.Database, config.Password, config.SSL, config.KeyFile, config.CertificateFile)
+		return fmt.Sprintf("postgres://%v@%v:%v/%v?password=%v&sslmode=%v&sslcert=%v&sslkey=%v",
+			cfg.Username, cfg.HostName, cfg.Port, cfg.Database, cfg.Password, cfg.SSL, cfg.CertificateFile, cfg.KeyFile)
 	case "mssql":
 		return fmt.Sprintf("sqlserver://%s:%s@%s:%s?database=%s",
-			config.Username, config.Password, config.HostName, config.Port, config.Database)
+			cfg.Username, cfg.Password, cfg.HostName, cfg.Port, cfg.Database)
 	default: // defaults to mysql
 		return fmt.Sprintf("%s:%s@tcp(%s:%s)/%s?charset=utf8&parseTime=True&loc=Local",
-			config.Username, config.Password, config.HostName, config.Port, config.Database)
+			cfg.Username, cfg.Password, cfg.HostName, cfg.Port, cfg.Database)
 	}
 }
 
