@@ -11,7 +11,7 @@ env:
 jobs:
   Build-and-Test:
     name: Build and Test Sample-api
-    runs-on: [self-hosted, linux, centos7, docker, git, gcc]
+    runs-on: [self-hosted, linux]
     steps:
       - name: Set up Go 1.17
         uses: actions/setup-go@v2
@@ -35,18 +35,24 @@ jobs:
           mkdir build
           go test ./... -v
 
-      - name: Build
-        run: |
-          cd examples/sample-api
-          go build -tags musl -ldflags "-linkmode external" -o main
-
       - name: GolangCI-Lint
         run: |
           cd examples/sample-api
           golangci-lint run --timeout 5m0s
 
+      - name: Build
+        run: |
+          cd examples/sample-api
+          go build -tags musl -ldflags "-linkmode external" -o main
+
+      - name: Upload binary to artifact
+        uses: actions/upload-artifact@v2
+        with:
+          name: app-binary
+          path: main
+
   Dockerize:
-    runs-on: [self-hosted, linux, centos7, docker, git, gcc]
+    runs-on: [self-hosted, linux]
     steps:
       - name: Set up Go 1.17
         uses: actions/setup-go@v2
@@ -57,9 +63,11 @@ jobs:
       - name: Checkout code into go module directory
         uses: actions/checkout@v2
 
-      - name: Build
-        run: |
-          go build -tags musl -ldflags "-linkmode external" -o main
+      - name: Download binary from artifact
+        uses: actions/download-artifact@v2
+        with:
+          name: app-binary
+          path: main
 
       - name: Build and Push docker image to AWS ECR
         uses: docker://ghcr.io/kciter/aws-ecr-action:latest
@@ -75,7 +83,7 @@ jobs:
 
   Deploy-on-Dev:
     needs: Dockerize
-    runs-on: [ self-hosted, linux, centos7 ]
+    runs-on: [ self-hosted, linux ]
     steps:
       - name: Trigger harness pipeline for deployment on DEV environment
         run: |
@@ -85,7 +93,7 @@ jobs:
 
   Deploy-on-QA:
     needs: Dockerize
-    runs-on: [ self-hosted, linux, centos7 ]
+    runs-on: [ self-hosted, linux ]
     steps:
       - name: Trigger harness pipeline for deployment on QA environment
         run: |
