@@ -9,9 +9,6 @@ func main() {
 	// create the application object
 	app := gofr.New()
 
-	// enabling /swagger endpoint for Swagger UI
-	app.EnableSwaggerUI()
-
 	// add a handler
 	app.GET("/hello-world", handler.HelloWorld)
 

@@ -277,8 +277,8 @@ func TestSwaggerUIHandler(t *testing.T) {
 	// Added contextInjector middleware
 	k.Server.Router.Use(k.Server.contextInjector)
 
-	k.GET("/swagger", SwaggerUIHandler)
-	k.GET("/swagger/{name}", SwaggerUIHandler)
+	k.GET("/.well-known/swagger", SwaggerUIHandler)
+	k.GET("/.well-known/swagger/{name}", SwaggerUIHandler)
 
 	createSampleOpenAPI()
 
@@ -298,7 +298,7 @@ func TestSwaggerUIHandler(t *testing.T) {
 	}
 
 	for _, resource := range resourceList {
-		url := "http://localhost:3395/" + resource.resource
+		url := "http://localhost:3395/.well-known/" + resource.resource
 		req, _ := http.NewRequest(http.MethodGet, url, http.NoBody)
 
 		w := httptest.NewRecorder()

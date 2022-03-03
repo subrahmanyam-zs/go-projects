@@ -121,23 +121,6 @@ func TestGofr_Start(t *testing.T) {
 	}
 }
 
-func TestGofr_EnableSwaggerUI(t *testing.T) {
-	k := New()
-	// Added contextInjector middleware
-	k.Server.Router.Use(k.Server.contextInjector)
-
-	k.EnableSwaggerUI()
-
-	w := httptest.NewRecorder()
-	r, _ := request.NewMock(http.MethodGet, "/swagger", nil)
-
-	k.Server.Router.ServeHTTP(w, r)
-
-	if w.Code != 200 {
-		t.Errorf("Expected 200 but got: %v", w.Code)
-	}
-}
-
 func TestGofrUseMiddleware(t *testing.T) {
 	k := New()
 	mws := []Middleware{

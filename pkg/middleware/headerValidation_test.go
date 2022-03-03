@@ -234,7 +234,7 @@ func Test_ExemptPath(t *testing.T) {
 		{&http.Request{URL: &url.URL{Host: "http://localhost:8000", Path: "/v1/metrics"}}, true},
 		{&http.Request{URL: &url.URL{Host: "http://localhost:8000", Path: "/dummy"}}, false},
 		{&http.Request{URL: &url.URL{Host: "http://localhost:8000", Path: "/v1/.well-known/heartbeat"}}, true},
-		{&http.Request{URL: &url.URL{Host: "http://localhost:8000", Path: "/v3/swagger"}}, true},
+		{&http.Request{URL: &url.URL{Host: "http://localhost:8000", Path: "/v3/.well-known/swagger"}}, true},
 		{&http.Request{URL: &url.URL{Host: "http://localhost:8000", Path: "/metrics"}}, true},
 		{&http.Request{URL: &url.URL{Host: "http://localhost:8000", Path: "/v2/.well-known/openapi.json"}}, true},
 	}

@@ -136,6 +136,9 @@ func (s *server) Start(logger log.Logger) {
 	s.Router.Route(http.MethodGet, "/.well-known/health-check", HealthHandler)
 	s.Router.Route(http.MethodGet, "/.well-known/heartbeat", HeartBeatHandler)
 	s.Router.Route(http.MethodGet, "/.well-known/openapi.json", OpenAPIHandler)
+	// routes for swagger-endpoints.
+	s.Router.Route(http.MethodGet, "/.well-known/swagger", SwaggerUIHandler)
+	s.Router.Route(http.MethodGet, "/.well-known/swagger/{name}", SwaggerUIHandler)
 
 	s.handleMetrics(logger)
 
