@@ -50,8 +50,35 @@ jobs:
         with:
           name: app-binary
           path: main
+  scans :
+    needs: Build-and-Test
+    name: all scans
+    runs-on: [self-hosted, Linux, X64]
+    steps:
+      - name: Sonar scan and upload report
+        run: |
+          export PATH=$PATH:/opt/sonarqube/sonar-runner/sonar-scanner-4.6.2.2472-linux/bin
+          sonar-scanner \
+               -Dsonar.password=${{ secrets.SONAR_PWD }}\
+               -Dsonar.login=${{ secrets.SONAR_USER }}
+
+      - name: Sonar scan browse url
+        run: echo "http://10.95.114.134:9000/dashboard?id=cnsr-gofr"
+
+      - name: Fortify Scan
+        run: |
+          export PATH=$PATH:/opt/fortify/fortify-base/bin
+          sourceanalyzer -b 1 -scan -f scan.fpr
+          BIRTReportGenerator -template "DISA STIG" -source scan.fpr -format PDF -output scan.pdf -showSuppressed -showHidden
+
+      - name: Upload fortify
+        uses: actions/upload-artifact@v2
+        with:
+          name: Fortify
+          path: scan.pdf
 
   Dockerize:
+    needs: scans
     runs-on: [self-hosted, linux]
     steps:
       - name: Set up Go 1.17
