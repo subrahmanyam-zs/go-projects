@@ -66,6 +66,7 @@ const (
 
 // nolint:lll,gocognit,gocyclo,funlen  // cannot reduce the number of lines since there are many parameters.
 func (h *httpService) call(ctx context.Context, method, target string, params map[string]interface{}, body []byte, headers map[string]string) (*Response, error) {
+	target = strings.TrimLeft(target, "/")
 	correlationID, _ := ctx.Value(middleware.CorrelationIDKey).(string)
 	appData := getAppData(ctx)
 
@@ -225,7 +226,6 @@ func getAppData(ctx context.Context) map[string]interface{} {
 // the endpoint and the method for the request are defined from the parameters provided to the function
 // nolint:lll,gocognit // cannot reduce the number of lines since there are many parameters.
 func (h *httpService) createReq(ctx context.Context, method, target string, params map[string]interface{}, body []byte, headers map[string]string) (*http.Request, error) {
-	target = strings.TrimLeft(target, "/")
 	uri := h.url + "/" + target
 
 	if target == "" {
