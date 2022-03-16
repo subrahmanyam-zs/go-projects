@@ -135,7 +135,7 @@ func (h *httpService) call(ctx context.Context, method, target string, params ma
 			break
 		}
 		// add url, method, statusCode and duration in prometheus metric
-		httpServiceResponse.WithLabelValues(h.url+"/"+target, method, fmt.Sprintf("%d", statusCode)).Observe(time.Since(start).Seconds())
+		httpServiceResponse.WithLabelValues(h.url, method, fmt.Sprintf("%d", statusCode)).Observe(time.Since(start).Seconds())
 
 		if err != nil {
 			return nil, err
@@ -194,7 +194,7 @@ func (h *httpService) preCall(method, target, correlationID string, params, appD
 	h.mu.Unlock()
 
 	if err != nil {
-		httpServiceResponse.WithLabelValues(h.url+"/"+target, method, fmt.Sprintf("%d", statusCode)).Observe(time.Since(start).Seconds())
+		httpServiceResponse.WithLabelValues(h.url, method, fmt.Sprintf("%d", statusCode)).Observe(time.Since(start).Seconds())
 		h.logError(&errorLog{CorrelationID: correlationID, Method: method, URI: h.url + "/" + target, Params: params,
 			Message: err.Error(), AppData: appData}, headers, start, authorizationHeader)
 
