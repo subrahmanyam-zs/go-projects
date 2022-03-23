@@ -111,7 +111,9 @@ func (h *httpService) call(ctx context.Context, method, target string, params ma
 		)
 
 		for i := 0; i <= h.numOfRetries; i++ {
-			resp, err = h.Do(req) //nolint:bodyclose // body is being closed after call response is logged
+			req.Body = io.NopCloser(bytes.NewReader(body)) // reset Request.Body
+
+			resp, err = h.Do(req) // nolint:bodyclose // body is being closed after call response is logged
 			if resp != nil {
 				statusCode = resp.StatusCode
 			}

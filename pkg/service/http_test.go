@@ -178,6 +178,35 @@ func TestService_GetRetry(t *testing.T) {
 	}
 }
 
+// The TestService_CustomPostRetryBodyError function is testing the http service retry mechanism for repeated requests having a body
+func TestService_CustomRetryRequestBodyError(t *testing.T) {
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		_, _ = w.Write([]byte(`"data":"hello"`))
+	}))
+
+	// creating a new service call with test-server url , mock logger and number of retries
+	h := NewHTTPServiceWithOptions(ts.URL, log.NewMockLogger(io.Discard), &Options{NumOfRetries: 3})
+	h.CustomRetry = func(logger log.Logger, err error, statusCode, attemptCount int) bool {
+		if statusCode == http.StatusCreated {
+			return false
+		}
+
+		if err != nil && attemptCount < 2 {
+			logger.Errorf("Retrying because of err: ", err)
+			return true
+		}
+
+		return true
+	}
+
+	_, err := h.Post(context.Background(), "/dummy", nil, []byte(`{"name":"gofr"}`))
+
+	ts.Close()
+
+	// error should occur if io.NopCloser is not used for req.Body inside custom-Retry func. Error: "http: ContentLength=15 with Body length 0"
+	assert.NoError(t, err)
+}
+
 func TestServiceLog_String(t *testing.T) {
 	l := &callLog{
 		Method:  http.MethodGet,
