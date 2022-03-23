@@ -160,4 +160,4 @@ jobs:
           go get -v -t -d ./...
       - name: GolangCI-Lint
         run: |
-          golangci-lint run --timeout 5m0s
+          golangci-lint run --timeout 9m0s
