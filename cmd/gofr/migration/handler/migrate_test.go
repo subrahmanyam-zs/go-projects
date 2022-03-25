@@ -207,18 +207,16 @@ func Test_runMigration(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		tt := tt
-		t.Run(tt.name, func(t *testing.T) {
-			got, err := runMigration(mockFS, tt.args.method, tt.args.db, nil)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("runMigration() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
+		got, err := runMigration(mockFS, tt.args.method, tt.args.db, nil)
 
-			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("runMigration() got = %v, want %v", got, tt.want)
-			}
-		})
+		if (err != nil) != tt.wantErr {
+			t.Errorf("runMigration() error = %v, wantErr %v", err, tt.wantErr)
+			return
+		}
+
+		if !reflect.DeepEqual(got, tt.want) {
+			t.Errorf("runMigration() got = %v, want %v", got, tt.want)
+		}
 	}
 }
 

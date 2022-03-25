@@ -5,7 +5,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/go-sql-driver/mysql"
 	"github.com/stretchr/testify/assert"
 
 	"gorm.io/gorm"
@@ -35,7 +34,10 @@ func Test_Run(t *testing.T) {
 	g := initTests()
 
 	defer func() {
-		_ = g.db.Migrator().DropTable("gofr_migrations")
+		err := g.db.Migrator().DropTable("gofr_migrations")
+		if err != nil {
+			t.Errorf("Unexpected Error while dropping gofr-migrations. %v", err)
+		}
 	}()
 
 	tests := []struct {
@@ -63,17 +65,17 @@ func Test_preRun(t *testing.T) {
 	createTable(t, g.db)
 
 	defer func() {
-		_ = g.txn.Migrator().DropTable("gofr_migrations")
+		err := g.txn.Migrator().DropTable("gofr_migrations")
+		if err != nil {
+			t.Errorf("Unexpected Error while dropping gofr-migrations. %v", err)
+		}
 	}()
 
 	insertMigration(t, g.txn, &gofrMigration{App: "gofr-app", Version: int64(20180324120906), StartTime: now, EndTime: now, Method: "UP"})
 
 	expErr := &errors.Response{
-		Reason: "unable to insert migration start time",
-		Detail: &mysql.MySQLError{
-			Number:  uint16(1062),
-			Message: "Duplicate entry 'gofr-app-20180324120906-UP' for key 'gofr_migrations.PRIMARY'",
-		},
+		Reason: "unable to insert values into  gofr_migrations table.",
+		Detail: "Error 1062: Duplicate entry 'gofr-app-20180324120906-UP' for key 'gofr_migrations.PRIMARY'",
 	}
 
 	err := g.preRun("gofr-app", "UP", "20180324120906")
@@ -98,7 +100,10 @@ func Test_isDirty(t *testing.T) {
 	createTable(t, g.db)
 
 	defer func() {
-		_ = g.db.Migrator().DropTable("gofr_migrations")
+		err := g.db.Migrator().DropTable("gofr_migrations")
+		if err != nil {
+			t.Errorf("Unexpected Error while dropping gofr-migrations. %v", err)
+		}
 	}()
 
 	insertMigration(t, g.db, &gofrMigration{App: "gofr-app", Version: int64(20180324120906), StartTime: time.Now().UTC(), Method: "UP"})
@@ -117,7 +122,10 @@ func Test_LastRunVersion(t *testing.T) {
 	createTable(t, g.db)
 
 	defer func() {
-		_ = g.db.Migrator().DropTable("gofr_migrations")
+		err := g.db.Migrator().DropTable("gofr_migrations")
+		if err != nil {
+			t.Errorf("Unexpected Error while dropping gofr-migrations. %v", err)
+		}
 	}()
 
 	insertMigration(t, g.db, &gofrMigration{App: "gofr-app", Version: int64(20180324120906), StartTime: now, EndTime: now, Method: "UP"})
@@ -136,7 +144,10 @@ func Test_GetAllMigrations(t *testing.T) {
 	createTable(t, g.db)
 
 	defer func() {
-		_ = g.db.Migrator().DropTable("gofr_migrations")
+		err := g.db.Migrator().DropTable("gofr_migrations")
+		if err != nil {
+			t.Errorf("Unexpected Error while dropping gofr-migrations. %v", err)
+		}
 	}()
 
 	insertMigration(t, g.db, &gofrMigration{App: "gofr-app", Version: int64(20180324120906), StartTime: now, EndTime: now, Method: "UP"})
@@ -157,7 +168,10 @@ func Test_GetAllMigrationsError(t *testing.T) {
 	createMockTable(t, g.db)
 
 	defer func() {
-		_ = g.db.Migrator().DropTable("gofr_migrations")
+		err := g.db.Migrator().DropTable("gofr_migrations")
+		if err != nil {
+			t.Errorf("Unexpected Error while dropping gofr-migrations. %v", err)
+		}
 	}()
 
 	up, down := g.GetAllMigrations("gofr-app")
@@ -185,7 +199,14 @@ func insertMigration(t *testing.T, g *gorm.DB, mig *gofrMigration) {
 }
 
 func createTable(t *testing.T, g *gorm.DB) {
-	err := g.Migrator().CreateTable(&gofrMigration{})
+	tx, err := g.DB()
+	assert.NoError(t, err)
+
+	// ensures the gofr_migrations table is dropped if exists in DB
+	_, err = tx.Exec("DROP TABLE IF EXISTS gofr_migrations")
+	assert.NoError(t, err)
+
+	err = g.Migrator().CreateTable(&gofrMigration{})
 	if err != nil {
 		t.Error(err)
 	}
@@ -196,7 +217,14 @@ func createMockTable(t *testing.T, g *gorm.DB) {
 		App string `gorm:"primary_key"`
 	}
 
-	err := g.Migrator().CreateTable(&gofrMigration{})
+	tx, err := g.DB()
+	assert.NoError(t, err)
+
+	// ensures the gofr_migrations table is dropped if exists in DB
+	_, err = tx.Exec("DROP TABLE IF EXISTS gofr_migrations")
+	assert.NoError(t, err)
+
+	err = g.Migrator().CreateTable(&gofrMigration{})
 	if err != nil {
 		t.Error(err)
 	}

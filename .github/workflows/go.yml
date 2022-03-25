@@ -3,11 +3,21 @@ on:
   pull_request:
     branches:
       - "*"
-
 jobs:
+  cleanup:
+    runs-on: self-hosted
+    container:
+      image: ubuntu:latest
+    steps:
+      - name: Cleaning up the $GITHUB_WORKSPACE as root from a Docker image
+        # Volume auto mounted by gh actions pointing to the current working-directory
+        run: find /__w/${{ github.event.repository.name }}/${{ github.event.repository.name }}/. -name . -o -prune -exec rm -rf -- {} + || true
+
   setup:
+    needs: cleanup
     name: Test and Code Quality
-    runs-on: [self-hosted, linux]
+    runs-on: [ self-hosted, linux ]
+
     services:
       mysql:
         image: mysql:latest
@@ -23,7 +33,7 @@ jobs:
         options: "--entrypoint redis-server"
 
       zipkin:
-        image: openzipkin/zipkin
+        image: openzipkin/zipkin:2
         ports:
           - "9411:9411"
 
@@ -110,24 +120,25 @@ jobs:
 
       - name: Load Schema of Solr
         run: |
+          docker rm -f /solr
+          sleep 10s;
           docker run -d --name solr -p 8983:8983 solr:8 -DzkRun;
           sleep 10s;
           docker exec -i solr sh < .github/setups/solrSchema.sh;
 
-      - name: Yugabyte setup
-        uses: yugabyte/yugabyte-db-action@master
-        with:
-          yb_master_ui_port: 7000
-          yb_tserver_ui_port: 6000
-          ysql_port: 5433
-          ycql_port: 9042
+      - name: Set up YugabyteDB
+        run: |
+          docker rm -f /gofr-yugabyte
+          sleep 10s;
+          docker run --network="host" --name gofr-yugabyte -p7000:7000 -p6000:6000 -p5433:5433 -p9042:9042 -d yugabytedb/yugabyte:latest bin/yugabyted start --daemon=false
 
       - name: Load Schema of YCQL
         run: |
           temp=$(sudo docker ps | grep yugabyte | awk '{print $1}');
+          sleep 10s;
           docker exec -i $temp /home/yugabyte/bin/ycqlsh < .github/setups/keyspace.ycql;
 
-      - name: Fetch dependencies
+      - name: Get dependencies
         run: |
           git config --global url."https://${{ secrets.PAT}}:x-oauth-basic@github-lvs.corpzone.internalzone.com/".insteadOf "https://github-lvs.corpzone.internalzone.com/"
           git config --global http.sslVerify false
@@ -148,9 +159,9 @@ jobs:
 
       - name: Setup linter
         run: |
-          curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin v1.43.0
+          curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin v1.44.0
           golangci-lint --version
 
       - name: Linter Check
         run: |
-          golangci-lint run --timeout 5m0s
+          golangci-lint run --timeout 9m0s

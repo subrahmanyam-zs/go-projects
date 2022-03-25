@@ -31,11 +31,11 @@ func TestIntegration(t *testing.T) {
 	}{
 		{"valid request", http.MethodGet, "hello", nil, http.StatusOK},
 		{"valid request", http.MethodPost, "greet", []byte(`{"name":"test"}`), http.StatusCreated},
-		{"unknown route", http.MethodDelete, "hello", nil, http.StatusNotFound},
+		{"unknown route", http.MethodDelete, "invalidRoute", nil, http.StatusNotFound},
 	}
 
 	for i, test := range tests {
-		req, _ := http.NewRequest(test.method, "http://localhost:9005/"+test.endPoint, bytes.NewBuffer(test.body))
+		req, _ := http.NewRequest(test.method, "http://localhost:4000/"+test.endPoint, bytes.NewBuffer(test.body))
 		headers := csp.GetCSPHeaders(req)
 
 		// set csp security headers

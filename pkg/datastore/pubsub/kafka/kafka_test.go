@@ -184,6 +184,36 @@ func Test_PubSub(t *testing.T) {
 	Subscribe(t, k)
 }
 
+// Test_PubSubWithOffset check the subscribe operation with custom initial offset value.
+func Test_PubSubWithOffset(t *testing.T) {
+	t.Skip("skipping testing in short mode")
+
+	logger := log.NewLogger()
+	c := config.NewGoDotEnvProvider(logger, "../../../../configs")
+	topic := c.Get("KAFKA_TOPIC")
+	// prereqisite
+	k, err := New(&Config{
+		Brokers:        c.Get("KAFKA_HOSTS"),
+		Topics:         []string{topic},
+		InitialOffsets: OffsetOldest,
+		GroupID:        "testing-consumerGroup",
+		Offsets:        []pubsub.TopicPartition{{Topic: topic, Partition: 0, Offset: 1}},
+	}, logger)
+
+	if err != nil {
+		t.Errorf("Kafka connection failed : %v", err)
+		return
+	}
+
+	Ping(t, k)
+	// In this we are first trying to publish some messages then we are consuming 1 message
+	PublishMessage(t, k)
+	// SubscribeWithCommit will only subscribe and commit messages from 0th and the 1st offset.
+	SubscribeWithCommit(t, k, topic)
+	// Subscribe to ensure every message in the queue is subscribed.
+	Subscribe(t, k)
+}
+
 func PublishEvent(t *testing.T, k *Kafka) {
 	type args struct {
 		key   string
@@ -263,23 +293,20 @@ func Subscribe(t *testing.T, k *Kafka) {
 	}
 
 	for _, tt := range tests {
-		tt := tt
-		t.Run(tt.name, func(t *testing.T) {
-			msg, err := k.Subscribe()
-			if (err != nil) != tt.wantErr {
-				t.Errorf("Subscribe() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
+		msg, err := k.Subscribe()
+		if (err != nil) != tt.wantErr {
+			t.Errorf("Subscribe() error = %v, wantErr %v", err, tt.wantErr)
+			return
+		}
 
-			if msg == nil {
-				t.Errorf("Subscribe(): expected message, got nil")
-				return
-			}
+		if msg == nil {
+			t.Errorf("Subscribe(): expected message, got nil")
+			return
+		}
 
-			if len(msg.Headers) != 1 {
-				t.Errorf("Subscribe() only one message header should be present, found: %v", len(msg.Headers))
-			}
-		})
+		if len(msg.Headers) != 1 {
+			t.Errorf("Subscribe() only one message header should be present, found: %v", len(msg.Headers))
+		}
 	}
 }
 
@@ -517,46 +544,6 @@ func PublishMessage(t *testing.T, k *Kafka) {
 			t.Errorf("Failed[%v] expected error as nil\n got %v", i, err)
 		}
 	}
-}
-
-// Test_PubSubWithOffset check the subscribe operation with custom initial offset value.
-func Test_PubSubWithOffset(t *testing.T) {
-	topic := "test-custom-offset"
-	logger := log.NewLogger()
-	c := config.NewGoDotEnvProvider(logger, "../../../../configs")
-	// prereqisite
-	k, err := New(&Config{
-		Brokers:        c.Get("KAFKA_HOSTS"),
-		Topics:         []string{topic},
-		InitialOffsets: OffsetOldest,
-		GroupID:        "testing-consumerGroup",
-	}, logger)
-
-	if err != nil {
-		t.Errorf("Kafka connection failed : %v", err)
-		return
-	}
-	// In this we are first trying to publish some messages then we are consuming 1 message
-	PublishMessage(t, k)
-	Subscribe(t, k)
-	// testing subscribe operation with offset
-	k, err = New(&Config{
-		Brokers:        c.Get("KAFKA_HOSTS"),
-		Topics:         []string{topic},
-		InitialOffsets: OffsetOldest,
-		GroupID:        "testing-consumerGroup",
-		Offsets:        []pubsub.TopicPartition{{Topic: topic, Partition: 0, Offset: 0}},
-	}, logger)
-
-	if err != nil {
-		t.Errorf("Kafka connection failed : %v", err)
-		return
-	}
-	// since we have already consumed one message so the offset value changed to 1. As we are setting the offset value as 0
-	// so when we will try to consume message it will start consuming message from offset 0.
-	// If setting of offset is unsuccessful then the subscribe operation will fail.
-	SubscribeWithCommit(t, k, topic)
-	Subscribe(t, k)
 }
 
 func Test_populateOffsetTopic(t *testing.T) {

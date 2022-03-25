@@ -23,7 +23,7 @@ func TestServerRun(t *testing.T) {
 		endpoint   string
 		statusCode int
 	}{
-		{"get succuss", "/home", http.StatusOK},
+		{"get success", "/home", http.StatusOK},
 		{"get unknown endpoint", "/unknown", http.StatusNotFound},
 	}
 	for i, tc := range tcs {

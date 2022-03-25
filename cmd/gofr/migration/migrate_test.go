@@ -186,6 +186,12 @@ func TestMySQL_Migration(t *testing.T) {
 		_ = mysql.Migrator().DropTable("gofr_migrations")
 	}()
 
+	// ensures the gofr_migrations table is dropped in DB
+	tx := mysql.DB.Exec("DROP TABLE IF EXISTS gofr_migrations")
+	if tx != nil {
+		assert.NoError(t, tx.Error)
+	}
+
 	testcases := []struct {
 		method     string
 		migrations map[string]dbmigration.Migrator
@@ -283,7 +289,13 @@ func Test_MigrateCheck(t *testing.T) {
 		_ = mysql.Migrator().DropTable("gofr_migrations")
 	}()
 
-	migrations := map[string]dbmigration.Migrator{"20200324150906": K20200324150906{},
+	// ensures the gofr_migrations table is dropped in DB
+	tx := mysql.DB.Exec("DROP TABLE IF EXISTS gofr_migrations")
+	if tx != nil {
+		assert.NoError(t, tx.Error)
+	}
+
+	migrations := map[string]dbmigration.Migrator{"20210324150906": K20200324150906{},
 		"20200324120906": K20200324120906{},
 		"20190324150906": K20190324150906{}}
 
@@ -294,7 +306,7 @@ func Test_MigrateCheck(t *testing.T) {
 	loggedStr := b.String()
 	i1 := strings.Index(loggedStr, "20190324150906")
 	i2 := strings.Index(loggedStr, "20200324120906")
-	i3 := strings.Index(loggedStr, "20200324150906")
+	i3 := strings.Index(loggedStr, "20210324150906")
 
 	if i1 > i2 || i2 > i3 {
 		t.Errorf("Sequence of migration run is not in order, got: %v", loggedStr)

@@ -701,10 +701,10 @@ func Test_createReq(t *testing.T) {
 		target      string
 		expectedURL string
 	}{
-		{"multiple backslashes in POST", "POST", "/////////post", ts.URL + "/post"},
-		{"single backslashes in GET", "GET", "/get", ts.URL + "/get"},
-		{"multiple backslashes in PUT", "PUT", "///put", ts.URL + "/put"},
-		{"single backslashes in PATCH", "PATCH", "/patch", ts.URL + "/patch"},
+		{"multiple backslashes in POST", http.MethodPost, "////////post", ts.URL + "/////////post"},
+		{"single backslashes in GET", http.MethodGet, "get", ts.URL + "/get"},
+		{"multiple backslashes in PUT", http.MethodPut, "//put", ts.URL + "///put"},
+		{"single backslashes in PATCH", http.MethodPatch, "patch", ts.URL + "/patch"},
 	}
 
 	h := NewHTTPServiceWithOptions(ts.URL, nil, nil)
