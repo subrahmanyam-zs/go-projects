@@ -14,8 +14,8 @@ import (
 	"developer.zopsmart.com/go/gofr/pkg/log"
 	"developer.zopsmart.com/go/gofr/pkg/middleware"
 
-	"github.com/bmizerany/assert"
 	"github.com/golang-jwt/jwt/v4"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestValidateErrors(t *testing.T) {

@@ -10,6 +10,7 @@ import (
 
 func getOutput(main func(), command string) string {
 	tmpfile, _ := os.CreateTemp("", "fake-stdout.*")
+
 	defer os.Remove(tmpfile.Name())
 
 	os.Stdout = tmpfile
@@ -20,6 +21,7 @@ func getOutput(main func(), command string) string {
 	main()
 
 	outputBytes, _ := os.ReadFile(tmpfile.Name())
+
 	output := strings.TrimSpace(string(outputBytes))
 
 	return output

@@ -333,6 +333,8 @@ func TestForeignKey(t *testing.T) {
 		_ = db.Exec("DROP TABLE IF EXISTS store_employee")
 	}()
 
+	d = DataStore{ORM: db}
+
 	path, _ := os.Getwd()
 	s := NewSeeder(&d, path)
 

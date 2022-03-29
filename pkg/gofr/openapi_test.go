@@ -247,7 +247,7 @@ func TestOpenAPIHandlerError(t *testing.T) {
 	// Added contextInjector middleware
 	k.Server.Router.Use(k.Server.contextInjector)
 
-	rootDir, _ := os.Getwd()
+	rootDir := t.TempDir()
 	path := rootDir + "/" + "api"
 
 	k.GET("/.well-known/openapi.json", OpenAPIHandler)

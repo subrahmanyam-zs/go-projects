@@ -3,7 +3,6 @@ package handler
 import (
 	"net/http"
 	"net/http/httptest"
-	"os"
 	"testing"
 
 	"developer.zopsmart.com/go/gofr/pkg/gofr"
@@ -12,7 +11,7 @@ import (
 
 func TestTemplateHandler(t *testing.T) {
 	app := gofr.New()
-	rootPath, _ := os.Getwd()
+	rootPath := t.TempDir()
 	app.TemplateDir = rootPath + "/../templates"
 	r := httptest.NewRequest(http.MethodGet, "http://dummy/test", nil)
 	req := request.NewHTTPRequest(r)

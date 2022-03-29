@@ -15,13 +15,11 @@ require (
 	github.com/aws/aws-sdk-go v1.42.50
 	github.com/aws/aws-sdk-go-v2/credentials v1.8.0
 	github.com/aws/aws-sdk-go-v2/service/s3 v1.24.1
-	github.com/bmizerany/assert v0.0.0-20160611221934-b7ed37b82869
 	github.com/elastic/go-elasticsearch/v7 v7.17.0
 	github.com/getkin/kin-openapi v0.89.0
 	github.com/go-ldap/ldap/v3 v3.4.1
 	github.com/go-redis/redis/extra/redisotel v0.3.0
 	github.com/go-redis/redis/v8 v8.11.4
-	github.com/go-sql-driver/mysql v1.6.0
 	github.com/gocql/gocql v0.0.0-20211222173705-d73e6b1002a7
 	github.com/golang-jwt/jwt/v4 v4.3.0
 	github.com/golang/mock v1.6.0
@@ -103,6 +101,7 @@ require (
 	github.com/go-openapi/jsonpointer v0.19.5 // indirect
 	github.com/go-openapi/swag v0.21.1 // indirect
 	github.com/go-redis/redis/extra/rediscmd v0.2.0 // indirect
+	github.com/go-sql-driver/mysql v1.6.0 // indirect
 	github.com/go-stack/stack v1.8.1 // indirect
 	github.com/golang-sql/civil v0.0.0-20190719163853-cb61b32ac6fe // indirect
 	github.com/golang-sql/sqlexp v0.0.0-20170517235910-f1bb20e5a188 // indirect
@@ -133,8 +132,6 @@ require (
 	github.com/jpillora/backoff v1.0.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/klauspost/compress v1.14.2 // indirect
-	github.com/kr/pretty v0.3.0 // indirect
-	github.com/kr/text v0.2.0 // indirect
 	github.com/mailru/easyjson v0.7.7 // indirect
 	github.com/mattn/go-ieproxy v0.0.3 // indirect
 	github.com/mattn/go-sqlite3 v2.0.3+incompatible // indirect

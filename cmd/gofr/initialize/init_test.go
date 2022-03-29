@@ -59,12 +59,6 @@ func Test_createProjectErrors(t *testing.T) {
 func Test_createProject(t *testing.T) {
 	var h Handler
 
-	currDir, _ := os.Getwd()
-
-	defer func() {
-		_ = os.Chdir(currDir)
-	}()
-
 	type args struct {
 		f    fileSystem
 		name string

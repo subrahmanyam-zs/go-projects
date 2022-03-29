@@ -17,7 +17,9 @@ import (
 )
 
 func Test_getModulePath(t *testing.T) {
-	err := os.Chdir("..")
+	dir := t.TempDir()
+
+	err := os.Chdir(dir)
 	if err != nil {
 		t.Error(err)
 	}
@@ -49,14 +51,10 @@ func Test_getModulePath(t *testing.T) {
 }
 
 func Test_createMain(t *testing.T) {
-	currDir, _ := os.Getwd()
-
 	ctrl := gomock.NewController(t)
 
 	defer func() {
 		ctrl.Finish()
-
-		_ = os.Chdir(currDir)
 	}()
 
 	mockFS := NewMockFSMigrate(ctrl)
@@ -67,8 +65,8 @@ func Test_createMain(t *testing.T) {
 	f, _ := os.Create("test.txt")
 	f2, _ := os.Create("main.go")
 	modFile, _ := os.Create("go.mod")
-	_, _ = modFile.WriteString("module moduleName")
 
+	_, _ = modFile.WriteString("module moduleName")
 	defer modFile.Close()
 
 	type args struct {
@@ -132,13 +130,9 @@ func Test_createMain(t *testing.T) {
 }
 
 func Test_createMain_goPath_success(t *testing.T) {
-	currDir, _ := os.Getwd()
-
 	ctrl := gomock.NewController(t)
 	defer func() {
 		ctrl.Finish()
-
-		_ = os.Chdir(currDir)
 	}()
 
 	mockFS := NewMockFSMigrate(ctrl)
@@ -148,16 +142,30 @@ func Test_createMain_goPath_success(t *testing.T) {
 
 	build.Default.GOPATH = dir
 
-	_, _ = os.MkdirTemp("src", dir)
+	currDir, err := os.MkdirTemp(dir, "src")
+	if err != nil {
+		t.Errorf("received unexpected error:\n%+v", err)
+
+		return
+	}
+
+	defer os.RemoveAll(currDir)
 
 	dir += "/src"
-	_ = os.Chdir(dir)
+	_ = os.Chdir(currDir)
 
-	_, _ = os.MkdirTemp("gofr", dir)
+	currDir, err = os.MkdirTemp(currDir, "gofr")
+	if err != nil {
+		t.Errorf("Received unexpected error:\n%+v", err)
+
+		return
+	}
+
+	defer os.RemoveAll(currDir)
 
 	dir += "/gofr"
 
-	f, _ := os.CreateTemp("test.txt", dir)
+	f, _ := os.CreateTemp("test.txt", currDir)
 	f2, _ := os.Create("main.go")
 
 	mockFS.EXPECT().OpenFile(gomock.Any(), gomock.Any(), gomock.Any()).Return(f, &errors.Response{Reason: "test error"})
@@ -230,6 +238,13 @@ func (m mockFSMigrate) OpenFile(name string, flag int, perm os.FileMode) (*os.Fi
 
 // Test_importOrder tests if the imports are sorted in migration template
 func Test_importOrder(t *testing.T) {
+	dir := t.TempDir()
+
+	err := os.Chdir(dir)
+	if err != nil {
+		t.Error(err)
+	}
+
 	ctrl := gomock.NewController(t)
 	mockFS := mockFSMigrate{MockFSMigrate: NewMockFSMigrate(ctrl)}
 
@@ -237,7 +252,7 @@ func Test_importOrder(t *testing.T) {
 	mockFS.EXPECT().IsNotExist(nil).Return(false)
 	mockFS.EXPECT().Chdir("build").Return(nil)
 
-	err := templateCreate(mockFS, "sample-api", "UP", "db := dbmigration.NewGorm(k.GORM())", "example.com/sample-api", nil)
+	err = templateCreate(mockFS, "sample-api", "UP", "db := dbmigration.NewGorm(k.GORM())", "example.com/sample-api", nil)
 	if err != nil {
 		t.Errorf("expected no error, got:\n%v", err)
 	}
