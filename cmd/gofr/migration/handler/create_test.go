@@ -8,6 +8,7 @@ import (
 	"developer.zopsmart.com/go/gofr/pkg/errors"
 
 	"github.com/golang/mock/gomock"
+	"github.com/stretchr/testify/assert"
 )
 
 func Test_create(t *testing.T) {
@@ -71,5 +72,43 @@ func Test_create(t *testing.T) {
 				t.Errorf("create() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
+	}
+}
+
+func Test_getPrefixes(t *testing.T) {
+	dir := t.TempDir()
+
+	_ = os.Chdir(dir)
+	// these files will be ignored
+	_, _ = os.Create("20190320095356_test.go")                       // files with len < 2 will be ignored
+	_, _ = os.Create("000_all.go")                                   // 000_all.go will be ignored.
+	_, _ = os.Create("20220320095352_table_employee_create_test.go") // ignores the files that have the suffix test
+
+	// files whose prefixes will be added to the slice prefixes
+	_, _ = os.Create("20220410095352_table_employee_create.go")
+	_, _ = os.Create("20210520095352_table_employee_create.go")
+	_, _ = os.Create("20190320095352_table_employee_create.go")
+
+	allFiles, _ := os.ReadDir(dir)
+	ctrl := gomock.NewController(t)
+	mockFS := NewMockFSCreate(ctrl)
+
+	tests := []struct {
+		desc      string
+		output    []string
+		err       error
+		mockEntry []os.DirEntry
+	}{
+		{"Success", []string{"20190320095352", "20210520095352", "20220410095352"}, nil, allFiles},
+		{"Error in Reading files", nil, errors.Error("Error while reading file"), nil},
+	}
+	for i, tc := range tests {
+		mockFS.EXPECT().ReadDir(gomock.Any()).Return(tc.mockEntry, tc.err)
+
+		result, err := getPrefixes(mockFS)
+
+		assert.Equal(t, tc.output, result, "TEST[%d], failed.\n%s", i, tc.desc)
+
+		assert.Equal(t, tc.err, err, "TEST[%d], failed.\n%s", i, tc.desc)
 	}
 }
