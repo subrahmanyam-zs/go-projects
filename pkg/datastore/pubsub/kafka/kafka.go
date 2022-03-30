@@ -25,6 +25,7 @@ import (
 const (
 	ErrConsumeMsg       = errors.Error("error while consuming the message")
 	SASLTypeSCRAMSHA512 = "SCRAM-SHA-512"
+	PLAIN               = "PLAIN"
 	errInvalidMechanism = errors.Error("Invalid SASL Mechanism")
 )
 
@@ -208,7 +209,7 @@ func New(config *Config, logger log.Logger) (*Kafka, error) {
 	_ = prometheus.Register(publishSuccessCount)
 	_ = prometheus.Register(publishTotalCount)
 
-	if config.SASL.Mechanism != SASLTypeSCRAMSHA512 && config.SASL.User != "" {
+	if config.SASL.Mechanism != SASLTypeSCRAMSHA512 && config.SASL.Mechanism != PLAIN && config.SASL.User != "" {
 		return nil, errInvalidMechanism
 	}
 
@@ -388,11 +389,14 @@ func processSASLConfigs(s SASLConfig, conf *sarama.Config) {
 			InsecureSkipVerify: true, //nolint:gosec // TLS InsecureSkipVerify set true.
 		}
 
-		if s.Mechanism == SASLTypeSCRAMSHA512 {
+		switch s.Mechanism {
+		case SASLTypeSCRAMSHA512:
 			conf.Net.SASL.Mechanism = sarama.SASLMechanism(s.Mechanism)
 			conf.Net.SASL.SCRAMClientGeneratorFunc = func() sarama.SCRAMClient {
 				return &XDGSCRAMClient{HashGeneratorFcn: SHA512}
 			}
+		case PLAIN:
+			conf.Net.SASL.Mechanism = sarama.SASLMechanism(s.Mechanism)
 		}
 	}
 }

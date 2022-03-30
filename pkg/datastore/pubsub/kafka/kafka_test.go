@@ -353,26 +353,93 @@ func Test_processSASLConfigs(t *testing.T) {
 	expConfig.Net.TLS.Config = &tls.Config{
 		InsecureSkipVerify: true, //nolint:gosec // TLS InsecureSkipVerify set true.
 	}
-	expConfig.Net.SASL.Mechanism = SASLTypeSCRAMSHA512
-	expConfig.Net.SASL.SCRAMClientGeneratorFunc = func() sarama.SCRAMClient {
+
+	scramClientGeneratorFunc := func() sarama.SCRAMClient {
 		return &XDGSCRAMClient{HashGeneratorFcn: sha512.New}
 	}
 
-	saslConfig := SASLConfig{
-		User:      "testuser",
-		Password:  "password",
-		Mechanism: SASLTypeSCRAMSHA512,
+	tests := []struct {
+		desc                     string
+		mechanism                string
+		SCRAMClientGeneratorFunc func() sarama.SCRAMClient
+	}{
+		{"using mechanism SASL/PLAIN", PLAIN, nil},
+		{"using SASL mechanism SCRAM", SASLTypeSCRAMSHA512, scramClientGeneratorFunc},
 	}
 
-	conf := sarama.NewConfig()
-	processSASLConfigs(saslConfig, conf)
+	for i, tc := range tests {
+		expConfig.Net.SASL.Mechanism = sarama.SASLMechanism(tc.mechanism)
+		expConfig.Net.SASL.SCRAMClientGeneratorFunc = tc.SCRAMClientGeneratorFunc
 
-	conf.Net.SASL.SCRAMClientGeneratorFunc = nil
-	expConfig.Net.SASL.SCRAMClientGeneratorFunc = nil
-	conf.Producer.Partitioner = nil
-	expConfig.Producer.Partitioner = nil
+		saslConfig := SASLConfig{
+			User:      "testuser",
+			Password:  "password",
+			Mechanism: tc.mechanism,
+		}
 
-	assert.Equal(t, expConfig, conf)
+		conf := sarama.NewConfig()
+		processSASLConfigs(saslConfig, conf)
+
+		conf.Net.SASL.SCRAMClientGeneratorFunc = nil
+		expConfig.Net.SASL.SCRAMClientGeneratorFunc = nil
+		conf.Producer.Partitioner = nil
+		expConfig.Producer.Partitioner = nil
+
+		assert.Equal(t, expConfig, conf, "TEST[%d], failed.\n%s", i, tc.desc)
+	}
+}
+
+func Test_KafkaAuthentication(t *testing.T) {
+	logger := log.NewMockLogger(io.Discard)
+	c := config.NewGoDotEnvProvider(logger, "../../../../configs")
+	topic := c.Get("KAFKA_TOPIC")
+	topics := strings.Split(topic, ",")
+
+	tests := []struct {
+		userName      string
+		pass          string
+		authMechanism string
+		err           error
+	}{
+		{"", "", PLAIN, nil},
+		{"zopsmart", "zopsmart", "", errInvalidMechanism},
+	}
+
+	for i, tc := range tests {
+		cfg := &Config{
+
+			Brokers: c.Get("KAFKA_HOSTS"),
+			Topics:  topics,
+			SASL:    SASLConfig{User: tc.userName, Password: tc.pass, Mechanism: tc.authMechanism},
+		}
+
+		_, err := New(cfg, log.NewMockLogger(io.Discard))
+
+		assert.Equal(t, tc.err, err, "TEST[%d], failed.\n%s", i)
+	}
+}
+
+func Test_invalidSaslMechanism(t *testing.T) {
+	logger := log.NewMockLogger(io.Discard)
+	c := config.NewGoDotEnvProvider(logger, "../../../../configs")
+	topic := c.Get("KAFKA_TOPIC")
+	topics := strings.Split(topic, ",")
+
+	cfg := &Config{
+		Brokers: c.Get("KAFKA_HOSTS"),
+		Topics:  topics,
+		SASL: SASLConfig{
+			User:      "invalid-user-name",
+			Password:  "password",
+			Mechanism: "invalid-mechanism",
+		},
+	}
+
+	kafka, err := New(cfg, logger)
+
+	assert.Equal(t, errInvalidMechanism, err)
+
+	assert.Nil(t, kafka)
 }
 
 func TestKafkaHealthCheck(t *testing.T) {
