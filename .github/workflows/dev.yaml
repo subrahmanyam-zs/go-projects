@@ -28,6 +28,11 @@ jobs:
           git config --global http.sslVerify false
           go get -v -t -d ./...
 
+      - name: Set Configs
+        run: |
+          cd examples/sample-api/configs
+          echo "APP_VERSION=${GITHUB_SHA::7}" >> .env
+
       - name: Test
         run: |
           export GOFR_ENV=test

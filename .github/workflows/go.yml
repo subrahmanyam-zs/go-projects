@@ -152,6 +152,11 @@ jobs:
           cat build/coverage.txt | grep -v '.pb.go' > build/coverage.out
           go tool cover -func build/coverage.out
 
+      - name: Set Configs
+        run: |
+          cd examples/sample-api/configs
+          echo "APP_VERSION=${GITHUB_SHA::7}" >> .env
+
       - name: Build
         run: |
           cd examples/sample-api
