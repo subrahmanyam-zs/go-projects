@@ -33,6 +33,19 @@ func TestNewHTTPServiceWithNilOptions(t *testing.T) {
 	}
 }
 
+func TestHttpServiceWithOptions_EmptyResourceAddress(t *testing.T) {
+	b := new(bytes.Buffer)
+	logger := log.NewMockLogger(b)
+
+	expLog := "value for resourceAddress is empty"
+
+	_ = NewHTTPServiceWithOptions("", logger, nil)
+
+	if !strings.Contains(b.String(), expLog) {
+		t.Errorf("TEST FAILED, Expected logs contains %v,contains %v", expLog, b.String())
+	}
+}
+
 func TestNewHTTPServiceNotNilOptions(t *testing.T) {
 	testCases := []struct {
 		resourceURL string

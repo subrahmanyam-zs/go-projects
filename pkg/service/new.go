@@ -72,7 +72,12 @@ var (
 // hence we dont want to export the type
 func NewHTTPServiceWithOptions(resourceAddr string, logger log.Logger, options *Options) *httpService {
 	// Register the prometheus metric
-	resourceAddr = strings.TrimRight(resourceAddr, "/")
+	if resourceAddr == "" {
+		logger.Errorf("value for resourceAddress is empty")
+	} else {
+		resourceAddr = strings.TrimRight(resourceAddr, "/")
+	}
+
 	_ = prometheus.Register(httpServiceResponse)
 
 	// Transport for http Client
