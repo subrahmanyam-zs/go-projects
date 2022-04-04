@@ -610,12 +610,12 @@ func Test_AuthCall(t *testing.T) {
 	}{
 		{nil, "", nil},
 		{&Options{Auth: &Auth{UserName: "user", Password: "secret"}}, "Basic dXNlcjpzZWNyZXQ=", nil},
-		{&Options{Auth: &Auth{OAuthOption: &OAuthOption{"Alice", "alice_secret", server.URL,
-			"some_scope", 0}}}, "Bearer sample_token", nil},
+		{&Options{Auth: &Auth{OAuthOption: &OAuthOption{ClientID: "Alice", ClientSecret: "alice_secret", KeyProviderURL: server.URL,
+			Scope: "some_scope"}}}, "Bearer sample_token", nil},
 		{&Options{Auth: &Auth{UserName: "user", Password: "abc", OAuthOption: &OAuthOption{}}}, "", ErrToken},
 		{&Options{Auth: &Auth{OAuthOption: &OAuthOption{}}}, "", ErrToken},
-		{&Options{Auth: &Auth{OAuthOption: &OAuthOption{"Bob", "bob_secret", url,
-			"some_scope", 0}}}, "", ErrToken},
+		{&Options{Auth: &Auth{OAuthOption: &OAuthOption{ClientID: "Bob", ClientSecret: "bob_secret", KeyProviderURL: url,
+			Scope: "some_scope"}}}, "", ErrToken},
 	}
 
 	for i, tc := range tests {

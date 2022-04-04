@@ -10,6 +10,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/assert"
+
 	"developer.zopsmart.com/go/gofr/pkg/log"
 )
 
@@ -116,5 +118,30 @@ func Test_getNewAccessToken(t *testing.T) {
 				t.Errorf("getNewAccessToken() gotExp = %v, want %v", gotExp, tt.wantExp)
 			}
 		})
+	}
+}
+
+func Test_getPayload(t *testing.T) {
+	const (
+		audience = "https://zopsmart.com"
+		scope    = "some-scope"
+	)
+
+	options := &OAuthOption{Audience: audience, Scope: scope}
+
+	data := getPayload(options)
+
+	tests := []struct {
+		desc     string
+		key      string
+		expected string
+	}{
+		{"compares audience value", "audience", audience},
+		{"compares scope value", "scope", scope},
+		{"compares grant_type value", "grant_type", "client_credentials"},
+	}
+
+	for i, tc := range tests {
+		assert.Equal(t, tc.expected, data[tc.key][0], "TEST[%d], failed.\n%s", i, tc.desc)
 	}
 }

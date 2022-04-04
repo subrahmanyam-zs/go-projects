@@ -19,6 +19,7 @@ type OAuthOption struct {
 	ClientSecret   string
 	KeyProviderURL string
 	Scope          string
+	Audience       string
 	MaxSleep       int
 }
 
@@ -74,12 +75,7 @@ func (h *httpService) setClientOauthHeader(option *OAuthOption) {
 }
 
 func getNewAccessToken(basicAuth string, option *OAuthOption) (bearerToken string, exp int, err error) {
-	data := url.Values{}
-	data.Set("grant_type", "client_credentials")
-
-	if option.Scope != "" {
-		data.Set("scope", option.Scope)
-	}
+	data := getPayload(option)
 
 	reqHeaders := map[string]string{
 		"Content-Type": "application/x-www-form-urlencoded",
@@ -143,6 +139,21 @@ func oauthFibonacciRetry(max int) []int {
 	retryList = append(retryList, max)
 
 	return retryList
+}
+
+func getPayload(option *OAuthOption) url.Values {
+	data := url.Values{}
+	data.Set("grant_type", "client_credentials")
+
+	if option.Scope != "" {
+		data.Set("scope", option.Scope)
+	}
+
+	if option.Audience != "" {
+		data.Set("audience", option.Audience)
+	}
+
+	return data
 }
 
 func successStatusRange(status int) bool {
