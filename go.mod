@@ -4,7 +4,7 @@ go 1.17
 
 require (
 	cloud.google.com/go/storage v1.20.0
-	github-lvs.corpzone.internalzone.com/mcafee/cnsr-gofr-csp-auth v0.1.2
+	github-lvs.corpzone.internalzone.com/mcafee/cnsr-gofr-csp-auth v0.1.3
 	github.com/Azure/azure-amqp-common-go/v3 v3.2.3
 	github.com/Azure/azure-event-hubs-go/v3 v3.3.17
 	github.com/Azure/azure-storage-blob-go v0.14.0
@@ -34,7 +34,6 @@ require (
 	github.com/lib/pq v1.10.4
 	github.com/newrelic/go-agent v3.15.2+incompatible
 	github.com/prometheus/client_golang v1.12.1
-	github.com/satori/go.uuid v1.2.0
 	github.com/stretchr/testify v1.7.0
 	github.com/xdg/scram v1.0.5
 	github.com/yugabyte/gocql v0.0.0-20220204171058-0bd8e6cb12d0

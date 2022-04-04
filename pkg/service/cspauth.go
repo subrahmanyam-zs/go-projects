@@ -9,7 +9,7 @@ import (
 	"strconv"
 	"time"
 
-	uuid "github.com/satori/go.uuid"
+	"github.com/google/uuid"
 
 	"developer.zopsmart.com/go/gofr/pkg/errors"
 	"developer.zopsmart.com/go/gofr/pkg/log"
@@ -91,7 +91,7 @@ type cspAuthJSON struct {
 }
 
 func (o *CSPOption) generateAuthJSON(method, bodyHash string) []byte {
-	guid := uuid.NewV4()
+	guid := uuid.New()
 	msgUniqueID := cspauth.HexEncode(guid[:])
 
 	// take hash of machineName+requestDate+ip+appKey+sharedKey+httpMethod+guid+clientId+bodyhash
@@ -125,7 +125,7 @@ func encryptData(plaintext, key, iv []byte) []byte {
 }
 
 func getRandomChars() []byte {
-	uu := uuid.NewV4()
+	uu := uuid.New()
 	ux := uu.String()
 
 	return []byte(ux[:lenRandomChars])
