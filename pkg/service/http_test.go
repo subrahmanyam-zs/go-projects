@@ -95,6 +95,7 @@ func TestService_Get(t *testing.T) {
 
 	for _, tt := range tests {
 		ps := NewHTTPServiceWithOptions(tt.URL, log.NewMockLogger(io.Discard), nil)
+
 		ps.SetConnectionPool(1, 1*time.Second)
 		ps.SetSurgeProtectorOptions(false, "", 5)
 
@@ -148,6 +149,7 @@ func TestService_GetRetry(t *testing.T) {
 
 	for i, tc := range tests {
 		timeout := tc.timeout
+
 		ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			re := map[string]interface{}{"name": "gofr"}
 			reBytes, _ := json.Marshal(re)
@@ -326,6 +328,8 @@ func Test_SetSurgeProtectorOptions(t *testing.T) {
 	customHeartbeatURL := "/.fake-heartbeat"
 	retryFrequencySeconds := 1
 
+	h.sp.logger = log.NewLogger()
+
 	h.SetSurgeProtectorOptions(isEnabled, customHeartbeatURL, retryFrequencySeconds)
 
 	if h.sp.isEnabled != isEnabled || h.sp.customHeartbeatURL != customHeartbeatURL ||
@@ -339,6 +343,7 @@ func TestCorrelationIDPropagation(t *testing.T) {
 	correlationIDs := []string{"1YUHS767SHD", "", "OUDIDd78f78d"}
 	for i := range correlationIDs {
 		h := httpService{}
+
 		ctx := context.WithValue(context.Background(), middleware.CorrelationIDKey, correlationIDs[i])
 		req, _ := h.createReq(ctx, http.MethodGet, "/", nil, nil, nil)
 
@@ -355,9 +360,9 @@ func TestService_CorrelationIDLog(t *testing.T) {
 
 	correlationID := "81ADIDDNODID"
 	buf := new(bytes.Buffer)
+
 	ps := NewHTTPServiceWithOptions(ts.URL, log.NewMockLogger(buf), nil)
 	ctx := context.WithValue(context.Background(), middleware.CorrelationIDKey, correlationID)
-
 	_, _ = ps.Get(ctx, "", nil)
 
 	if !strings.Contains(buf.String(), correlationID) {
@@ -707,7 +712,7 @@ func Test_createReq(t *testing.T) {
 		{"single backslashes in PATCH", http.MethodPatch, "patch", ts.URL + "/patch"},
 	}
 
-	h := NewHTTPServiceWithOptions(ts.URL, nil, nil)
+	h := NewHTTPServiceWithOptions(ts.URL, log.NewLogger(), nil)
 	for _, tc := range testcase {
 		req, err := h.createReq(context.Background(), tc.method, tc.target, nil, nil, nil)
 		if err != nil {

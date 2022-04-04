@@ -93,6 +93,7 @@ func NewHTTPServiceWithOptions(resourceAddr string, logger log.Logger, options *
 			isEnabled:             true,
 			customHeartbeatURL:    "/.well-known/heartbeat",
 			retryFrequencySeconds: RetryFrequency,
+			logger:                logger,
 		},
 	}
 

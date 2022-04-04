@@ -124,13 +124,14 @@ func TestNewHTTPService_WithSurgeProtection(t *testing.T) {
 		options           Options
 		surgeProtectionOp surgeProtector
 	}{
-		{Options{}, surgeProtector{isEnabled: true, customHeartbeatURL: "/.well-known/heartbeat", retryFrequencySeconds: 5}},
+		{Options{}, surgeProtector{isEnabled: true, customHeartbeatURL: "/.well-known/heartbeat", retryFrequencySeconds: 5,
+			logger: log.NewLogger()}},
 		{Options{SurgeProtectorOption: &SurgeProtectorOption{}}, surgeProtector{isEnabled: true, customHeartbeatURL: "/.well-known/heartbeat",
-			retryFrequencySeconds: RetryFrequency}},
+			retryFrequencySeconds: RetryFrequency, logger: log.NewLogger()}},
 		{Options{SurgeProtectorOption: &SurgeProtectorOption{HeartbeatURL: "custom url"}}, surgeProtector{isEnabled: true,
-			customHeartbeatURL: "custom url", retryFrequencySeconds: RetryFrequency}},
+			customHeartbeatURL: "custom url", retryFrequencySeconds: RetryFrequency, logger: log.NewLogger()}},
 		{Options{SurgeProtectorOption: &SurgeProtectorOption{RetryFrequency: 10}}, surgeProtector{isEnabled: true,
-			customHeartbeatURL: "/.well-known/heartbeat", retryFrequencySeconds: 10}},
+			customHeartbeatURL: "/.well-known/heartbeat", retryFrequencySeconds: 10, logger: log.NewLogger()}},
 	}
 
 	for i := range testCases {
@@ -192,17 +193,17 @@ func TestNewHTTPServiceWithOptions_MultipleFeatures(t *testing.T) {
 		{Options{Auth: &Auth{UserName: "abc", Password: "pwd"}, Cache: &Cache{Cacher: mockCache{}, TTL: 10}},
 			httpService{auth: "Basic YWJjOnB3ZA==", cache: &cachedHTTPService{cacher: mockCache{}, ttl: 10},
 				sp: surgeProtector{isEnabled: true, customHeartbeatURL: "/.well-known/heartbeat",
-					retryFrequencySeconds: RetryFrequency}}},
+					retryFrequencySeconds: RetryFrequency, logger: log.NewLogger()}}},
 		{Options{Auth: &Auth{UserName: "abc", Password: "pwd"}, Cache: &Cache{Cacher: mockCache{}, TTL: 10},
 			Headers: map[string]string{"h": "hb"}}, httpService{auth: "Basic YWJjOnB3ZA==",
 			cache: &cachedHTTPService{cacher: mockCache{}, ttl: 10}, customHeaders: map[string]string{"h": "hb"},
 			sp: surgeProtector{isEnabled: true, customHeartbeatURL: "/.well-known/heartbeat",
-				retryFrequencySeconds: RetryFrequency}}},
+				retryFrequencySeconds: RetryFrequency, logger: log.NewLogger()}}},
 		{Options{Auth: &Auth{UserName: "abc", Password: "pwd"}, Cache: &Cache{Cacher: mockCache{}, TTL: 10},
 			SurgeProtectorOption: &SurgeProtectorOption{RetryFrequency: RetryFrequency}},
 			httpService{auth: "Basic YWJjOnB3ZA==", cache: &cachedHTTPService{cacher: mockCache{}, ttl: 10},
 				sp: surgeProtector{isEnabled: true, customHeartbeatURL: "/.well-known/heartbeat",
-					retryFrequencySeconds: RetryFrequency}}},
+					retryFrequencySeconds: RetryFrequency, logger: log.NewLogger()}}},
 	}
 
 	for i := range testCases {
@@ -304,7 +305,7 @@ func TestHttpServiceWithOptions_CSP(t *testing.T) {
 }
 
 func TestHttpService_HealthCheck(t *testing.T) {
-	h := NewHTTPServiceWithOptions("test", nil, nil)
+	h := NewHTTPServiceWithOptions("test", log.NewLogger(), nil)
 
 	healthCheck := h.HealthCheck()
 	if healthCheck.Status != pkg.StatusUp {
