@@ -49,12 +49,13 @@ jobs:
         run: |
           cd examples/sample-api
           go build -tags musl -ldflags "-linkmode external" -o main
+          cp main build/
 
       - name: Upload binary to artifact
         uses: actions/upload-artifact@v2
         with:
           name: app-binary
-          path: main
+          path: examples/sample-api/build/main
 
   Dockerize:
     runs-on: [self-hosted, linux]
@@ -72,7 +73,7 @@ jobs:
         uses: actions/download-artifact@v2
         with:
           name: app-binary
-          path: main
+          path: examples/sample-api/build/main
 
       - name: Build and Push docker image to AWS ECR
         uses: docker://ghcr.io/kciter/aws-ecr-action:latest
@@ -94,4 +95,4 @@ jobs:
         run: |
           template='{"application":"%s","parameters":{"image":"%s"}}'
           jsonData=$( printf "$template" "$HARNESS_APP_ID" "$IMAGE_URL" )
-          curl -X POST -H 'content-type: application/json' --url ${{ secrets.HARNESS_STAGE_WEBHOOK_URL }} -d $jsonData
+          curl -X POST -H 'content-type: application/json' --url ${{ secrets.HARNESS_STAGE_SAMPLE_API_WEBHOOK_URL }} -d $jsonData
