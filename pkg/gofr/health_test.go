@@ -3,7 +3,6 @@ package gofr
 import (
 	"fmt"
 	"net/http"
-	"reflect"
 	"testing"
 	"time"
 
@@ -35,9 +34,7 @@ func TestHeartBeatHandler(t *testing.T) {
 				t.Errorf("heartBeatHandler() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
-			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("heartBeatHandler() got = %v, want %v", got, tt.want)
-			}
+			assert.Equal(t, tt.want, got, "heartBeatHandler() got = %v, want %v")
 		})
 	}
 }
@@ -90,7 +87,8 @@ func Test_server_HeartCheck(t *testing.T) {
 		name string
 		want string
 	}{
-		{"test1", "GET /.well-known/health-check"},
+		{"test1", "GET /.well-known/health-check HEAD /.well-known/health-check GET /.well-known/heartbeat" +
+			" HEAD /.well-known/heartbeat GET /.well-known/openapi.json HEAD /.well-known/openapi.json "},
 	}
 	for _, tt := range tests {
 		tt := tt
@@ -99,10 +97,7 @@ func Test_server_HeartCheck(t *testing.T) {
 			go s.Start()
 			time.Sleep(3 * time.Second)
 			got := fmt.Sprintf("%s", s.Server.Router)
-
-			if reflect.DeepEqual(got, tt.want) {
-				t.Errorf(" got = %v, want %v", got, tt.want)
-			}
+			assert.Equal(t, tt.want, got)
 		})
 	}
 }
@@ -159,12 +154,14 @@ func Test_HealthCheckHandler(t *testing.T) {
 	}
 
 	// details should not be nil
-	if _, ok = m["details"]; !ok {
+	_, ok = m["details"]
+	if !ok {
 		t.Errorf("details should not be nil")
 	}
 
 	// status should be UP
-	if v, ok := m["status"]; ok {
+	v, ok := m["status"]
+	if ok {
 		if v != pkg.StatusUp {
 			t.Errorf("status should be UP")
 		}
