@@ -32,12 +32,13 @@ func TestHandler_Get(t *testing.T) {
 	tests := []struct {
 		desc        string
 		queryParams string
+		name        string
 		resp        interface{}
 		err         error
 	}{
-		{"get without params", "", []models.Customer{{Name: "Ponting", Age: 24, City: "Sydney"}}, nil},
-		{"get with name", "name=Tim", []models.Customer{{Name: "Tim", Age: 35, City: "Munich"}}, nil},
-		{"get with invalid name", "name=1", nil, errors.InvalidParam{Param: []string{"name"}}},
+		{"get without params", "", "", []models.Customer{{Name: "Ponting", Age: 24, City: "Sydney"}}, nil},
+		{"get with name", "name=Tim", "Tim", []models.Customer{{Name: "Tim", Age: 35, City: "Munich"}}, nil},
+		{"get with invalid name", "name=1", "1", nil, errors.InvalidParam{Param: []string{"name"}}},
 	}
 
 	store, h, app := initializeHandlersTest(t)
@@ -47,7 +48,7 @@ func TestHandler_Get(t *testing.T) {
 		r := request.NewHTTPRequest(req)
 		ctx := gofr.NewContext(nil, r, app)
 
-		store.EXPECT().Get(gomock.Any(), gomock.Any()).Return(tc.resp, tc.err)
+		store.EXPECT().Get(ctx, tc.name).Return(tc.resp, tc.err)
 
 		resp, err := h.Get(ctx)
 
@@ -99,26 +100,27 @@ func TestHandler_Create_Invalid_JSON(t *testing.T) {
 }
 
 func TestHandler_Create(t *testing.T) {
+	customer := `{"name":"Pirlo","age":42,"city":"Turin"}`
+	c := models.Customer{Name: "Pirlo", Age: 42, City: "Turin"}
 	tests := []struct {
-		desc     string
-		customer string
-		resp     string
-		err      error
+		desc string
+		resp string
+		err  error
 	}{
-		{"create succuss", `{"name":"Pirlo","age":42,"city":"Turin"}`, "New Customer Added!!", nil},
-		{"create fail", `{"name":"Pirlo","age":42,"city":"Turin"}`, "", errors.Error("test error")},
+		{"create success", "New Customer Added!!", nil},
+		{"create fail", "", errors.Error("test error")},
 	}
 
 	store, h, app := initializeHandlersTest(t)
 
 	for i, tc := range tests {
-		input := strings.NewReader(tc.customer)
+		input := strings.NewReader(customer)
 
 		req := httptest.NewRequest(http.MethodGet, "/dummy", input)
 		r := request.NewHTTPRequest(req)
 		ctx := gofr.NewContext(nil, r, app)
 
-		store.EXPECT().Create(gomock.Any(), gomock.Any()).Return(tc.err)
+		store.EXPECT().Create(ctx, c).Return(tc.err)
 
 		_, err := h.Create(ctx)
 
@@ -128,25 +130,25 @@ func TestHandler_Create(t *testing.T) {
 
 func TestHandler_Delete(t *testing.T) {
 	tests := []struct {
-		desc        string
-		queryParams string
-		count       int
-		resp        interface{}
-		err         error
+		desc  string
+		name  string
+		count int
+		resp  interface{}
+		err   error
 	}{
-		{"delete invalid entity", "name=1", 0, nil, errors.InvalidParam{Param: []string{"name"}}},
-		{"delete multiple entities", "name=Tim", 2, "2 Customers Deleted!", nil},
-		{"delete single entity", "name=Thomas", 1, "1 Customers Deleted!", nil},
+		{"delete invalid entity", "1", 0, nil, errors.InvalidParam{Param: []string{"name"}}},
+		{"delete multiple entities", "Tim", 2, "2 Customers Deleted!", nil},
+		{"delete single entity", "Thomas", 1, "1 Customers Deleted!", nil},
 	}
 
 	store, h, app := initializeHandlersTest(t)
 
 	for i, tc := range tests {
-		req := httptest.NewRequest(http.MethodGet, "/customer?"+tc.queryParams, nil)
+		req := httptest.NewRequest(http.MethodGet, "/customer?name="+tc.name, nil)
 		r := request.NewHTTPRequest(req)
 		ctx := gofr.NewContext(nil, r, app)
 
-		store.EXPECT().Delete(gomock.Any(), gomock.Any()).Return(tc.count, tc.err).Times(1)
+		store.EXPECT().Delete(ctx, gomock.Any()).Return(tc.count, tc.err).Times(1)
 
 		resp, err := h.Delete(ctx)
 
