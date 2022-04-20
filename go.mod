@@ -9,7 +9,7 @@ require (
 	github.com/Azure/azure-storage-blob-go v0.14.0
 	github.com/Azure/go-autorest/autorest v0.11.24
 	github.com/GoogleCloudPlatform/opentelemetry-operations-go/exporter/trace v1.3.0
-	github.com/Shopify/sarama v1.31.1
+	github.com/Shopify/sarama v1.30.0
 	github.com/XSAM/otelsql v0.10.0
 	github.com/aws/aws-sdk-go v1.42.50
 	github.com/aws/aws-sdk-go-v2/credentials v1.8.0
