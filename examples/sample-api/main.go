@@ -27,6 +27,9 @@ func main() {
 	// Handler function which uses logging
 	app.GET("/log", handler.HelloLogHandler)
 
+	// Handler function return response of type raw
+	app.GET("/raw", handler.Raw)
+
 	// start the server
 	app.Start()
 }

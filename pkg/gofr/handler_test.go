@@ -443,3 +443,72 @@ func Test_Head(t *testing.T) {
 		t.Errorf("got %v\n expected %v\n", got, expected)
 	}
 }
+
+func TestHandler_ServeHTTP_TypeResponse(t *testing.T) {
+	k := New()
+	w := newCustomWriter()
+	r := httptest.NewRequest("GET", "/Dummy", nil)
+	r.Header.Add("Content-type", "application/json")
+	r = routeKeySetter(w, r)
+	req := request.NewHTTPRequest(r)
+	resp := responder.NewContextualResponder(w, r)
+	*r = *r.WithContext(ctx.WithValue(r.Context(), gofrContextkey, NewContext(resp, req, k)))
+	input := types.Response{
+		Data: "Mukund",
+	}
+
+	Handler(func(c *Context) (interface{}, error) {
+		return input, nil
+	}).ServeHTTP(w, r)
+
+	expOutput, _ := json.Marshal(input)
+
+	if !strings.Contains(w.Body, string(expOutput)) {
+		t.Errorf("Test failed. expected %v, got %v", string(expOutput), w.Body)
+	}
+}
+func TestHandler_ServeHTTP_TypeRaw(t *testing.T) {
+	k := New()
+	w := newCustomWriter()
+	r := httptest.NewRequest("GET", "/Dummy", nil)
+	r.Header.Add("Content-type", "application/json")
+	r = routeKeySetter(w, r)
+	req := request.NewHTTPRequest(r)
+	resp := responder.NewContextualResponder(w, r)
+	*r = *r.WithContext(ctx.WithValue(r.Context(), gofrContextkey, NewContext(resp, req, k)))
+
+	Handler(func(c *Context) (interface{}, error) {
+		return types.Raw{
+			Data: "Mukund",
+		}, nil
+	}).ServeHTTP(w, r)
+
+	expOutput := "Mukund"
+
+	if !strings.Contains(w.Body, expOutput) {
+		t.Errorf("Test failed. expected %v, got %v", expOutput, w.Body)
+	}
+}
+func TestHandler_ServeHTTP_TypeDefault(t *testing.T) {
+	k := New()
+	w := newCustomWriter()
+	r := httptest.NewRequest("GET", "/Dummy", nil)
+	r.Header.Add("Content-type", "application/json")
+	r = routeKeySetter(w, r)
+	req := request.NewHTTPRequest(r)
+	resp := responder.NewContextualResponder(w, r)
+	*r = *r.WithContext(ctx.WithValue(r.Context(), gofrContextkey, NewContext(resp, req, k)))
+	expOut := struct {
+		Data interface{} `json:"data"`
+	}{"Mukund"}
+
+	Handler(func(c *Context) (interface{}, error) {
+		return "Mukund", nil
+	}).ServeHTTP(w, r)
+
+	expOutput, _ := json.Marshal(expOut)
+
+	if !strings.Contains(w.Body, string(expOutput)) {
+		t.Errorf("Test failed. expected %v, got %v", string(expOutput), w.Body)
+	}
+}
