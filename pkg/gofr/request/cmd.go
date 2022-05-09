@@ -102,3 +102,13 @@ func (c *CMD) Bind(i interface{}) error {
 func (c *CMD) BindStrict(i interface{}) error {
 	return c.Bind(i)
 }
+
+// GetClaims returns nil claim for every request
+func (c *CMD) GetClaims() map[string]interface{} {
+	return nil
+}
+
+// GetClaim returns nil claim value for every request
+func (c *CMD) GetClaim(claimKey string) interface{} {
+	return nil
+}
