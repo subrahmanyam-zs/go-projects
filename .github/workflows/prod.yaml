@@ -8,6 +8,7 @@ on:
 env:
   IMAGE_URL: ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.us-west-2.amazonaws.com/${{ secrets.AWS_ECR_REPO }}:${{ github.sha }}
   HARNESS_APP_ID: ${{ secrets.HARNESS_APP_ID }}
+  GOPRIVATE: "github-lvs.corpzone.internalzone.com/mcafee,developer.zopsmart.com/go/gofr"
 
 jobs:
   Build-and-Test:

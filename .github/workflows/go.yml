@@ -7,6 +7,8 @@ jobs:
   setup:
     name: Test and Code Quality
     runs-on: [ self-hosted, linux ]
+    env:
+      GOPRIVATE: "github-lvs.corpzone.internalzone.com/mcafee,developer.zopsmart.com/go/gofr"
 
     services:
       mysql:
@@ -124,8 +126,7 @@ jobs:
           docker exec -i $temp /home/yugabyte/bin/ycqlsh < .github/setups/keyspace.ycql;
       - name: Get dependencies
         run: |
-          git config --global url."https://${{ secrets.PAT}}:x-oauth-basic@github-lvs.corpzone.internalzone.com/".insteadOf "https://github-lvs.corpzone.internalzone.com/"
-          git config --global http.sslVerify false
+          git config --global url."https://${{ secrets.PAT}}@github-lvs.corpzone.internalzone.com/".insteadOf "https://github-lvs.corpzone.internalzone.com/"
           go get -v -t -d ./...
       - name: Test
         run: |
