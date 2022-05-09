@@ -13,9 +13,12 @@ type File interface {
 	Seek(offset int64, whence int) (int64, error)
 	// Close calls the internal file descriptor method to Close.
 	Close() error
+	// List lists all the files in the directory
+	List(directory string) ([]string, error)
 }
 
 type cloudStore interface {
 	fetch(fd *os.File) error
 	push(fd *os.File) error
+	list(folderName string) ([]string, error)
 }

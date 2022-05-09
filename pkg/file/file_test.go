@@ -1,6 +1,7 @@
 package file
 
 import (
+	"io/fs"
 	"os"
 	"strings"
 	"syscall"
@@ -245,4 +246,38 @@ func createTestFile(filePath string, dataToWrite []byte) error {
 	_, err = file.Write(dataToWrite)
 
 	return err
+}
+
+func Test_List(t *testing.T) {
+	// Creating temporary directory for tests
+	d := t.TempDir()
+	_ = os.Chdir(d)
+
+	// Creating two files in the temp directory
+	_, _ = os.Create("test1.txt")
+	_, _ = os.Create("test2.txt")
+
+	expRes := []string{"test1.txt", "test2.txt"}
+
+	// Initializing file abstracter
+	l1 := newLocalFile("", "")
+	l2 := newLocalFile("", "")
+	l2.remoteFileAbstracter = &aws{}
+
+	testcases := []struct {
+		dir    string
+		l      *fileAbstractor
+		exp    []string
+		expErr error
+	}{
+		{dir: d, l: l1, exp: expRes, expErr: nil},
+		{dir: "abc", l: l1, exp: nil, expErr: &fs.PathError{Path: "abc"}},
+		{dir: d, l: l2, exp: nil, expErr: ErrListingNotSupported},
+	}
+
+	for i, tc := range testcases {
+		val, err := tc.l.List(tc.dir)
+		assert.Equal(t, tc.exp, val, "Test failed %v. Expected %v, got %v", i, tc.exp, val)
+		assert.IsType(t, tc.expErr, err, "Test failed %v. Expected: %v, got: %v", i, tc.expErr, err)
+	}
 }

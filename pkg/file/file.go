@@ -115,3 +115,22 @@ func (l *fileAbstractor) Close() error {
 
 	return os.Remove(l.fileName)
 }
+
+func (l *fileAbstractor) List(directory string) ([]string, error) {
+	files := make([]string, 0)
+
+	if l.remoteFileAbstracter != nil {
+		return l.remoteFileAbstracter.list(directory)
+	}
+
+	fInfo, err := os.ReadDir(directory)
+	if err != nil {
+		return nil, err
+	}
+
+	for i := range fInfo {
+		files = append(files, fInfo[i].Name())
+	}
+
+	return files, nil
+}

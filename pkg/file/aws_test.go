@@ -95,3 +95,11 @@ func TestAws_push(t *testing.T) {
 		_ = l.Close()
 	}
 }
+
+func Test_list(t *testing.T) {
+	m := &mockClient{}
+	s := &aws{fileName: "aws.txt", fileMode: READWRITE, client: m, bucketName: "random-bucket"}
+	expErr := ErrListingNotSupported
+	_, err := s.list("test")
+	assert.Equalf(t, expErr, err, "Test case failed.\nExpected: %v, got: %v", expErr, err)
+}
