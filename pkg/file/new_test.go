@@ -2,10 +2,12 @@ package file
 
 import (
 	"fmt"
+	"net"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 
+	"developer.zopsmart.com/go/gofr/pkg/errors"
 	"developer.zopsmart.com/go/gofr/pkg/gofr/config"
 )
 
@@ -27,6 +29,8 @@ func TestNewFile(t *testing.T) {
 		{AWS, "test.txt", READWRITE, nil},
 		{GCP, "test.txt", WRITE, fmt.Errorf("dialing: google: could not find default " +
 			"credentials. See https://developers.google.com/accounts/docs/application-default-credentials for more information.")},
+		{SFTP, "test.txt", READ, &net.OpError{}},
+		{"invalid file stroage", "test.txt", READ, errors.InvalidFileStorage},
 	}
 
 	for _, tc := range testcases {
@@ -35,6 +39,6 @@ func TestNewFile(t *testing.T) {
 		}}
 		_, err := NewWithConfig(&c, tc.fileName, tc.fileMode)
 
-		assert.Equal(t, err, tc.expErr)
+		assert.IsType(t, tc.expErr, err)
 	}
 }

@@ -13,8 +13,18 @@ type File interface {
 	Seek(offset int64, whence int) (int64, error)
 	// Close calls the internal file descriptor method to Close.
 	Close() error
+}
+
+type Storage interface {
+	File
 	// List lists all the files in the directory
 	List(directory string) ([]string, error)
+	// Move moves the file from source to destination
+	Move(dest, src string) error
+	// Copy copies the file from source to destination
+	Copy(dest, src string) (int, error)
+	// Delete deletes the given file
+	Delete(fileName string) error
 }
 
 type cloudStore interface {
