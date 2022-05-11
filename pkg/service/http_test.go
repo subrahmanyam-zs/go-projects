@@ -19,9 +19,12 @@ import (
 
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 
+	"developer.zopsmart.com/go/gofr/pkg/errors"
 	"developer.zopsmart.com/go/gofr/pkg/log"
 	"developer.zopsmart.com/go/gofr/pkg/middleware"
 )
+
+const dummyURL = "http://dummy"
 
 func TestService_Request(t *testing.T) {
 	ts := testServer()
@@ -243,6 +246,58 @@ func Test_Client_ctx_cancel(t *testing.T) {
 	}
 }
 
+func initializeOauthTestServer(addSleep bool) *httptest.Server {
+	return httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if addSleep {
+			// used for token blocking
+			time.Sleep(time.Millisecond * 40)
+		}
+		sampleTokenResponse := map[string]interface{}{
+			"expires_in":   10,
+			"access_token": "sample_token",
+			"token_type":   "bearer",
+		}
+
+		_ = json.NewEncoder(w).Encode(sampleTokenResponse)
+	}))
+}
+
+func Test_OAuth_ctx_cancel_RequestTimeout(t *testing.T) {
+	testServer := initializeOauthTestServer(false)
+	defer testServer.Close()
+
+	logger := log.NewMockLogger(io.Discard)
+	testcases := []struct {
+		ctxTimeout time.Duration
+		reqTimeout time.Duration
+		err        error
+	}{
+		{time.Nanosecond * 5, time.Second * 10, RequestCanceled{}},
+		{time.Second * 10, time.Nanosecond * 5, errors.Timeout{URL: testServer.URL}},
+	}
+
+	for i := range testcases {
+		oauth := OAuthOption{
+			ClientID:        "client_id",
+			ClientSecret:    "clientSecret",
+			KeyProviderURL:  testServer.URL,
+			Scope:           "test:data",
+			WaitForTokenGen: true,
+		}
+
+		svc := NewHTTPServiceWithOptions(testServer.URL, logger, &Options{Auth: &Auth{OAuthOption: &oauth}})
+		svc.Timeout = testcases[i].reqTimeout
+
+		// nolint:govet // ignoring the cancel function
+		ctx, _ := context.WithTimeout(context.TODO(), testcases[i].ctxTimeout)
+
+		_, err := svc.Get(ctx, "dummy", nil)
+		if !reflect.DeepEqual(err, testcases[i].err) {
+			t.Errorf("[TESTCASE%d]Failed.\nExpected %v\nGot %v\n", i+1, testcases[i].err, err)
+		}
+	}
+}
+
 func TestCallError(t *testing.T) {
 	octr := otelhttp.NewTransport(nil)
 	c := &http.Client{Transport: octr}
@@ -371,7 +426,7 @@ func TestService_CorrelationIDLog(t *testing.T) {
 }
 
 func TestHttpService_SetHeaders(t *testing.T) {
-	httpSvc := NewHTTPServiceWithOptions("http://dummy", log.NewLogger(), nil)
+	httpSvc := NewHTTPServiceWithOptions(dummyURL, log.NewLogger(), nil)
 
 	ctx := context.WithValue(context.TODO(), middleware.ClientIPKey, "123.234.545.894")
 	ctx = context.WithValue(ctx, middleware.AuthenticatedUserIDKey, "2")
@@ -389,7 +444,7 @@ func TestHttpService_CSPAuthHeaders(t *testing.T) {
 		SharedKey: "mock-shared-key",
 	}}}
 
-	httpSvc := NewHTTPServiceWithOptions("http://dummy", log.NewLogger(), opts)
+	httpSvc := NewHTTPServiceWithOptions(dummyURL, log.NewLogger(), opts)
 
 	req, _ := httpSvc.createReq(context.Background(), http.MethodGet, "", nil, nil, nil)
 
@@ -400,7 +455,7 @@ func TestHttpService_CSPAuthHeaders(t *testing.T) {
 }
 
 func TestHttpService_SetAuthClientIP(t *testing.T) {
-	s := NewHTTPServiceWithOptions("http://dummy", log.NewLogger(),
+	s := NewHTTPServiceWithOptions(dummyURL, log.NewLogger(),
 		&Options{Headers: map[string]string{"Authorization": "se31-2fhhvhjf-9049"}})
 	ctx := context.WithValue(context.TODO(), middleware.ClientIPKey, "123.234.545.894")
 	req, _ := s.createReq(ctx, http.MethodGet, "", nil, nil, nil)
@@ -413,7 +468,7 @@ func TestHttpService_SetAuthClientIP(t *testing.T) {
 func TestHttpService_PropagateHeaders(t *testing.T) {
 	httpSvc := httpService{
 		Client: &http.Client{},
-		url:    "http://dummy",
+		url:    dummyURL,
 	}
 
 	httpSvc.PropagateHeaders("X-Custom-Header")
@@ -549,7 +604,7 @@ func TestHeaderPriority(t *testing.T) {
 func TestNewHTTPAuthService(t *testing.T) {
 	user := "Alice"
 	pass := "12345"
-	url := "http://dummy"
+	url := dummyURL
 	svc := NewHTTPServiceWithOptions(url, log.NewLogger(), &Options{Auth: &Auth{UserName: user, Password: pass}})
 	authStr := "Basic " + base64.StdEncoding.EncodeToString([]byte(user+":"+pass))
 
@@ -565,7 +620,7 @@ func TestNewHTTPAuthService(t *testing.T) {
 // TestHTTPCookieLogging checks, Cookie is getting logged or not for http client.
 func TestHTTPCookieLogging(t *testing.T) {
 	b := new(bytes.Buffer)
-	url := "http://dummmyapi"
+	url := dummyURL
 	h := NewHTTPServiceWithOptions(url, log.NewMockLogger(b), nil)
 	_, _ = h.call(context.TODO(), http.MethodGet, "", nil, nil, map[string]string{"Cookie": "Some-Random-Value"})
 
@@ -578,7 +633,7 @@ func TestHTTPCookieLogging(t *testing.T) {
 // TestCSPHeaderLogging checks, CSP headers are getting logged or not for http client.
 func TestCSPHeaderLogging(t *testing.T) {
 	b := new(bytes.Buffer)
-	url := "http://dummmy"
+	url := dummyURL
 	h := NewHTTPServiceWithOptions(url, log.NewMockLogger(b), nil)
 	_, _ = h.call(context.TODO(), http.MethodGet, "", nil, nil, map[string]string{"ac": "Some-Random-Value", "ak": "Some-Random-Value"})
 
@@ -592,7 +647,7 @@ func TestCSPHeaderLogging(t *testing.T) {
 func Test_AuthCall(t *testing.T) {
 	b := new(bytes.Buffer)
 	logger := log.NewMockLogger(b)
-	url := "http://mockapi"
+	url := dummyURL
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		sampleTokenResponse := map[string]interface{}{

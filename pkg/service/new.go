@@ -68,8 +68,7 @@ var (
 	}, []string{"host"})
 )
 
-// nolint:gocognit,gocyclo // don't want users to access methods of this type without initialization
-// hence we dont want to export the type
+// NewHTTPServiceWithOptions returns an exported type because users should not be allowed to access this without initialization
 func NewHTTPServiceWithOptions(resourceAddr string, logger log.Logger, options *Options) *httpService {
 	// Register the prometheus metric
 	if resourceAddr == "" {
@@ -110,37 +109,7 @@ func NewHTTPServiceWithOptions(resourceAddr string, logger log.Logger, options *
 		httpSvc.customHeaders = options.Headers
 	}
 
-	// enable auth
-	if options.Auth != nil && options.UserName != "" && options.OAuthOption == nil { // OAuth and basic auth cannot co-exist
-		httpSvc.isAuthSet = true
-		httpSvc.auth = "Basic " + base64.StdEncoding.EncodeToString([]byte(options.UserName+":"+options.Password))
-	}
-
-	// enable oauth
-	if options.Auth != nil && options.OAuthOption != nil && httpSvc.auth == "" { // if auth is already set to basic auth, dont set oauth
-		httpSvc.isAuthSet = true
-		go httpSvc.setClientOauthHeader(options.OAuthOption)
-	}
-
-	if options.Auth != nil && options.CSPOption != nil && options.CSPSecurityOption == nil {
-		logger.Warn("Deprecated CSPOption is used, instead use CSPSecurityOption for CSP Security")
-
-		options.CSPSecurityOption = &generator.Option{
-			AppKey:      options.AppKey,
-			SharedKey:   options.SharedKey,
-			MachineName: options.MachineName,
-			IPAddress:   options.IPAddress,
-		}
-	}
-
-	if options.Auth != nil && options.CSPSecurityOption != nil {
-		var err error
-
-		httpSvc.csp, err = generator.New(options.CSPSecurityOption)
-		if err != nil {
-			logger.Warnf("CSP Auth is not enabled, %v", err)
-		}
-	}
+	httpSvc.initializeClientWithAuth(logger, *options)
 
 	enableSP := true
 
@@ -170,6 +139,62 @@ func NewHTTPServiceWithOptions(resourceAddr string, logger log.Logger, options *
 	}
 
 	return httpSvc
+}
+
+func (h *httpService) initializeClientWithAuth(logger log.Logger, options Options) {
+	if options.Auth == nil {
+		return
+	}
+
+	// simple auth
+	if options.UserName != "" && options.OAuthOption == nil { // OAuth and basic auth cannot co-exist
+		h.isSet = true
+		h.auth = "Basic " + base64.StdEncoding.EncodeToString([]byte(options.UserName+":"+options.Password))
+	}
+
+	h.enableOAuth(options)
+
+	h.enableCSPSecurity(logger, options)
+}
+
+func (h *httpService) enableOAuth(options Options) {
+	if options.OAuthOption != nil && h.auth == "" { // if auth is already set to basic auth, dont set oauth
+		h.isSet = true
+
+		h.isTokenGenBlocking = options.WaitForTokenGen
+		h.isTokenPresent = make(chan bool)
+
+		// WaitForTokenGen is a flag indicating if the token generation is blocking or not.
+		// if the call is tokenGen blocking, we read from the channel(in pre call) to make sure token generation is complete
+		// we close the channel as soon as we get the first token,
+		// as we don't have to make it a blocking a call once the token is received
+		go func() {
+			h.setClientOauthHeader(options.OAuthOption)
+			close(h.isTokenPresent)
+		}()
+	}
+}
+
+func (h *httpService) enableCSPSecurity(logger log.Logger, options Options) {
+	if options.CSPOption != nil && options.CSPSecurityOption == nil {
+		logger.Warn("Deprecated CSPOption is used, instead use CSPSecurityOption for CSP Security")
+
+		options.CSPSecurityOption = &generator.Option{
+			AppKey:      options.AppKey,
+			SharedKey:   options.SharedKey,
+			MachineName: options.MachineName,
+			IPAddress:   options.IPAddress,
+		}
+	}
+
+	if options.CSPSecurityOption != nil {
+		var err error
+
+		h.csp, err = generator.New(options.CSPSecurityOption)
+		if err != nil {
+			logger.Warnf("CSP Auth is not enabled, %v", err)
+		}
+	}
 }
 
 func (h *httpService) HealthCheck() types.Health {

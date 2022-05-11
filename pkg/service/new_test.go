@@ -260,10 +260,11 @@ func TestNewHTTPServiceWithOptions_Oauth(t *testing.T) {
 	}))
 
 	oauthOption := OAuthOption{
-		ClientID:       clientID,
-		ClientSecret:   clientSecret,
-		KeyProviderURL: server.URL,
-		Scope:          "some_scope",
+		ClientID:        clientID,
+		ClientSecret:    clientSecret,
+		KeyProviderURL:  server.URL,
+		Scope:           "some_scope",
+		WaitForTokenGen: false,
 	}
 
 	svc := NewHTTPServiceWithOptions(url, logger, &Options{Auth: &Auth{OAuthOption: &oauthOption}})
@@ -281,6 +282,52 @@ func TestNewHTTPServiceWithOptions_Oauth(t *testing.T) {
 		t.Errorf("Expected: %v \nGot: %v", expectedSvc, svc)
 	}
 	svc.mu.Unlock()
+}
+
+func TestNewHTTPServiceWithOptions_Oauth_TokenGenBlocking(t *testing.T) {
+	testServer := initializeOauthTestServer(false)
+	defer testServer.Close()
+
+	logger := log.NewMockLogger(io.Discard)
+
+	oauth := OAuthOption{
+		ClientID:        "clientID",
+		ClientSecret:    "clientSecret",
+		KeyProviderURL:  testServer.URL,
+		Scope:           "test:data",
+		WaitForTokenGen: true,
+	}
+
+	svc := NewHTTPServiceWithOptions("http://dummy", logger, &Options{Auth: &Auth{OAuthOption: &oauth}})
+
+	time.Sleep(1 * time.Second) // ensuring that the call to the test server is made
+
+	select {
+	case <-svc.isTokenPresent: // isTokenPresent is closed after successfully generating the token.
+	default:
+		t.Errorf("Test Failed, isTokenPresent is not closed after token generation")
+	}
+}
+
+func TestNewHTTPServiceWithOptions_OAuthError(t *testing.T) {
+	testServer := initializeOauthTestServer(true)
+	defer testServer.Close()
+
+	logger := log.NewMockLogger(io.Discard)
+
+	oauth := OAuthOption{
+		ClientID:        "clientID",
+		ClientSecret:    "clientSecret",
+		KeyProviderURL:  testServer.URL,
+		Scope:           "test:data",
+		WaitForTokenGen: true,
+	}
+
+	svc := NewHTTPServiceWithOptions("https://dummy", logger, &Options{Auth: &Auth{OAuthOption: &oauth}})
+
+	if svc.auth != "" { // auth Header will be empty because we have added a sleep in OAuth sever.
+		t.Errorf("Test Failed. Expected auth header to be empty. Got : %v", svc.auth)
+	}
 }
 
 func TestHttpServiceWithOptions_CSP(t *testing.T) {

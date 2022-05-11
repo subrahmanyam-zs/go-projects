@@ -15,12 +15,13 @@ import (
 )
 
 type OAuthOption struct {
-	ClientID       string
-	ClientSecret   string
-	KeyProviderURL string
-	Scope          string
-	Audience       string
-	MaxSleep       int
+	ClientID        string
+	ClientSecret    string
+	KeyProviderURL  string
+	Scope           string
+	Audience        string
+	MaxSleep        int
+	WaitForTokenGen bool
 }
 
 // nolint:gocognit // need to add new condition to check clientID and clientSecret
