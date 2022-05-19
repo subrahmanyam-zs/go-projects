@@ -146,10 +146,6 @@ jobs:
           name: build artifacts
           path: build
 
-      - name: Coverage Summary
-        run: |
-          go tool cover -func build/coverage.out >> $GITHUB_STEP_SUMMARY
-
   code_quality:
     name: Code Quality
     runs-on: ubuntu-latest
