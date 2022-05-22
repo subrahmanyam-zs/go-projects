@@ -111,8 +111,8 @@ jobs:
           account_id: ${{ secrets.AWS_ACCOUNT_ID }}
           repo: ${{ secrets.AWS_ECR_REPO }}
           region: us-west-2
-          dockerfile: ./Dockerfile
-          path: .
+          dockerfile: examples/sample-api/Dockerfile
+          path: examples/sample-api
           tags: ${{ github.sha }}
 
   Deploy-on-QA:
