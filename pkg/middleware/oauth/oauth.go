@@ -43,11 +43,11 @@ func Auth(logger log.Logger, options Options) func(inner http.Handler) http.Hand
 			if err == nil {
 				// if user is verified ,setting it in the context pool
 				ctx := context.WithValue(req.Context(), jwtClaimsKey, token.Claims)
-				req = req.WithContext(ctx)
+				*req = *req.Clone(ctx)
 				inner.ServeHTTP(w, req)
 				return
 			}
-			logger.Errorf("Client authentication failed for token : ", token, " with Error : ", err)
+			logger.Errorf("Client authentication failed for given token with Error : %v", err)
 
 			description, code := middleware.GetDescription(err)
 			e := middleware.FetchErrResponseWithCode(code, description, err.Error())
