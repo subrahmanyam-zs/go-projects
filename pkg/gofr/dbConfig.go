@@ -7,6 +7,7 @@ import (
 
 	"developer.zopsmart.com/go/gofr/pkg"
 	"developer.zopsmart.com/go/gofr/pkg/datastore"
+	"developer.zopsmart.com/go/gofr/pkg/datastore/kvdata"
 	"developer.zopsmart.com/go/gofr/pkg/datastore/pubsub/avro"
 	"developer.zopsmart.com/go/gofr/pkg/datastore/pubsub/eventhub"
 	"developer.zopsmart.com/go/gofr/pkg/datastore/pubsub/kafka"
@@ -236,5 +237,13 @@ func dynamoDBConfigFromEnv(c Config) datastore.DynamoDBConfig {
 		AccessKeyID:       c.Get("DYNAMODB_ACCESS_KEY_ID"),
 		SecretAccessKey:   c.Get("DYNAMODB_SECRET_ACCESS_KEY"),
 		ConnRetryDuration: getRetryDuration(c.Get("DYNAMODB_CONN_RETRY")),
+	}
+}
+
+func kvDataConfigFromEnv(c Config) kvdata.KvDataConfig {
+	return kvdata.KvDataConfig{
+		URL:       c.Get("KV_URL"),
+		AppKey:    c.Get("KV_CSP_APP_KEY_FWK"),
+		SharedKey: c.Get("KV_CSP_SHARED_KEY_FWK"),
 	}
 }

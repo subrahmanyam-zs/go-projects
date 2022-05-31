@@ -508,3 +508,34 @@ func Test_GofrCMDConfig(t *testing.T) {
 		t.Errorf("expected redis to be connected through configs")
 	}
 }
+
+func Test_initializeKvData(t *testing.T) {
+	b := new(bytes.Buffer)
+	logger := log.NewMockLogger(b)
+	c := config.NewGoDotEnvProvider(logger, "../../configs")
+	testCases := []struct {
+		config      config.MockConfig
+		expectedStr string
+	}{
+		{
+			config.MockConfig{Data: map[string]string{
+				"KV_URL":                c.Get("KV_URL"),
+				"KV_CSP_APP_KEY_FWK":    c.Get("KV_CSP_APP_KEY_FWK"),
+				"KV_CSP_SHARED_KEY_FWK": c.Get("KV_CSP_SHARED_KEY_FWK"),
+			}},
+			"KVData initialized",
+		},
+	}
+
+	k := &Gofr{Logger: logger}
+
+	for _, tc := range testCases {
+		initializeKvData(&tc.config, k)
+
+		if !strings.Contains(b.String(), tc.expectedStr) {
+			t.Errorf("FAILED, expected: `%v` in the logs, got: %v", tc.expectedStr, b.String())
+		}
+
+		b = new(bytes.Buffer)
+	}
+}

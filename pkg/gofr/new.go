@@ -7,12 +7,15 @@ import (
 	"strings"
 	"time"
 
+	"github-lvs.corpzone.internalzone.com/mcafee/cnsr-gofr-csp-auth/generator"
+
 	"github.com/prometheus/client_golang/prometheus"
 
 	"go.opentelemetry.io/otel"
 
 	"developer.zopsmart.com/go/gofr/pkg"
 	"developer.zopsmart.com/go/gofr/pkg/datastore"
+	kvData "developer.zopsmart.com/go/gofr/pkg/datastore/kvdata"
 	"developer.zopsmart.com/go/gofr/pkg/datastore/pubsub/avro"
 	"developer.zopsmart.com/go/gofr/pkg/datastore/pubsub/eventhub"
 	"developer.zopsmart.com/go/gofr/pkg/datastore/pubsub/kafka"
@@ -22,6 +25,7 @@ import (
 	"developer.zopsmart.com/go/gofr/pkg/log"
 	"developer.zopsmart.com/go/gofr/pkg/middleware"
 	awssns "developer.zopsmart.com/go/gofr/pkg/notifier/aws-sns"
+	"developer.zopsmart.com/go/gofr/pkg/service"
 )
 
 // nolint:gochecknoglobals // need to declare global variable to push metrics
@@ -242,6 +246,9 @@ func initializeDataStores(c Config, k *Gofr) {
 
 	// DynamoDB
 	initializeDynamoDB(c, k)
+
+	// KVData
+	initializeKvData(c, k)
 }
 
 func initializeDynamoDB(c Config, k *Gofr) {
@@ -595,4 +602,17 @@ func getConfigFolder() (configFolder string) {
 	}
 
 	return
+}
+
+func initializeKvData(c Config, app *Gofr) {
+	cfg := kvDataConfigFromEnv(c)
+
+	options := &service.Options{Auth: &service.Auth{CSPSecurityOption: &generator.Option{AppKey: cfg.AppKey, SharedKey: cfg.SharedKey}}}
+	kvSvc := service.NewHTTPServiceWithOptions(cfg.URL, app.Logger, options)
+
+	app.ServiceHealth = append(app.ServiceHealth, kvSvc.HealthCheck)
+	kv := kvData.New(kvSvc)
+	app.KVData = kv
+
+	app.Logger.Infof("KVData initialized at %v", cfg.URL)
 }

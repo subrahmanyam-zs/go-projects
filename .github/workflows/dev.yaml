@@ -102,6 +102,15 @@ jobs:
           dockerfile: examples/sample-api/Dockerfile
           path: examples/sample-api
           tags: ${{ github.sha }}
+  Deploy-on-Dev:
+    needs: Dockerize
+    runs-on: [ self-hosted, linux, centos7 ]
+    steps:
+      - name: Trigger harness pipeline for deployment on DEV environment
+        run: |
+          template='{"application":"%s","parameters":{"image":"%s"}}'
+          jsonData=$( printf "$template" "$HARNESS_APP_ID" "$IMAGE_URL" )
+          curl -X POST -H 'content-type: application/json' --url ${{ secrets.HARNESS_DEV_WEBHOOK_URL }} -d $jsonData
 
   Deploy-on-QA:
     needs: Dockerize

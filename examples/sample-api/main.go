@@ -30,6 +30,9 @@ func main() {
 	// Handler function return response of type raw
 	app.GET("/raw", handler.Raw)
 
+	// Handler function for KV data
+	app.GET("/kv", handler.KVHandler)
+
 	// start the server
 	app.Start()
 }

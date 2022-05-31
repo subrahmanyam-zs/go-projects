@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"developer.zopsmart.com/go/gofr/pkg/datastore"
+	"developer.zopsmart.com/go/gofr/pkg/datastore/kvdata"
 	"developer.zopsmart.com/go/gofr/pkg/datastore/pubsub/kafka"
 	"developer.zopsmart.com/go/gofr/pkg/gofr/config"
 	awssns "developer.zopsmart.com/go/gofr/pkg/notifier/aws-sns"
@@ -370,5 +371,27 @@ func Test_sqlDBConfigFromEnv(t *testing.T) {
 		cfg := sqlDBConfigFromEnv(tc.input)
 
 		assert.Equal(t, tc.expDBCfg, cfg, "TEST[%d], failed.\n%s", i, tc.desc)
+	}
+}
+
+func Test_kvDataConfigFromEnv(t *testing.T) {
+	input := &config.MockConfig{
+		Data: map[string]string{
+			"KV_URL":                "http://localhost:2021",
+			"KV_CSP_APP_KEY_FWK":    "test key",
+			"KV_CSP_SHARED_KEY_FWK": "test key",
+		},
+	}
+
+	expConfig := kvdata.KvDataConfig{
+		URL:       "http://localhost:2021",
+		AppKey:    "test key",
+		SharedKey: "test key",
+	}
+
+	cfg := kvDataConfigFromEnv(input)
+
+	if !reflect.DeepEqual(cfg, expConfig) {
+		t.Errorf("Got: %v,expected:%v", cfg, expConfig)
 	}
 }

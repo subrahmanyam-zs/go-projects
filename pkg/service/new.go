@@ -13,7 +13,6 @@ import (
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 
 	"developer.zopsmart.com/go/gofr/pkg"
-	"developer.zopsmart.com/go/gofr/pkg/gofr/cache"
 	"developer.zopsmart.com/go/gofr/pkg/gofr/types"
 	"developer.zopsmart.com/go/gofr/pkg/log"
 )
@@ -43,7 +42,7 @@ type Auth struct {
 
 // Cache provides the options needed for caching of HTTPService responses
 type Cache struct {
-	cache.Cacher
+	Cacher
 	TTL          time.Duration
 	KeyGenerator KeyGenerator
 }
