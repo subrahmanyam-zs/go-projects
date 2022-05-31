@@ -1,0 +1,65 @@
+name: Scans
+
+on:
+  push:
+    branches: [ master ]
+
+env:
+  GOPRIVATE: "github-lvs.corpzone.internalzone.com/mcafee,developer.zopsmart.com/go/gofr"
+
+jobs:
+  scans :
+    name: scans
+    runs-on: [self-hosted, Linux, X64]
+    steps:
+      - name: Set up Go 1.17
+        uses: actions/setup-go@v2
+        with:
+          go-version: 1.17
+          id: Go
+
+      - name: Checkout code into go module directory
+        uses: actions/checkout@v2
+
+      - name: Fetch dependencies
+        run: |
+          git config --global url."https://${{ secrets.PAT}}:x-oauth-basic@github-lvs.corpzone.internalzone.com/".insteadOf "https://github-lvs.corpzone.internalzone.com/"
+          git config --global http.sslVerify false
+          go get -v -t -d ./...
+
+      - name: Fortify Scan
+        run: |
+          export PATH=$PATH:/opt/fortify/fortify-base/bin
+          sourceanalyzer -b 1 -scan -f scan.fpr
+          BIRTReportGenerator -template "DISA STIG" -source scan.fpr -format PDF -output scan.pdf -showSuppressed -showHidden
+
+      - name: Upload fortify
+        uses: actions/upload-artifact@v2
+        with:
+          name: Fortify
+          path: scan.pdf
+
+      - name: Coverity Scan
+        env:
+          AUTH_DATA: ${{ secrets.COVERITY_KEY_FILE }}
+        run: |
+          export PATH=$PATH:/opt/coverity/coverity-base/bin
+          mkdir coverity
+          cov-build --dir coverity go build ./...
+          cov-analyze --dir coverity  --strip-path=`pwd`
+          touch auth_key_file
+          chmod 600 auth_key_file
+          echo $( printf "%s" "$AUTH_DATA" ) > auth_key_file
+          cov-commit-defects --dir coverity --url http://watcoverity2.mcafee.int:8080 --stream Gofr  --user ${{ secrets.COVERITY_USER }} --password ${{ secrets.COVERITY_PWD }}
+
+      - name: Upload Coverity
+        uses: actions/upload-artifact@v2
+        with:
+          name: coverity
+          path: coverity
+
+      - name: Remove coverity
+        run: |
+          rm -rf coverity
+
+        
