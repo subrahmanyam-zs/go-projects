@@ -74,22 +74,20 @@ func (s *levelService) updateRemoteLevel() {
 		return
 	}
 
+	defer resp.Body.Close()
+
 	if resp.StatusCode != http.StatusOK {
 		s.logger.Warnf("Logging Service returned %d status. Req: %s", resp.StatusCode, req.URL)
 
 		return
 	}
 
-	if resp.Body != nil {
-		b, _ := io.ReadAll(resp.Body)
+	b, _ := io.ReadAll(resp.Body)
 
-		_ = resp.Body.Close()
+	if newLevel := s.getRemoteLevel(b); s.level != newLevel {
+		s.logger.Debugf("Changing log level from %s to %s because of remote log service", s.level, newLevel)
 
-		if newLevel := s.getRemoteLevel(b); s.level != newLevel {
-			s.logger.Debugf("Changing log level from %s to %s because of remote log service", s.level, newLevel)
-
-			s.level = newLevel
-		}
+		s.level = newLevel
 	}
 }
 
