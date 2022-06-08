@@ -606,13 +606,14 @@ func getConfigFolder() (configFolder string) {
 
 func initializeKvData(c Config, app *Gofr) {
 	cfg := kvDataConfigFromEnv(c)
+	if cfg.URL != "" {
+		options := &service.Options{Auth: &service.Auth{CSPSecurityOption: &generator.Option{AppKey: cfg.AppKey, SharedKey: cfg.SharedKey}}}
+		kvSvc := service.NewHTTPServiceWithOptions(cfg.URL, app.Logger, options)
 
-	options := &service.Options{Auth: &service.Auth{CSPSecurityOption: &generator.Option{AppKey: cfg.AppKey, SharedKey: cfg.SharedKey}}}
-	kvSvc := service.NewHTTPServiceWithOptions(cfg.URL, app.Logger, options)
+		app.ServiceHealth = append(app.ServiceHealth, kvSvc.HealthCheck)
+		kv := kvData.New(kvSvc)
+		app.KVData = kv
 
-	app.ServiceHealth = append(app.ServiceHealth, kvSvc.HealthCheck)
-	kv := kvData.New(kvSvc)
-	app.KVData = kv
-
-	app.Logger.Infof("KVData initialized at %v", cfg.URL)
+		app.Logger.Infof("KVData initialized at %v", cfg.URL)
+	}
 }

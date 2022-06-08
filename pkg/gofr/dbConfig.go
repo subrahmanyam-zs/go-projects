@@ -240,8 +240,8 @@ func dynamoDBConfigFromEnv(c Config) datastore.DynamoDBConfig {
 	}
 }
 
-func kvDataConfigFromEnv(c Config) kvdata.KvDataConfig {
-	return kvdata.KvDataConfig{
+func kvDataConfigFromEnv(c Config) kvdata.Config {
+	return kvdata.Config{
 		URL:       c.Get("KV_URL"),
 		AppKey:    c.Get("KV_CSP_APP_KEY_FWK"),
 		SharedKey: c.Get("KV_CSP_SHARED_KEY_FWK"),

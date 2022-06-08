@@ -104,7 +104,7 @@ jobs:
           tags: ${{ github.sha }}
   Deploy-on-Dev:
     needs: Dockerize
-    runs-on: [ self-hosted, linux, centos7 ]
+    runs-on: [ self-hosted, linux ]
     steps:
       - name: Trigger harness pipeline for deployment on DEV environment
         run: |

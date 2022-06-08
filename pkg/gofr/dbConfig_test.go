@@ -383,7 +383,7 @@ func Test_kvDataConfigFromEnv(t *testing.T) {
 		},
 	}
 
-	expConfig := kvdata.KvDataConfig{
+	expConfig := kvdata.Config{
 		URL:       "http://localhost:2021",
 		AppKey:    "test key",
 		SharedKey: "test key",

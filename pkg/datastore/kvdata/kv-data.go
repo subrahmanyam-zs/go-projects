@@ -8,37 +8,36 @@ import (
 	"developer.zopsmart.com/go/gofr/pkg/errors"
 )
 
-//nolint
-type KvDataConfig struct {
+type Config struct {
 	URL       string
 	AppKey    string
 	SharedKey string
 }
 
-type kvDataClient struct {
+type client struct {
 	kvDataSvc HTTPService
 }
 
-//nolint
-func New(kvDataSvc HTTPService) kvDataClient {
-	return kvDataClient{kvDataSvc: kvDataSvc}
+//nolint:revive //client should not be accessed directly
+func New(kvDataSvc HTTPService) client {
+	return client{kvDataSvc: kvDataSvc}
 }
 
-func (k kvDataClient) Get(ctx context.Context, key string) (string, error) {
-	resp, err := k.kvDataSvc.Get(ctx, "data/"+key, nil)
+func (c client) Get(ctx context.Context, key string) (string, error) {
+	resp, err := c.kvDataSvc.Get(ctx, "data/"+key, nil)
 	if err != nil {
 		return "", err
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		return "", k.getError(resp.Body, resp.StatusCode)
+		return "", c.getError(resp.Body, resp.StatusCode)
 	}
 
 	var res = struct {
 		Data map[string]string
 	}{}
 
-	err = k.bind(resp.Body, &res)
+	err = c.bind(resp.Body, &res)
 	if err != nil {
 		return "", err
 	}
@@ -46,7 +45,7 @@ func (k kvDataClient) Get(ctx context.Context, key string) (string, error) {
 	return res.Data[key], nil
 }
 
-func (k kvDataClient) Set(ctx context.Context, key, value string) error {
+func (c client) Set(ctx context.Context, key, value string) error {
 	input := make(map[string]string)
 	input[key] = value
 
@@ -55,26 +54,26 @@ func (k kvDataClient) Set(ctx context.Context, key, value string) error {
 		return err
 	}
 
-	resp, err := k.kvDataSvc.Post(ctx, "data", nil, body)
+	resp, err := c.kvDataSvc.Post(ctx, "data", nil, body)
 	if err != nil {
 		return err
 	}
 
 	if resp.StatusCode != http.StatusCreated {
-		return k.getError(resp.Body, resp.StatusCode)
+		return c.getError(resp.Body, resp.StatusCode)
 	}
 
 	return nil
 }
 
-func (k kvDataClient) Delete(ctx context.Context, key string) error {
-	resp, err := k.kvDataSvc.Delete(ctx, "data/"+key, nil)
+func (c client) Delete(ctx context.Context, key string) error {
+	resp, err := c.kvDataSvc.Delete(ctx, "data/"+key, nil)
 	if err != nil {
 		return err
 	}
 
 	if resp.StatusCode != http.StatusNoContent {
-		return k.getError(resp.Body, resp.StatusCode)
+		return c.getError(resp.Body, resp.StatusCode)
 	}
 
 	return nil
@@ -82,12 +81,12 @@ func (k kvDataClient) Delete(ctx context.Context, key string) error {
 
 // getError unmarshalls the error response and returns it.
 // If error occurs while unmarshalling, it returns Bind Error.
-func (k kvDataClient) getError(body []byte, statusCode int) error {
+func (c client) getError(body []byte, statusCode int) error {
 	resp := struct {
 		Errors []errors.Response `json:"errors"`
 	}{}
 
-	if err := k.bind(body, &resp); err != nil {
+	if err := c.bind(body, &resp); err != nil {
 		return err
 	}
 
@@ -100,8 +99,8 @@ func (k kvDataClient) getError(body []byte, statusCode int) error {
 }
 
 // bind unmarshalls response body to data and returns Bind Error if an error occurs.
-func (k kvDataClient) bind(body []byte, data interface{}) error {
-	err := k.kvDataSvc.Bind(body, data)
+func (c client) bind(body []byte, data interface{}) error {
+	err := c.kvDataSvc.Bind(body, data)
 	if err != nil {
 		return &errors.Response{
 			Code:   "Bind Error",
