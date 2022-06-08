@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"github-lvs.corpzone.internalzone.com/mcafee/cnsr-gofr-csp-auth/generator"
+	"github.int.mcafee.com/mcafee/cnsr-gofr-csp-auth/generator"
 )
 
 func TestIntegration(t *testing.T) {

@@ -7,7 +7,7 @@ on:
 env:
   IMAGE_URL: ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.us-west-2.amazonaws.com/${{ secrets.AWS_ECR_REPO }}:${{ github.sha }}
   HARNESS_APP_ID: ${{ secrets.HARNESS_APP_ID }}
-  GOPRIVATE: "github-lvs.corpzone.internalzone.com/mcafee,developer.zopsmart.com/go/gofr"
+  GOPRIVATE: "github.int.mcafee.com/mcafee,developer.zopsmart.com/go/gofr"
 
 jobs:
   Build-and-Test:
@@ -25,7 +25,7 @@ jobs:
 
       - name: Fetch dependencies
         run: |
-          git config --global url."https://${{ secrets.PAT}}:x-oauth-basic@github-lvs.corpzone.internalzone.com/".insteadOf "https://github-lvs.corpzone.internalzone.com/"
+          git config --global url."https://${{ secrets.PAT}}:x-oauth-basic@github.int.mcafee.com/".insteadOf "https://github.int.mcafee.com/"
           git config --global http.sslVerify false
           go get -v -t -d ./...
 

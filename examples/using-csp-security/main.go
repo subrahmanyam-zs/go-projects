@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github-lvs.corpzone.internalzone.com/mcafee/cnsr-gofr-csp-auth/validator"
+	"github.int.mcafee.com/mcafee/cnsr-gofr-csp-auth/validator"
 
 	"developer.zopsmart.com/go/gofr/pkg/errors"
 	"developer.zopsmart.com/go/gofr/pkg/gofr"

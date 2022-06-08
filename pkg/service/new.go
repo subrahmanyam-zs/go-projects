@@ -8,7 +8,7 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 
-	"github-lvs.corpzone.internalzone.com/mcafee/cnsr-gofr-csp-auth/generator"
+	"github.int.mcafee.com/mcafee/cnsr-gofr-csp-auth/generator"
 
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 

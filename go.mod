@@ -4,7 +4,6 @@ go 1.17
 
 require (
 	cloud.google.com/go/storage v1.20.0
-	github-lvs.corpzone.internalzone.com/mcafee/cnsr-gofr-csp-auth v0.1.3
 	github.com/Azure/azure-amqp-common-go/v3 v3.2.3
 	github.com/Azure/azure-event-hubs-go/v3 v3.3.17
 	github.com/Azure/azure-storage-blob-go v0.14.0
@@ -35,10 +34,11 @@ require (
 	github.com/newrelic/go-agent v3.15.2+incompatible
 	github.com/pkg/sftp v1.13.4
 	github.com/prometheus/client_golang v1.12.1
-	github.com/stretchr/testify v1.7.1
+	github.com/stretchr/testify v1.7.2
 	github.com/xdg/scram v1.0.5
 	github.com/yugabyte/gocql v0.0.0-20220204171058-0bd8e6cb12d0
 	github.com/zopsmart/gorm-opentelemetry v1.0.1-0.20211208062846-bf802ea1c033
+	github.int.mcafee.com/mcafee/cnsr-gofr-csp-auth v0.2.0
 	go.mongodb.org/mongo-driver v1.8.3
 	go.opencensus.io v0.23.0
 	go.opentelemetry.io/contrib/instrumentation/net/http/httptrace/otelhttptrace v0.28.0
@@ -47,7 +47,7 @@ require (
 	go.opentelemetry.io/otel/exporters/zipkin v1.3.0
 	go.opentelemetry.io/otel/sdk v1.3.0
 	go.opentelemetry.io/otel/trace v1.3.0
-	golang.org/x/crypto v0.0.0-20220209195652-db638375bc3a
+	golang.org/x/crypto v0.0.0-20220525230936-793ad666bf5e
 	golang.org/x/net v0.0.0-20220127200216-cd36cc0744dd
 	golang.org/x/text v0.3.7
 	google.golang.org/api v0.68.0
@@ -165,8 +165,7 @@ require (
 	golang.org/x/xerrors v0.0.0-20200804184101-5ec99f83aff1 // indirect
 	google.golang.org/appengine v1.6.7 // indirect
 	google.golang.org/genproto v0.0.0-20220208230804-65c12eb4c068 // indirect
-	google.golang.org/grpc/cmd/protoc-gen-go-grpc v1.2.0 // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
-	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b // indirect
+	gopkg.in/yaml.v3 v3.0.1 // indirect
 )

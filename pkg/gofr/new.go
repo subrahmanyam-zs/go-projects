@@ -7,7 +7,7 @@ import (
 	"strings"
 	"time"
 
-	"github-lvs.corpzone.internalzone.com/mcafee/cnsr-gofr-csp-auth/generator"
+	"github.int.mcafee.com/mcafee/cnsr-gofr-csp-auth/generator"
 
 	"github.com/prometheus/client_golang/prometheus"
 
