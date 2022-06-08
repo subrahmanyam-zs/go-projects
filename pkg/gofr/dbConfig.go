@@ -228,8 +228,8 @@ func eventbridgeConfigFromEnv(c Config) *eventbridge.Config {
 		EventBus:          c.Get("EVENT_BRIDGE_BUS"),
 		EventSource:       c.Get("EVENT_BRIDGE_SOURCE"),
 		Region:            c.Get("EVENT_BRIDGE_REGION"),
-		AccessKeyID:       c.Get("AWS_ACCESS_KEY_ID"),
-		SecretAccessKey:   c.Get("AWS_SECRET_ACCESS_KEY"),
+		AccessKeyID:       c.Get("EVENTBRIDGE_ACCESS_KEY_ID"),
+		SecretAccessKey:   c.Get("EVENTBRIDGE_SECRET_ACCESS_KEY"),
 	}
 }
 

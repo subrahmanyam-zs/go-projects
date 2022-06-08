@@ -378,12 +378,12 @@ func Test_sqlDBConfigFromEnv(t *testing.T) {
 func Test_eventBridgeConfigFromEnv(t *testing.T) {
 	c := &config.MockConfig{
 		Data: map[string]string{
-			"EVENT_BRIDGE_REGION":          "us-east-1",
-			"EVENT_BRIDGE_BUS":             "Gofr",
-			"EVENT_BRIDGE_SOURCE":          "Gofr-application",
-			"EVENT_BRIDGE_RETRY_FREQUENCY": "5",
-			"AWS_ACCESS_KEY_ID":            "test",
-			"AWS_SECRET_ACCESS_KEY":        "test",
+			"EVENT_BRIDGE_REGION":           "us-east-1",
+			"EVENT_BRIDGE_BUS":              "Gofr",
+			"EVENT_BRIDGE_SOURCE":           "Gofr-application",
+			"EVENT_BRIDGE_RETRY_FREQUENCY":  "5",
+			"EVENTBRIDGE_ACCESS_KEY_ID":     "test",
+			"EVENTBRIDGE_SECRET_ACCESS_KEY": "test",
 		}}
 
 	cfg := eventbridgeConfigFromEnv(c)
