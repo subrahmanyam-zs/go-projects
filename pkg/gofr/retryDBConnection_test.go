@@ -1,9 +1,11 @@
 package gofr
 
 import (
+	"bytes"
 	"io"
 	"strconv"
 	"testing"
+	"time"
 
 	"github.com/go-redis/redis/v8"
 	"github.com/stretchr/testify/assert"
@@ -255,4 +257,27 @@ func Test_dynamoRetry(t *testing.T) {
 	if k.DynamoDB.DynamoDB == nil {
 		t.Errorf("FAILED, expected: DynamoDB initialized successfully, got: DynamoDB initialization failed")
 	}
+}
+
+func Test_AWSEventBridgeRetry(t *testing.T) {
+	var k Gofr
+
+	b := new(bytes.Buffer)
+	logger := log.NewMockLogger(b)
+	k.Logger = logger
+	c := config.NewGoDotEnvProvider(logger, "../../configs")
+	cfg := eventbridgeConfigFromEnv(c)
+	cfg.ConnRetryDuration = 1
+
+	go eventbridgeRetry(cfg, &k)
+
+	for i := 0; i < 5; i++ {
+		time.Sleep(1 * time.Second)
+
+		if k.PubSub != nil {
+			break
+		}
+	}
+
+	assert.Contains(t, b.String(), "AWS EventBridge initialized successfully")
 }

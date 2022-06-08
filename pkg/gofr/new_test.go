@@ -509,6 +509,22 @@ func Test_GofrCMDConfig(t *testing.T) {
 	}
 }
 
+func Test_initializeEventBridge(t *testing.T) {
+	b := new(bytes.Buffer)
+	logger := log.NewMockLogger(b)
+	c := &config.MockConfig{
+		Data: map[string]string{
+			"EVENT_BRIDGE_REGION": "us-east-1",
+			"EVENT_BRIDGE_BUS":    "Gofr",
+			"EVENT_BRIDGE_SOURCE": "Gofr-application",
+		},
+	}
+	k := &Gofr{Logger: logger}
+	initializeEventBridge(c, k)
+
+	assert.Contains(t, b.String(), "AWS EventBridge initialized successfully")
+}
+
 func Test_initializeKvData(t *testing.T) {
 	testCases := []struct {
 		config      config.MockConfig

@@ -12,7 +12,7 @@ require (
 	github.com/GoogleCloudPlatform/opentelemetry-operations-go/exporter/trace v1.3.0
 	github.com/Shopify/sarama v1.31.1
 	github.com/XSAM/otelsql v0.10.0
-	github.com/aws/aws-sdk-go v1.42.50
+	github.com/aws/aws-sdk-go v1.44.13
 	github.com/aws/aws-sdk-go-v2/credentials v1.8.0
 	github.com/aws/aws-sdk-go-v2/service/s3 v1.24.1
 	github.com/elastic/go-elasticsearch/v7 v7.17.0

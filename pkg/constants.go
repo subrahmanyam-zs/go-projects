@@ -11,6 +11,7 @@ const (
 	SQL               = "sql"
 	Mongo             = "mongo"
 	Kafka             = "kafka"
+	EventBridge       = "Event bridge"
 	ElasticSearch     = "elasticsearch"
 	YCQL              = "ycql"
 	EventHub          = "eventhub"

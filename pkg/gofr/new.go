@@ -17,6 +17,7 @@ import (
 	"developer.zopsmart.com/go/gofr/pkg/datastore"
 	kvData "developer.zopsmart.com/go/gofr/pkg/datastore/kvdata"
 	"developer.zopsmart.com/go/gofr/pkg/datastore/pubsub/avro"
+	"developer.zopsmart.com/go/gofr/pkg/datastore/pubsub/eventbridge"
 	"developer.zopsmart.com/go/gofr/pkg/datastore/pubsub/eventhub"
 	"developer.zopsmart.com/go/gofr/pkg/datastore/pubsub/kafka"
 	"developer.zopsmart.com/go/gofr/pkg/gofr/config"
@@ -138,6 +139,8 @@ func initializePubSub(c Config, k *Gofr) {
 		initializeKafka(c, k)
 	case "EVENTHUB":
 		initializeEventhub(c, k)
+	case "EVENTBRIDGE":
+		initializeEventBridge(c, k)
 	}
 }
 
@@ -398,6 +401,25 @@ func initializeKafka(c Config, k *Gofr) {
 		if avroConfig.URL != "" {
 			initializeAvro(avroConfig, k)
 		}
+	}
+}
+
+func initializeEventBridge(c Config, k *Gofr) {
+	if c.Get("EVENT_BRIDGE_BUS") != "" {
+		cfg := eventbridgeConfigFromEnv(c)
+
+		var err error
+
+		k.PubSub, err = eventbridge.New(cfg)
+		if err != nil {
+			k.Logger.Errorf("AWS EventBridge could not be initialized, error: %v\n", err)
+
+			go eventbridgeRetry(cfg, k)
+
+			return
+		}
+
+		k.Logger.Info("AWS EventBridge initialized successfully")
 	}
 }
 

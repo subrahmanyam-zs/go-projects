@@ -63,7 +63,7 @@ type PublisherSubscriber interface {
 
 			returns error if publish encounters a failure
 	*/
-	PublishEvent(key string, value interface{}, headers map[string]string) error
+	PublishEvent(string, interface{}, map[string]string) error
 
 	/*
 		Subscribe read messages from the pubsub(kafka) configured.

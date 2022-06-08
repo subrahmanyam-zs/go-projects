@@ -9,6 +9,7 @@ import (
 	"developer.zopsmart.com/go/gofr/pkg/datastore"
 	"developer.zopsmart.com/go/gofr/pkg/datastore/kvdata"
 	"developer.zopsmart.com/go/gofr/pkg/datastore/pubsub/avro"
+	"developer.zopsmart.com/go/gofr/pkg/datastore/pubsub/eventbridge"
 	"developer.zopsmart.com/go/gofr/pkg/datastore/pubsub/eventhub"
 	"developer.zopsmart.com/go/gofr/pkg/datastore/pubsub/kafka"
 	awssns "developer.zopsmart.com/go/gofr/pkg/notifier/aws-sns"
@@ -216,6 +217,19 @@ func eventhubConfigFromEnv(c Config) eventhub.Config {
 		SharedAccessName:  c.Get("EVENTHUB_SAS_NAME"),
 		SharedAccessKey:   c.Get("EVENTHUB_SAS_KEY"),
 		ConnRetryDuration: getRetryDuration(c.Get("EVENTHUB_CONN_RETRY")),
+	}
+}
+
+func eventbridgeConfigFromEnv(c Config) *eventbridge.Config {
+	retryFrequency, _ := strconv.Atoi(c.Get("EVENT_BRIDGE_RETRY_FREQUENCY"))
+
+	return &eventbridge.Config{
+		ConnRetryDuration: retryFrequency,
+		EventBus:          c.Get("EVENT_BRIDGE_BUS"),
+		EventSource:       c.Get("EVENT_BRIDGE_SOURCE"),
+		Region:            c.Get("EVENT_BRIDGE_REGION"),
+		AccessKeyID:       c.Get("AWS_ACCESS_KEY_ID"),
+		SecretAccessKey:   c.Get("AWS_SECRET_ACCESS_KEY"),
 	}
 }
 

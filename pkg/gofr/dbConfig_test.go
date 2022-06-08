@@ -7,6 +7,7 @@ import (
 
 	"developer.zopsmart.com/go/gofr/pkg/datastore"
 	"developer.zopsmart.com/go/gofr/pkg/datastore/kvdata"
+	"developer.zopsmart.com/go/gofr/pkg/datastore/pubsub/eventbridge"
 	"developer.zopsmart.com/go/gofr/pkg/datastore/pubsub/kafka"
 	"developer.zopsmart.com/go/gofr/pkg/gofr/config"
 	awssns "developer.zopsmart.com/go/gofr/pkg/notifier/aws-sns"
@@ -372,6 +373,30 @@ func Test_sqlDBConfigFromEnv(t *testing.T) {
 
 		assert.Equal(t, tc.expDBCfg, cfg, "TEST[%d], failed.\n%s", i, tc.desc)
 	}
+}
+
+func Test_eventBridgeConfigFromEnv(t *testing.T) {
+	c := &config.MockConfig{
+		Data: map[string]string{
+			"EVENT_BRIDGE_REGION":          "us-east-1",
+			"EVENT_BRIDGE_BUS":             "Gofr",
+			"EVENT_BRIDGE_SOURCE":          "Gofr-application",
+			"EVENT_BRIDGE_RETRY_FREQUENCY": "5",
+			"AWS_ACCESS_KEY_ID":            "test",
+			"AWS_SECRET_ACCESS_KEY":        "test",
+		}}
+
+	cfg := eventbridgeConfigFromEnv(c)
+	expCfg := &eventbridge.Config{
+		ConnRetryDuration: 5,
+		EventBus:          "Gofr",
+		EventSource:       "Gofr-application",
+		Region:            "us-east-1",
+		AccessKeyID:       "test",
+		SecretAccessKey:   "test",
+	}
+
+	assert.Equal(t, expCfg, cfg)
 }
 
 func Test_kvDataConfigFromEnv(t *testing.T) {
