@@ -389,7 +389,7 @@ func TestHTTP_GetClaims(t *testing.T) {
 
 	for i, tc := range testcases {
 		r := httptest.NewRequest("GET", "http://dummy", nil)
-		r = r.WithContext(ctx.WithValue(r.Context(), tc.ctxKey, tc.ctxVal))
+		r = r.Clone(ctx.WithValue(r.Context(), tc.ctxKey, tc.ctxVal))
 		req := NewHTTPRequest(r)
 
 		out := req.GetClaims()
@@ -399,7 +399,7 @@ func TestHTTP_GetClaims(t *testing.T) {
 
 func TestHTTP_GetClaim(t *testing.T) {
 	r := httptest.NewRequest("GET", "http://dummy", nil)
-	r = r.WithContext(ctx.WithValue(r.Context(), oauth.JWTContextKey("claims"),
+	r = r.Clone(ctx.WithValue(r.Context(), oauth.JWTContextKey("claims"),
 		jwt.MapClaims(map[string]interface{}{"sub": "trial-sub"})))
 	req := NewHTTPRequest(r)
 

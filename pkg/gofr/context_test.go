@@ -196,7 +196,7 @@ func Test_Log(t *testing.T) {
 	for i, tc := range tests {
 		if tc.appData != nil {
 			// simulating the case where the `contextInjector` middleware sets the `appLogData` to empty map
-			*r = *r.WithContext(ctx.WithValue(c, appData, &sync.Map{}))
+			*r = *r.Clone(ctx.WithValue(c, appData, &sync.Map{}))
 		}
 
 		c.Log(tc.key, tc.value)
@@ -218,7 +218,7 @@ func TestLog_CorrelationModify(t *testing.T) {
 		value = "7"
 	)
 
-	*r = *r.WithContext(ctx.WithValue(c, appData, map[string]interface{}{key: value}))
+	*r = *r.Clone(ctx.WithValue(c, appData, map[string]interface{}{key: value}))
 
 	// Trying to change the correlationID
 	c.Log(key, "incorrect")
@@ -240,7 +240,7 @@ func TestContext_ValidateClaimSubPFCX(t *testing.T) {
 	claims := jwt.MapClaims{}
 	claims["sub"] = "trial-sub" //nolint
 	claims["pfcx"] = "trial-pfcx"
-	r = r.WithContext(ctx.WithValue(r.Context(), oauth.JWTContextKey("claims"), claims))
+	r = r.Clone(ctx.WithValue(r.Context(), oauth.JWTContextKey("claims"), claims))
 	req := request.NewHTTPRequest(r)
 	c := NewContext(nil, req, nil)
 	c.Context = req.Request().Context()
@@ -271,7 +271,7 @@ func TestContext_ValidateClaimSubScope(t *testing.T) {
 
 	claims := jwt.MapClaims{}
 	claims["scope"] = "trial-scope1 trial-scope2"
-	r = r.WithContext(ctx.WithValue(r.Context(), oauth.JWTContextKey("claims"), claims))
+	r = r.Clone(ctx.WithValue(r.Context(), oauth.JWTContextKey("claims"), claims))
 	req := request.NewHTTPRequest(r)
 	c := NewContext(nil, req, nil)
 	c.Context = req.Request().Context()
@@ -313,7 +313,7 @@ func TestContext_BindStrict(t *testing.T) {
 func Test_GetClaim(t *testing.T) {
 	r := httptest.NewRequest("GET", "http://dummy", nil)
 
-	r = r.WithContext(ctx.WithValue(r.Context(), oauth.JWTContextKey("claims"), jwt.MapClaims(map[string]interface{}{"sub": "trial-sub"})))
+	r = r.Clone(ctx.WithValue(r.Context(), oauth.JWTContextKey("claims"), jwt.MapClaims(map[string]interface{}{"sub": "trial-sub"})))
 	c := NewContext(nil, request.NewHTTPRequest(r), nil)
 
 	testcases := []struct {
@@ -345,7 +345,7 @@ func Test_GetClaims(t *testing.T) {
 	}
 	for i, tc := range testcases {
 		req := httptest.NewRequest("GET", "http://dummy", nil)
-		req = req.WithContext(ctx.WithValue(req.Context(), tc.ctxKey, tc.ctxValue))
+		req = req.Clone(ctx.WithValue(req.Context(), tc.ctxKey, tc.ctxValue))
 		gofrCtx := NewContext(nil, request.NewHTTPRequest(req), nil)
 
 		out := gofrCtx.GetClaims()

@@ -23,7 +23,7 @@ func NewRelic(appname, license string) func(http.Handler) http.Handler {
 				_ = txn.End()
 			}()
 			ctx := context.WithValue(r.Context(), newRelicTxnKey, txn)
-			*r = *r.WithContext(ctx)
+			*r = *r.Clone(ctx)
 			inner.ServeHTTP(w, r)
 		})
 	}

@@ -49,7 +49,7 @@ func (h Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 		// set the error in the context, which can be fetched in the logging middleware
 		ctx := context.WithValue(r.Context(), middleware.ErrorMessage, err.Error())
-		*r = *r.WithContext(ctx)
+		*r = *r.Clone(ctx)
 	}
 
 	switch res := data.(type) {

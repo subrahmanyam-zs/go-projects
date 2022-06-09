@@ -104,7 +104,7 @@ func (c *Context) Log(key string, value interface{}) {
 	}
 
 	appLogData.Store(key, value)
-	*r = *r.WithContext(ctx.WithValue(r.Context(), appData, appLogData))
+	*r = *r.Clone(ctx.WithValue(r.Context(), appData, appLogData))
 
 	// This section takes care of all the individual context loggers
 	c.Logger.AddData(key, value)

@@ -240,9 +240,9 @@ func (s *server) contextInjector(inner http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		c := s.contextPool.Get().(*Context)
 		c.reset(responder.NewContextualResponder(w, r), request.NewHTTPRequest(r))
-		*r = *r.WithContext(ctx.WithValue(r.Context(), appData, &sync.Map{}))
+		*r = *r.Clone(ctx.WithValue(r.Context(), appData, &sync.Map{}))
 		c.Context = r.Context()
-		*r = *r.WithContext(ctx.WithValue(c.Context, gofrContextkey, c))
+		*r = *r.Clone(ctx.WithValue(c.Context, gofrContextkey, c))
 
 		correlationID := r.Header.Get("X-B3-TraceID")
 		if correlationID == "" {
