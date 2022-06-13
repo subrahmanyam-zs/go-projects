@@ -27,7 +27,6 @@ jobs:
       - name: Fetch dependencies
         run: |
           git config --global url."https://${{ secrets.PAT}}:x-oauth-basic@github.int.mcafee.com/".insteadOf "https://github.int.mcafee.com/"
-          git config --global http.sslVerify false
           go get -v -t -d ./...
 
       - name: Set Configs
@@ -50,32 +49,24 @@ jobs:
       - name: Build
         run: |
           cd examples/sample-api
-          go build -tags musl -ldflags "-linkmode external" -o main
+          CGO_ENABLED=0 go build -o main
           cp main build/
 
       - name: Upload binary to artifact
         uses: actions/upload-artifact@v2
         with:
           name: app-binary
-          path: examples/sample-api/build/main
+          path: examples/sample-api/build
 
   Dockerize:
+    needs: Build-and-Test
     runs-on: [self-hosted, linux]
     steps:
-      - name: Set up Go 1.17
-        uses: actions/setup-go@v2
-        with:
-          go-version: 1.17
-          id: Go
-
-      - name: Checkout code into go module directory
-        uses: actions/checkout@v2
-
       - name: Download binary from artifact
         uses: actions/download-artifact@v2
         with:
           name: app-binary
-          path: examples/sample-api/build/main
+          path: examples/sample-api/build
 
       - name: Build and Push docker image to AWS ECR
         uses: docker://ghcr.io/kciter/aws-ecr-action:latest
@@ -85,13 +76,13 @@ jobs:
           account_id: ${{ secrets.AWS_ACCOUNT_ID }}
           repo: ${{ secrets.AWS_ECR_REPO }}
           region: us-west-2
-          dockerfile: ./Dockerfile
-          path: .
+          dockerfile: examples/sample-api/Dockerfile
+          path: examples/sample-api
           tags: ${{ github.sha }}
 
   Deploy-on-Prod:
     needs: Dockerize
-    runs-on: [ self-hosted, linux, centos7 ]
+    runs-on: [ self-hosted, linux]
     steps:
       - name: Trigger harness pipeline for deployment on PROD environment
         run: |
