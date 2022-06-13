@@ -126,7 +126,6 @@ jobs:
           docker exec -i $temp /home/yugabyte/bin/ycqlsh < .github/setups/keyspace.ycql;
       - name: Get dependencies
         run: |
-          rm -rf ~/.gitconfig 
           git config --global url."https://${{ secrets.PAT}}@github.int.mcafee.com/".insteadOf "https://github.int.mcafee.com/"
           go get -v -t -d ./...
       - name: Test
