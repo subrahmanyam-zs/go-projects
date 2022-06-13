@@ -134,6 +134,8 @@ jobs:
           mkdir build
           go test ./... -short --tags=integration -v -coverprofile build/coverage.txt -coverpkg=./...
           cat build/coverage.txt | grep -v '.pb.go' > build/coverage.out
+      - name: Coverage Report
+        run: |
           go tool cover -func build/coverage.out
       - name: Set Configs
         run: |
