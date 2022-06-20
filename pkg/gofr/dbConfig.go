@@ -255,9 +255,17 @@ func dynamoDBConfigFromEnv(c Config) datastore.DynamoDBConfig {
 }
 
 func kvDataConfigFromEnv(c Config) kvdata.Config {
+	ak := c.Get("KV_CSP_APP_KEY")
+	sk := c.Get("KV_CSP_SHARED_KEY")
+
+	if ak == "" {
+		ak = c.Get("KV_CSP_APP_KEY_FWK")
+		sk = c.Get("KV_CSP_SHARED_KEY_FWK")
+	}
+
 	return kvdata.Config{
 		URL:       c.Get("KV_URL"),
-		AppKey:    c.Get("KV_CSP_APP_KEY_FWK"),
-		SharedKey: c.Get("KV_CSP_SHARED_KEY_FWK"),
+		AppKey:    ak,
+		SharedKey: sk,
 	}
 }

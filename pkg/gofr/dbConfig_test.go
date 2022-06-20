@@ -400,7 +400,7 @@ func Test_eventBridgeConfigFromEnv(t *testing.T) {
 }
 
 func Test_kvDataConfigFromEnv(t *testing.T) {
-	input := &config.MockConfig{
+	mockCfg1 := &config.MockConfig{
 		Data: map[string]string{
 			"KV_URL":                "http://localhost:2021",
 			"KV_CSP_APP_KEY_FWK":    "test key",
@@ -408,15 +408,37 @@ func Test_kvDataConfigFromEnv(t *testing.T) {
 		},
 	}
 
-	expConfig := kvdata.Config{
+	expConfig1 := kvdata.Config{
 		URL:       "http://localhost:2021",
 		AppKey:    "test key",
 		SharedKey: "test key",
 	}
 
-	cfg := kvDataConfigFromEnv(input)
+	mockCfg2 := &config.MockConfig{
+		Data: map[string]string{
+			"KV_URL":            "http://localhost:2021",
+			"KV_CSP_APP_KEY":    "test",
+			"KV_CSP_SHARED_KEY": "test",
+		},
+	}
 
-	if !reflect.DeepEqual(cfg, expConfig) {
-		t.Errorf("Got: %v,expected:%v", cfg, expConfig)
+	expConfig2 := kvdata.Config{
+		URL:       "http://localhost:2021",
+		AppKey:    "test",
+		SharedKey: "test",
+	}
+
+	testcases := []struct {
+		input  *config.MockConfig
+		expOut kvdata.Config
+	}{
+		{mockCfg1, expConfig1},
+		{mockCfg2, expConfig2},
+	}
+	for i, tc := range testcases {
+		cfg := kvDataConfigFromEnv(tc.input)
+		if !reflect.DeepEqual(cfg, tc.expOut) {
+			t.Errorf("Test case failed [%v]. Got: %v,expected:%v", i, cfg, tc.expOut)
+		}
 	}
 }
