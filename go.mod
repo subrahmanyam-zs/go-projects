@@ -38,7 +38,7 @@ require (
 	github.com/xdg/scram v1.0.5
 	github.com/yugabyte/gocql v0.0.0-20220204171058-0bd8e6cb12d0
 	github.com/zopsmart/gorm-opentelemetry v1.0.1-0.20211208062846-bf802ea1c033
-	github.int.mcafee.com/mcafee/cnsr-gofr-csp-auth v0.2.0
+	github.int.mcafee.com/mcafee/cnsr-gofr-csp-auth v0.3.1
 	go.mongodb.org/mongo-driver v1.8.3
 	go.opencensus.io v0.23.0
 	go.opentelemetry.io/contrib/instrumentation/net/http/httptrace/otelhttptrace v0.28.0

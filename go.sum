@@ -170,7 +170,6 @@ github.com/andybalholm/cascadia v1.1.0/go.mod h1:GsXiBklL0woXo1j/WYWtSYYC4ouU9Pq
 github.com/antihax/optional v1.0.0/go.mod h1:uupD/76wgC+ih3iEmQUL+0Ugr19nfwCT1kdvxnR2qWY=
 github.com/aws/aws-sdk-go v1.37.0/go.mod h1:hcU610XS61/+aQV88ixoOzUoG7v3b31pl2zKMmprdro=
 github.com/aws/aws-sdk-go v1.40.48/go.mod h1:585smgzpB/KqRA+K3y/NL/oYRqQvpNJYvLm+LY1U59Q=
-github.com/aws/aws-sdk-go v1.42.50 h1:FA5pbpkLz2fdnMt+AWyHnNaIA269rqr/sYAe3WKCYN4=
 github.com/aws/aws-sdk-go v1.42.50/go.mod h1:OGr6lGMAKGlG9CVrYnWYDKIyb829c6EVBRjxqjmPepc=
 github.com/aws/aws-sdk-go v1.44.13 h1:7mRsYayiEQSladCR2ASLsNz3f3XIdfOdXd+od3uOLP4=
 github.com/aws/aws-sdk-go v1.44.13/go.mod h1:y4AeaBuwd2Lk+GepC1E9v0qOiTws0MIWAX4oIKwKHZo=
@@ -812,6 +811,8 @@ github.com/zopsmart/gorm-opentelemetry v1.0.1-0.20211208062846-bf802ea1c033 h1:9
 github.com/zopsmart/gorm-opentelemetry v1.0.1-0.20211208062846-bf802ea1c033/go.mod h1:PkIdP0sOJVQ37fr7uok6yaRECtuuSaUzkF+Frb8aVo0=
 github.int.mcafee.com/mcafee/cnsr-gofr-csp-auth v0.2.0 h1:Yzn1zjdqcjfN3h9t1dFeUitVTxgO8cUs4g1mnOPkGVg=
 github.int.mcafee.com/mcafee/cnsr-gofr-csp-auth v0.2.0/go.mod h1:8oeYe1Lgip0DfkqOGs6ixq++qT/r5lyG4p1cpC31bSY=
+github.int.mcafee.com/mcafee/cnsr-gofr-csp-auth v0.3.1 h1:1vtWAA7zMMI9TvTyY/KHq1i03AweL37BjWRNPJiR/qI=
+github.int.mcafee.com/mcafee/cnsr-gofr-csp-auth v0.3.1/go.mod h1:ssG5pVyrkukDVTlBiHWM5LkzU75UIHxyntek6DkRAWA=
 go.mongodb.org/mongo-driver v1.7.2/go.mod h1:Q4oFMbo1+MSNqICAdYMlC/zSTrwCogR4R8NzkI+yfU8=
 go.mongodb.org/mongo-driver v1.8.3 h1:TDKlTkGDKm9kkJVUOAXDK5/fkqKHJVwYQSpoRfB43R4=
 go.mongodb.org/mongo-driver v1.8.3/go.mod h1:0sQWfOeY63QTntERDJJ/0SuKK0T1uVSgKCuAROlKEPY=

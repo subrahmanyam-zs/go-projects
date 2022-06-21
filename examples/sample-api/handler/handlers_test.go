@@ -192,5 +192,4 @@ func Test_KVHandler_GetError(t *testing.T) {
 
 	assert.Equalf(t, nil, resp, "Test case failed. Expected: %v, got: %v", nil, resp)
 	assert.Equalf(t, pkgErr.New("get error"), err, "Test case failed. Expected: %v, got: %v", pkgErr.New("get error"), err)
-
 }
