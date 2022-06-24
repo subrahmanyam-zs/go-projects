@@ -61,6 +61,7 @@ func (sp *surgeProtector) checkHealth(url string, ch chan bool) {
 			l.Err = err
 		} else if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusNotFound {
 			l.StatusCode = resp.StatusCode
+			resp.Body.Close()
 		} else {
 			isHealthy = true
 			resp.Body.Close()
