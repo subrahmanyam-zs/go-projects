@@ -48,7 +48,7 @@ func TestGetByID(t *testing.T) {
 			"id": tc.id,
 		})
 
-		store.EXPECT().Get(gomock.Any(), tc.id).Return(tc.storeResp, tc.err)
+		store.EXPECT().Get(ctx, tc.id).Return(tc.storeResp, tc.err)
 
 		resp, err := h.GetByID(ctx)
 
@@ -64,7 +64,9 @@ func TestDelete(t *testing.T) {
 		"id": "1",
 	})
 
-	store.EXPECT().Delete(ctx, gomock.Any()).Return(nil)
+	id := ctx.PathParam("id")
+
+	store.EXPECT().Delete(ctx, id).Return(nil)
 
 	_, err := h.Delete(ctx)
 
@@ -84,7 +86,11 @@ func TestCreate(t *testing.T) {
 	for i, tc := range tests {
 		store, h, ctx := initializeTest(t, http.MethodPost, "/person", tc.body)
 
-		store.EXPECT().Create(ctx, gomock.Any()).Return(tc.err)
+		var p models.Person
+
+		_ = ctx.Bind(&p)
+
+		store.EXPECT().Create(ctx, p).Return(tc.err)
 
 		_, err := h.Create(ctx)
 
@@ -108,7 +114,15 @@ func TestUpdate(t *testing.T) {
 			"id": "1",
 		})
 
-		store.EXPECT().Update(ctx, gomock.Any()).Return(tc.err)
+		id := ctx.PathParam("id")
+
+		var p models.Person
+
+		_ = ctx.Bind(&p)
+
+		p.ID = id
+
+		store.EXPECT().Update(ctx, p).Return(tc.err)
 
 		_, err := h.Update(ctx)
 

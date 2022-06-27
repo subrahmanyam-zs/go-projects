@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"net/http"
 	"net/http/httptest"
+	"strconv"
 	"testing"
 	"time"
 
@@ -19,6 +20,7 @@ import (
 type mockStore struct{}
 
 const redisKey = "someKey"
+const size = 64
 
 func (m mockStore) Get(ctx *gofr.Context, key string) (string, error) {
 	switch key {
@@ -128,17 +130,16 @@ func TestModel_SetKey(t *testing.T) {
 	mockMetric := metrics.NewMockMetric(gomock.NewController(t))
 	app.Metric = mockMetric
 
-	mockMetric.EXPECT().SetGauge(gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
-	mockMetric.EXPECT().IncCounter(gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
-
 	tests := []struct {
-		desc string
-		body []byte
-		err  error
+		desc    string
+		body    []byte
+		err     error
+		counter string
+		label   string
 	}{
-		{"set key with invalid body", []byte(`{`), invalidBodyErr{}},
-		{"set key with invalid input", []byte(`{"someKey":"someValue"}`), invalidInputErr{}},
-		{"set key success", []byte(`{"someKey123": "123"}`), nil},
+		{"set key with invalid body", []byte(`{`), invalidBodyErr{}, InvalidBodyCounter, "failed"},
+		{"set key with invalid input", []byte(`{"someKey":"someValue"}`), invalidInputErr{}, NumberOfSetsCounter, "failed"},
+		{"set key success", []byte(`{"someKey123": "123"}`), nil, NumberOfSetsCounter, "succeeded"},
 	}
 
 	for i, tc := range tests {
@@ -146,6 +147,12 @@ func TestModel_SetKey(t *testing.T) {
 
 		req := request.NewHTTPRequest(r)
 		ctx := gofr.NewContext(nil, req, app)
+
+		length, _ := strconv.ParseFloat(ctx.Header("Content-Length"), size)
+
+		mockMetric.EXPECT().SetGauge(ReqContentLengthGauge, length).Return(nil).AnyTimes()
+		mockMetric.EXPECT().IncCounter(tc.counter).Return(nil).AnyTimes()
+		mockMetric.EXPECT().IncCounter(NumberOfSetsCounter, tc.label).Return(nil).AnyTimes()
 
 		_, err := m.SetKey(ctx)
 
@@ -164,8 +171,10 @@ func TestSetKey_SetGaugeError(t *testing.T) {
 	mockMetric := metrics.NewMockMetric(gomock.NewController(t))
 	ctx.Metric = mockMetric
 
+	length, _ := strconv.ParseFloat(ctx.Header("Content-Length"), size)
+
 	expErr := errors.Error("error case")
-	mockMetric.EXPECT().SetGauge(gomock.Any(), gomock.Any()).Return(expErr)
+	mockMetric.EXPECT().SetGauge(ReqContentLengthGauge, length).Return(expErr)
 
 	_, err := m.SetKey(ctx)
 	assert.Equal(t, expErr, err)
@@ -180,10 +189,12 @@ func TestSetKey_InvalidBodyCounterError(t *testing.T) {
 	mockMetric := metrics.NewMockMetric(gomock.NewController(t))
 	ctx.Metric = mockMetric
 
-	mockMetric.EXPECT().SetGauge(gomock.Any(), gomock.Any()).Return(nil)
+	length, _ := strconv.ParseFloat(ctx.Header("Content-Length"), size)
+
+	mockMetric.EXPECT().SetGauge(ReqContentLengthGauge, length).Return(nil)
 
 	expErr := errors.Error("error case")
-	mockMetric.EXPECT().IncCounter(gomock.Any()).Return(expErr)
+	mockMetric.EXPECT().IncCounter(InvalidBodyCounter).Return(expErr)
 
 	_, err := m.SetKey(ctx)
 	assert.Equal(t, expErr, err)
@@ -191,12 +202,13 @@ func TestSetKey_InvalidBodyCounterError(t *testing.T) {
 
 func TestSetKey_IncCounterError(t *testing.T) {
 	tcs := []struct {
-		desc string
-		body []byte
+		desc  string
+		body  []byte
+		label string
 	}{
-		{"invalid body", []byte(`{"`)},
-		{"error key", []byte(`{"someKey":"someValue"}`)},
-		{"valid key", []byte(`{"someKey1":"someValue1"}`)},
+		{"invalid body", []byte(`{"`), "failed"},
+		{"error key", []byte(`{"someKey":"someValue"}`), "failed"},
+		{"valid key", []byte(`{"someKey1":"someValue1"}`), "succeeded"},
 	}
 
 	app := gofr.New()
@@ -205,14 +217,17 @@ func TestSetKey_IncCounterError(t *testing.T) {
 	app.Metric = mockMetric
 	expErr := errors.Error("error case")
 
-	mockMetric.EXPECT().SetGauge(gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
-	mockMetric.EXPECT().IncCounter(gomock.Any()).Return(nil)
-	mockMetric.EXPECT().IncCounter(gomock.Any(), gomock.Any()).Return(expErr).AnyTimes()
+	mockMetric.EXPECT().IncCounter(InvalidBodyCounter).Return(nil)
 
 	for i, tc := range tcs {
 		r := httptest.NewRequest(http.MethodPost, "http://dummy", bytes.NewReader(tc.body))
 		req := request.NewHTTPRequest(r)
 		ctx := gofr.NewContext(nil, req, app)
+
+		length, _ := strconv.ParseFloat(ctx.Header("Content-Length"), size)
+
+		mockMetric.EXPECT().SetGauge(ReqContentLengthGauge, length).Return(nil).AnyTimes()
+		mockMetric.EXPECT().IncCounter(NumberOfSetsCounter, tc.label).Return(expErr).AnyTimes()
 
 		_, err := m.SetKey(ctx)
 		assert.Equal(t, expErr, err, "TEST[%d], failed.\n%s", i, tc.desc)

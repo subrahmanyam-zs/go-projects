@@ -32,7 +32,7 @@ func TestCoreLayer(t *testing.T) {
 
 func createTable(app *gofr.Gofr) {
 	// drop table to clean previously added id's
-	_, err := app.DB().Exec("DROP TABLE customers;")
+	_, err := app.DB().Exec("DROP TABLE IF EXISTS customers;")
 	if err != nil {
 		return
 	}

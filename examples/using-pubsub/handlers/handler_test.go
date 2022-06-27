@@ -89,7 +89,7 @@ func TestProducerHandler(t *testing.T) {
 	mockMetric := metrics.NewMockMetric(gomock.NewController(t))
 	app.Metric = mockMetric
 
-	mockMetric.EXPECT().ObserveHistogram(gomock.Any(), gomock.Any()).Return(nil)
+	mockMetric.EXPECT().ObserveHistogram(PublishEventHistogram, gomock.Any()).Return(nil)
 
 	m := mockPubSub{}
 	app.PubSub = &m
@@ -134,7 +134,7 @@ func TestConsumerHandler(t *testing.T) {
 	mockMetric := metrics.NewMockMetric(gomock.NewController(t))
 	app.Metric = mockMetric
 
-	mockMetric.EXPECT().ObserveSummary(gomock.Any(), gomock.Any()).Return(nil)
+	mockMetric.EXPECT().ObserveSummary(ConsumeEventSummary, gomock.Any()).Return(nil)
 
 	app.PubSub = &mockPubSub{}
 
