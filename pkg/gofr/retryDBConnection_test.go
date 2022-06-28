@@ -20,8 +20,8 @@ func Test_kafkaRetry(t *testing.T) {
 
 	logger := log.NewMockLogger(io.Discard)
 	c := config.NewGoDotEnvProvider(logger, "../../configs")
-	kafkaConfig := kafkaConfigFromEnv(c)
-	avroConfig := avroConfigFromEnv(c)
+	kafkaConfig := kafkaConfigFromEnv(c, "")
+	avroConfig := avroConfigFromEnv(c, "")
 
 	kafkaConfig.ConnRetryDuration = 1
 	k.Logger = logger
@@ -50,7 +50,7 @@ func Test_eventhubRetry(t *testing.T) {
 		"AZURE_TENANT_ID":     conf.Get("AZURE_TENANT_ID"),
 		"PUBSUB_BACKEND":      "EVENTHUB",
 	}}
-	eventhubConfig := eventhubConfigFromEnv(c)
+	eventhubConfig := eventhubConfigFromEnv(c, "")
 
 	eventhubConfig.ConnRetryDuration = 1
 	k.Logger = logger
@@ -94,7 +94,7 @@ func Test_cassandraRetry(t *testing.T) {
 
 	logger := log.NewMockLogger(io.Discard)
 	c := config.NewGoDotEnvProvider(logger, "../../configs")
-	cassandraCfg := cassandraConfigFromEnv(c)
+	cassandraCfg := cassandraConfigFromEnv(c, "")
 
 	cassandraCfg.ConnRetryDuration = 1
 	k.Logger = logger
@@ -111,7 +111,7 @@ func Test_ycqlRetry(t *testing.T) {
 
 	logger := log.NewMockLogger(io.Discard)
 	c := config.NewGoDotEnvProvider(logger, "../../configs")
-	cassandraCfg := getYcqlConfigs(c)
+	cassandraCfg := getYcqlConfigs(c, "")
 
 	cassandraCfg.Port, _ = strconv.Atoi(c.Get("YCQL_DB_PORT"))
 	cassandraCfg.Password = c.Get("YCQL_DB_PASS")
@@ -227,7 +227,7 @@ func Test_AWSSNSRetry(t *testing.T) {
 
 	logger := log.NewMockLogger(io.Discard)
 	c := config.NewGoDotEnvProvider(logger, "../../configs")
-	awsSNSConfig := awsSNSConfigFromEnv(c)
+	awsSNSConfig := awsSNSConfigFromEnv(c, "")
 
 	awsSNSConfig.ConnRetryDuration = 1
 	k.Logger = logger
@@ -266,7 +266,7 @@ func Test_AWSEventBridgeRetry(t *testing.T) {
 	logger := log.NewMockLogger(b)
 	k.Logger = logger
 	c := config.NewGoDotEnvProvider(logger, "../../configs")
-	cfg := eventbridgeConfigFromEnv(c)
+	cfg := eventbridgeConfigFromEnv(c, "")
 	cfg.ConnRetryDuration = 1
 
 	go eventbridgeRetry(cfg, &k)
