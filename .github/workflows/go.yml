@@ -4,7 +4,7 @@ on:
     branches:
       - "*"
 jobs:
-  setup:
+   setup:
     name: Test and Code Quality
     runs-on: [ self-hosted, linux ]
     env:
@@ -101,12 +101,15 @@ jobs:
       - name: Load Schema of Postgres
         run: |
           docker run -d postgres:latest -i ${{ job.services.postgres.id }} -U postgres --dbname=test < .github/setups/setup.sql
+
       - name: Load Schema of Cassandra
         run: |
           docker exec -i ${{ job.services.cassandra.id }} cqlsh --debug  < .github/setups/keyspace.cql
+
       - name: Set up MySQL
         run: |
           docker exec -i ${{ job.services.mysql.id }} mysql -uroot -ppassword -e 'CREATE DATABASE test;'
+
       - name: Load Schema of Solr
         run: |
           docker rm -f /solr
@@ -114,20 +117,24 @@ jobs:
           docker run -d --name solr -p 8983:8983 solr:8 -DzkRun;
           sleep 10s;
           docker exec -i solr sh < .github/setups/solrSchema.sh;
+
       - name: Set up YugabyteDB
         run: |
           docker rm -f /gofr-yugabyte
           sleep 10s;
           docker run --network="host" --name gofr-yugabyte -p7000:7000 -p6000:6000 -p5433:5433 -p9042:9042 -d yugabytedb/yugabyte:latest bin/yugabyted start --daemon=false
+
       - name: Load Schema of YCQL
         run: |
           temp=$(sudo docker ps | grep yugabyte | awk '{print $1}');
           sleep 10s;
           docker exec -i $temp /home/yugabyte/bin/ycqlsh < .github/setups/keyspace.ycql;
+
       - name: Get dependencies
         run: |
           git config --global url."https://${{ secrets.PAT}}@github.int.mcafee.com/".insteadOf "https://github.int.mcafee.com/"
           go get -v -t -d ./...
+
       - name: Test
         run: |
           export GOFR_ENV=test
@@ -137,18 +144,22 @@ jobs:
       - name: Coverage Report
         run: |
           go tool cover -func build/coverage.out
+
       - name: Set Configs
         run: |
           cd examples/sample-api/configs
           echo "APP_VERSION=${GITHUB_SHA::7}" >> .env
+
       - name: Build
         run: |
           cd examples/sample-api
           go build -o main
+
       - name: Setup linter
         run: |
           curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin v1.44.0
           golangci-lint --version
+
       - name: Linter Check
         run: |
           golangci-lint run --timeout 9m0s

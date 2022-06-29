@@ -203,7 +203,7 @@ func main() {
 		return err
 	}
 
-	os.RemoveAll("main.go")
+	_ = os.RemoveAll("main.go")
 
 	mainFile, err := f.OpenFile("main.go", os.O_CREATE|os.O_WRONLY, mg.RWMode)
 	if err != nil {

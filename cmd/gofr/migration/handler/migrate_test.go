@@ -264,7 +264,11 @@ func Test_importOrder(t *testing.T) {
 		t.Errorf("error in opening main.go file: %v", err)
 	}
 
-	defer file.Close()
+	defer func() {
+		if err = file.Close(); err != nil {
+			t.Logf("Error closing file: %s\n", err)
+		}
+	}()
 
 	err = checkImportOrder(file)
 	if err != nil {

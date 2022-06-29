@@ -613,7 +613,10 @@ func (k *Kafka) Ping() error {
 			break
 		}
 
-		conn.Close()
+		err = conn.Close()
+		if err != nil {
+			return err
+		}
 
 		accessibleBrokers = append(accessibleBrokers, host)
 	}
