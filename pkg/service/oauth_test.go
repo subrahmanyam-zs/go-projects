@@ -92,14 +92,14 @@ func Test_getNewAccessToken(t *testing.T) {
 		wantBearerToken string
 		wantExp         int
 	}{
-		{
-			"token received", args{"user:pass", &OAuthOption{KeyProviderURL: ts.URL}},
-			"Bearer dummy-token", 100,
-		},
-		{
-			"invalid credentials", args{"pass:user", &OAuthOption{KeyProviderURL: ts.URL}},
-			"", 0,
-		},
+		{"token received", args{"user:pass", &OAuthOption{KeyProviderURL: ts.URL}},
+			"Bearer dummy-token", 100},
+		{"invalid credentials", args{"pass:user", &OAuthOption{KeyProviderURL: ts.URL}},
+			"", 0},
+		{"value of audience", args{"user:pass", &OAuthOption{Audience: "random", Scope: "shubham", KeyProviderURL: ts.URL}},
+			"Bearer dummy-token", 100},
+		{"value of scope", args{"user:pass", &OAuthOption{Scope: "random", KeyProviderURL: ts.URL}},
+			"Bearer dummy-token", 100},
 	}
 
 	for _, tt := range tests {
@@ -108,6 +108,7 @@ func Test_getNewAccessToken(t *testing.T) {
 			tt.args.basicAuth = "Basic " + base64.StdEncoding.EncodeToString([]byte(tt.args.basicAuth))
 
 			gotBearerToken, gotExp, _ := getNewAccessToken(tt.args.basicAuth, tt.args.option)
+
 			if gotBearerToken != tt.wantBearerToken {
 				t.Errorf("getNewAccessToken() gotBearerToken = %v, want %v", gotBearerToken, tt.wantBearerToken)
 			}

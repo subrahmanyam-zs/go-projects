@@ -551,11 +551,11 @@ func Test_AuthCall(t *testing.T) {
 		{nil, "", nil},
 		{&Options{Auth: &Auth{UserName: "user", Password: "secret"}}, "Basic dXNlcjpzZWNyZXQ=", nil},
 		{&Options{Auth: &Auth{OAuthOption: &OAuthOption{"Alice", "alice_secret", server.URL,
-			"some_scope", 0}}}, "Bearer sample_token", nil},
+			"some_scope", 0, "some_audience"}}}, "Bearer sample_token", nil},
 		{&Options{Auth: &Auth{UserName: "user", Password: "abc", OAuthOption: &OAuthOption{}}}, "", ErrToken},
 		{&Options{Auth: &Auth{OAuthOption: &OAuthOption{}}}, "", ErrToken},
 		{&Options{Auth: &Auth{OAuthOption: &OAuthOption{"Bob", "bob_secret", url,
-			"some_scope", 0}}}, "", ErrToken},
+			"some_scope", 0, "some_audience"}}}, "", ErrToken},
 	}
 
 	for i, tc := range tests {

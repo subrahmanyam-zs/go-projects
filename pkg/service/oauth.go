@@ -20,6 +20,7 @@ type OAuthOption struct {
 	KeyProviderURL string
 	Scope          string
 	MaxSleep       int
+	Audience       string
 }
 
 // nolint:gocognit // need to add new condition to check clientID and clientSecret
@@ -73,12 +74,17 @@ func (h *httpService) setClientOauthHeader(option *OAuthOption) {
 	}()
 }
 
+// nolint:gocognit // cognitive complexity of func is high (> 10)
 func getNewAccessToken(basicAuth string, option *OAuthOption) (bearerToken string, exp int, err error) {
 	data := url.Values{}
 	data.Set("grant_type", "client_credentials")
 
 	if option.Scope != "" {
 		data.Set("scope", option.Scope)
+	}
+
+	if option.Audience != "" {
+		data.Set("audience", option.Audience)
 	}
 
 	reqHeaders := map[string]string{
