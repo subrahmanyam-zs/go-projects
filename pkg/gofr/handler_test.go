@@ -51,6 +51,7 @@ func TestHandler_ServeHTTP_StatusCode(t *testing.T) {
 			map[string]interface{}{"name": "Alice"}},
 		{gofrErrors.MissingParam{Param: []string{"organizationId"}}, http.StatusBadRequest, "Missing Parameter", types.Response{}},
 		{nil, http.StatusOK, "", &types.Response{Data: map[string]interface{}{"name": "Alice"}}},
+		{gofrErrors.DB{}, http.StatusInternalServerError, "DB Error", nil},
 	}
 
 	for i, tc := range testCases {
