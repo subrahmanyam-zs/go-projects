@@ -137,13 +137,12 @@ func initializePubSub(c Config, k *Gofr) {
 		return
 	}
 
-	//nolint:goconst // no need to make const used in switch condition only
-	switch pubsubBackend {
-	case "KAFKA", "AVRO":
+	switch strings.ToLower(pubsubBackend) {
+	case pkg.Kafka, pkg.Avro:
 		initializeKafka(c, k)
-	case "EVENTHUB":
+	case pkg.EventHub:
 		initializeEventhub(c, k)
-	case "EVENTBRIDGE":
+	case pkg.EventBridge:
 		initializeEventBridge(c, k)
 	}
 }
@@ -158,12 +157,12 @@ func InitializePubSubFromConfigs(c Config, l log.Logger, prefix string) (pubsub.
 		return nil, errors.DataStoreNotInitialized{DBName: "PubSub", Reason: "pubsub backend not provided"}
 	}
 
-	switch pubsubBackend {
-	case "KAFKA", "AVRO":
+	switch strings.ToLower(pubsubBackend) {
+	case pkg.Kafka, pkg.Avro:
 		return initializeKafkaFromConfigs(c, l, prefix)
-	case "EVENTHUB":
+	case pkg.EventHub:
 		return initializeEventhubFromConfigs(c, prefix)
-	case "EVENTBRIDGE":
+	case pkg.EventBridge:
 		return initializeEventBridgeFromConfigs(c, prefix)
 	}
 

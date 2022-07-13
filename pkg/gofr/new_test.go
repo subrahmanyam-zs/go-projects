@@ -599,7 +599,7 @@ func Test_initializeAvroFromConfigs(t *testing.T) {
 
 	for i, tc := range testcases {
 		_, err := initializeAvroFromConfigs(cfg, tc.ps)
-		assert.Equal(t, tc.expErr, err, "Test case failed [%d]", i)
+		assert.Equal(t, tc.expErr, err, "Test[%d], failed.\n%s", i, tc.desc)
 	}
 }
 
@@ -640,8 +640,9 @@ func Test_InitializeGORMFromConfigs(t *testing.T) {
 }
 
 func Test_InitializeMongoDBFromConfigs(t *testing.T) {
+	var cfg mockConfig
+
 	logger := log.NewMockLogger(io.Discard)
-	cfg := mockConfig{}
 
 	conn, err := InitializeMongoDBFromConfigs(cfg, logger, "")
 	if err != nil {
@@ -759,8 +760,9 @@ func Test_initializeEventBridgeFromConfigs(t *testing.T) {
 }
 
 func Test_InitializeKafkaFromConfigs(t *testing.T) {
+	var cfg mockConfig
+
 	logger := log.NewMockLogger(io.Discard)
-	cfg := mockConfig{}
 
 	conn, err := initializeKafkaFromConfigs(cfg, logger, "")
 	if err != nil {
@@ -771,13 +773,10 @@ func Test_InitializeKafkaFromConfigs(t *testing.T) {
 }
 
 func Test_InitializePubSubFromConfigs(t *testing.T) {
-	cfg := &config.MockConfig{
-		Data: map[string]string{
-			"PRE_PUBSUB_BACKEND": "",
-		},
-	}
-	ps, err := InitializePubSubFromConfigs(cfg, log.NewMockLogger(io.Discard), "PRE")
+	cfg := &config.MockConfig{Data: map[string]string{"PRE_PUBSUB_BACKEND": ""}}
 	expErr := errors.DataStoreNotInitialized{DBName: "PubSub", Reason: "pubsub backend not provided"}
+
+	ps, err := InitializePubSubFromConfigs(cfg, log.NewMockLogger(io.Discard), "PRE")
 
 	assert.Equal(t, nil, ps, "Test case failed")
 	assert.Equal(t, expErr, err, "Test case failed")
@@ -810,7 +809,9 @@ func Test_InitializeAWSSNSFromConfigs(t *testing.T) {
 		"PRE_NOTIFIER_BACKEND":   "SNS",
 		"PRE_AVRO_SCHEMA_URL":    ts.URL,
 	}}
+
 	conn, err := InitializeAWSSNSFromConfigs(cfg, "PRE")
+
 	assert.NotNil(t, conn, "Test case failed")
 	assert.Equal(t, nil, err, "Test case failed")
 }
@@ -819,6 +820,7 @@ func Test_InitializeSQLFromConfigs(t *testing.T) {
 	logger := log.NewMockLogger(io.Discard)
 	cfg := config.NewGoDotEnvProvider(logger, "../../configs")
 	conn, err := InitializeSQLFromConfigs(cfg, "")
+
 	assert.NotNil(t, conn, "Test case failed")
 	assert.Equal(t, nil, err, "Test case failed")
 }
