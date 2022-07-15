@@ -3,10 +3,14 @@ package datastore
 import (
 	"bytes"
 	"context"
+	"database/sql"
 	"io"
 	"strings"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
+
+	"developer.zopsmart.com/go/gofr/pkg/errors"
 	"developer.zopsmart.com/go/gofr/pkg/gofr/config"
 	"developer.zopsmart.com/go/gofr/pkg/log"
 )
@@ -51,6 +55,12 @@ func TestSQLClient_Exec(t *testing.T) {
 	if err != nil {
 		t.Errorf("Exec operation failed. Got: %s", err)
 	}
+
+	var d DataStore
+	_, err = d.DB().Exec("Drop table test")
+	expErr := errors.SQLNotInitialized
+
+	assert.Equal(t, expErr, err, "Exec operation failed")
 }
 
 func TestSQLClient_Query(t *testing.T) {
@@ -85,6 +95,17 @@ func TestSQLClient_Query(t *testing.T) {
 	if rows == nil {
 		t.Errorf("Failed. Got empty rows")
 	}
+
+	var (
+		d       DataStore
+		expRows *sql.Rows
+	)
+	// nolint:rowserrcheck // Rows is nil can't check rows.Err
+	rows, err = d.DB().Query("Select * from test")
+	expErr := errors.SQLNotInitialized
+
+	assert.Equal(t, expErr, err, "Query operation failed")
+	assert.Equal(t, expRows, rows, "Query operation failed")
 }
 
 func TestSQLClient_QueryRow(t *testing.T) {
@@ -143,6 +164,17 @@ func TestSQLClient_QueryContext(t *testing.T) {
 	if rows == nil {
 		t.Errorf("Failed. Got empty rows")
 	}
+
+	var (
+		d       DataStore
+		expRows *sql.Rows
+	)
+	// nolint:rowserrcheck // Rows is nil can't check rows.Err
+	rows, err = d.DB().QueryContext(context.Background(), "Select * from test")
+	expErr := errors.SQLNotInitialized
+
+	assert.Equal(t, expRows, rows, "Query operation failed")
+	assert.Equal(t, expErr, err, "Query operation failed")
 }
 
 func TestSQLClient_ExecContext(t *testing.T) {
@@ -152,6 +184,12 @@ func TestSQLClient_ExecContext(t *testing.T) {
 	if err != nil {
 		t.Errorf("ExecContext operation failed. Got: %s", err)
 	}
+
+	var d DataStore
+	_, err = d.DB().ExecContext(context.Background(), "Select * from test")
+	expErr := errors.SQLNotInitialized
+
+	assert.Equal(t, expErr, err, "Exec operation failed")
 }
 
 func TestSQLClient_QueryRowContext(t *testing.T) {
@@ -246,6 +284,13 @@ func TestSQLTx_Exec(t *testing.T) {
 	if err != nil {
 		t.Errorf("Exec operation failed. Got: %s", err)
 	}
+
+	var d DataStore
+	tx, _ = d.DB().Begin()
+	_, err = tx.Exec("Drop table test")
+	expErr := errors.SQLNotInitialized
+
+	assert.Equal(t, expErr, err, "Exec operation failed")
 }
 
 func TestSQLTx_ExecContext(t *testing.T) {
@@ -260,6 +305,13 @@ func TestSQLTx_ExecContext(t *testing.T) {
 	if err != nil {
 		t.Errorf("ExecContext operation failed. Got: %s", err)
 	}
+
+	var d DataStore
+	tx, _ = d.DB().Begin()
+	_, err = tx.ExecContext(context.Background(), "Drop table test")
+	expErr := errors.SQLNotInitialized
+
+	assert.Equal(t, expErr, err, "Exec operation failed")
 }
 
 func TestSQLTx_Query(t *testing.T) {
@@ -299,6 +351,19 @@ func TestSQLTx_Query(t *testing.T) {
 	if rows == nil {
 		t.Errorf("Failed. Got empty rows")
 	}
+
+	var (
+		d       DataStore
+		expRows *sql.Rows
+	)
+
+	tx, _ = d.DB().Begin()
+	// nolint:rowserrcheck // Rows is nil can't check rows.Err
+	rows, err = tx.Query("Select * from test")
+	expErr := errors.SQLNotInitialized
+
+	assert.Equal(t, expErr, err, "Query operation failed")
+	assert.Equal(t, expRows, rows, "Query operation failed")
 }
 
 func TestSQLTx_QueryContext(t *testing.T) {
@@ -338,6 +403,19 @@ func TestSQLTx_QueryContext(t *testing.T) {
 	if rows == nil {
 		t.Errorf("Failed. Got empty rows")
 	}
+
+	var (
+		d       DataStore
+		expRows *sql.Rows
+	)
+
+	tx, _ = d.DB().Begin()
+	// nolint:rowserrcheck // Rows is nil can't check rows.Err
+	rows, err = tx.QueryContext(context.Background(), "Select * from test")
+	expErr := errors.SQLNotInitialized
+
+	assert.Equal(t, expErr, err, "Query operation failed")
+	assert.Equal(t, expRows, rows, "Query operation failed")
 }
 
 func TestSQLTx_QueryRow(t *testing.T) {
@@ -405,6 +483,13 @@ func TestSQLClient_BeginTx(t *testing.T) {
 	if err != nil {
 		t.Errorf("Error in starting the transaction")
 	}
+
+	var d DataStore
+
+	_, err = d.DB().Begin()
+	expErr := errors.SQLNotInitialized
+
+	assert.Equal(t, expErr, err, "Query operation failed")
 }
 
 func TestSQLTx_Commit(t *testing.T) {
@@ -419,6 +504,14 @@ func TestSQLTx_Commit(t *testing.T) {
 	if err != nil {
 		t.Errorf("Error encountered while committing the transaction")
 	}
+
+	var d DataStore
+
+	tx, _ = d.DB().Begin()
+	err = tx.Commit()
+	expErr := errors.SQLNotInitialized
+
+	assert.Equal(t, expErr, err, "Query operation failed")
 }
 
 func Test_DataBaseNameInTransaction(t *testing.T) {
