@@ -75,6 +75,11 @@ func Test_createMain(t *testing.T) {
 		directory string
 	}
 
+	var (
+		path   = "../go.mod"
+		rwMode = os.FileMode(0666)
+	)
+
 	tests := []struct {
 		name      string
 		args      args
@@ -83,41 +88,41 @@ func Test_createMain(t *testing.T) {
 	}{
 		{"database not supported", args{"UP", "kafka", dir}, []*gomock.Call{}, true},
 		{"Project Not in GOPATH error", args{"DOWN", "gorm", dir}, []*gomock.Call{
-			mockFS.EXPECT().OpenFile(gomock.Any(), gomock.Any(), gomock.Any()).Return(f, &errors.Response{Reason: "test error"}).Times(1),
+			mockFS.EXPECT().OpenFile(path, os.O_RDONLY, rwMode).Return(f, &errors.Response{Reason: "test error"}).Times(1),
 		}, true},
 		{"success", args{"DOWN", "gorm", dir}, []*gomock.Call{
-			mockFS.EXPECT().OpenFile(gomock.Any(), gomock.Any(), gomock.Any()).Return(modFile, nil).Times(1),
+			mockFS.EXPECT().OpenFile(path, os.O_RDONLY, rwMode).Return(modFile, nil).Times(1),
 			mockFS.EXPECT().Stat("build").Return(nil, &errors.Response{Reason: "test error"}),
-			mockFS.EXPECT().IsNotExist(gomock.Any()).Return(true),
-			mockFS.EXPECT().Mkdir(gomock.Any(), gomock.Any()).Return(nil).Times(1),
-			mockFS.EXPECT().Chdir(gomock.Any()).Return(nil),
-			mockFS.EXPECT().OpenFile(gomock.Any(), gomock.Any(), gomock.Any()).Return(f2, nil).Times(1),
+			mockFS.EXPECT().IsNotExist(&errors.Response{Reason: "test error"}).Return(true),
+			mockFS.EXPECT().Mkdir("build", os.FileMode(0777)).Return(nil).Times(1),
+			mockFS.EXPECT().Chdir("build").Return(nil),
+			mockFS.EXPECT().OpenFile("main.go", os.O_CREATE|os.O_WRONLY, rwMode).Return(f2, nil).Times(1),
 		}, false},
 		{"mkdir error", args{"DOWN", "gorm", dir}, []*gomock.Call{
-			mockFS.EXPECT().OpenFile(gomock.Any(), gomock.Any(), gomock.Any()).Return(modFile, nil).Times(1),
+			mockFS.EXPECT().OpenFile(path, os.O_RDONLY, rwMode).Return(modFile, nil).Times(1),
 			mockFS.EXPECT().Stat("build").Return(nil, &errors.Response{Reason: "test error"}),
-			mockFS.EXPECT().IsNotExist(gomock.Any()).Return(true),
-			mockFS.EXPECT().Mkdir(gomock.Any(), gomock.Any()).Return(&errors.Response{Reason: "test error"}).Times(1),
+			mockFS.EXPECT().IsNotExist(&errors.Response{Reason: "test error"}).Return(true),
+			mockFS.EXPECT().Mkdir("build", os.FileMode(0777)).Return(&errors.Response{Reason: "test error"}).Times(1),
 		}, true},
 		{"chdir error", args{"DOWN", "gorm", dir}, []*gomock.Call{
-			mockFS.EXPECT().OpenFile(gomock.Any(), gomock.Any(), gomock.Any()).Return(modFile, nil).Times(1),
+			mockFS.EXPECT().OpenFile(path, os.O_RDONLY, rwMode).Return(modFile, nil).Times(1),
 			mockFS.EXPECT().Stat("build").Return(nil, nil),
-			mockFS.EXPECT().IsNotExist(gomock.Any()).Return(false),
-			mockFS.EXPECT().Chdir(gomock.Any()).Return(&errors.Response{Reason: "test error"}).Times(1),
+			mockFS.EXPECT().IsNotExist(nil).Return(false),
+			mockFS.EXPECT().Chdir("build").Return(&errors.Response{Reason: "test error"}).Times(1),
 		}, true},
 		{"openFile error", args{"DOWN", "gorm", dir}, []*gomock.Call{
-			mockFS.EXPECT().OpenFile(gomock.Any(), gomock.Any(), gomock.Any()).Return(modFile, nil).Times(1),
+			mockFS.EXPECT().OpenFile(path, os.O_RDONLY, rwMode).Return(modFile, nil).Times(1),
 			mockFS.EXPECT().Stat("build").Return(nil, nil),
-			mockFS.EXPECT().IsNotExist(gomock.Any()).Return(false),
-			mockFS.EXPECT().Chdir(gomock.Any()).Return(nil).Times(1),
+			mockFS.EXPECT().IsNotExist(nil).Return(false),
+			mockFS.EXPECT().Chdir("build").Return(nil).Times(1),
 			mockFS.EXPECT().OpenFile(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil, &errors.Response{Reason: "test error"}).Times(1),
 		}, true},
 		{"template execution error", args{"DOWN", "gorm", dir}, []*gomock.Call{
-			mockFS.EXPECT().OpenFile(gomock.Any(), gomock.Any(), gomock.Any()).Return(modFile, nil).Times(1),
+			mockFS.EXPECT().OpenFile(path, os.O_RDONLY, rwMode).Return(modFile, nil).Times(1),
 			mockFS.EXPECT().Stat("build").Return(nil, nil),
-			mockFS.EXPECT().IsNotExist(gomock.Any()).Return(false),
-			mockFS.EXPECT().Chdir(gomock.Any()).Return(nil).Times(1),
-			mockFS.EXPECT().OpenFile(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil, nil).Times(1),
+			mockFS.EXPECT().IsNotExist(nil).Return(false),
+			mockFS.EXPECT().Chdir("build").Return(nil).Times(1),
+			mockFS.EXPECT().OpenFile("main.go", os.O_CREATE|os.O_WRONLY, rwMode).Return(nil, nil).Times(1),
 		}, true},
 	}
 
@@ -134,6 +139,11 @@ func Test_createMain_goPath_success(t *testing.T) {
 	defer func() {
 		ctrl.Finish()
 	}()
+
+	var (
+		path   = "../go.mod"
+		rwMode = os.FileMode(0666)
+	)
 
 	mockFS := NewMockFSMigrate(ctrl)
 	dir := t.TempDir()
@@ -168,11 +178,11 @@ func Test_createMain_goPath_success(t *testing.T) {
 	f, _ := os.CreateTemp("test.txt", currDir)
 	f2, _ := os.Create("main.go")
 
-	mockFS.EXPECT().OpenFile(gomock.Any(), gomock.Any(), gomock.Any()).Return(f, &errors.Response{Reason: "test error"})
+	mockFS.EXPECT().OpenFile(path, os.O_RDONLY, rwMode).Return(f, &errors.Response{Reason: "test error"})
 	mockFS.EXPECT().Stat("build").Return(nil, &errors.Response{Reason: "test error"})
-	mockFS.EXPECT().IsNotExist(gomock.Any()).Return(false)
-	mockFS.EXPECT().Chdir(gomock.Any()).Return(nil)
-	mockFS.EXPECT().OpenFile(gomock.Any(), gomock.Any(), gomock.Any()).Return(f2, nil)
+	mockFS.EXPECT().IsNotExist(&errors.Response{Reason: "test error"}).Return(false)
+	mockFS.EXPECT().Chdir("build").Return(nil)
+	mockFS.EXPECT().OpenFile("main.go", os.O_CREATE|os.O_WRONLY, rwMode).Return(f2, nil)
 
 	if err := createMain(mockFS, "DOWN", "GORM", dir, nil); (err != nil) != false {
 		t.Errorf("FAILED: Success case GOPATH  : createMain() error = %v, wantErr false", err)
@@ -202,15 +212,15 @@ func Test_runMigration(t *testing.T) {
 		}, nil, true},
 
 		{"Chdir and  dir not exists error", args{}, []*gomock.Call{
-			mockFS.EXPECT().Getwd().Return("", nil).AnyTimes(),
-			mockFS.EXPECT().Chdir("migrations").Return(nil).AnyTimes(),
-			mockFS.EXPECT().IsNotExist(gomock.Any()).Return(true).Times(1),
+			mockFS.EXPECT().Getwd().Return("", nil).MaxTimes(2),
+			mockFS.EXPECT().Chdir("migrations").Return(nil).MaxTimes(2),
+			mockFS.EXPECT().IsNotExist(nil).Return(true).Times(1),
 		}, nil, true},
 
 		{"createMain error", args{}, []*gomock.Call{
-			mockFS.EXPECT().IsNotExist(gomock.Any()).Return(false).AnyTimes(),
-			mockFS.EXPECT().Stat(gomock.Any()).Return(nil, nil).AnyTimes(),
-			mockFS.EXPECT().Chdir("build").Return(&errors.Response{Reason: "test error"}).AnyTimes(),
+			mockFS.EXPECT().IsNotExist(gomock.Any()).Return(false),
+			mockFS.EXPECT().Stat(gomock.Any()).Return(nil, nil).MaxTimes(1),
+			mockFS.EXPECT().Chdir("build").Return(&errors.Response{Reason: "test error"}).MaxTimes(1),
 		}, nil, true},
 	}
 

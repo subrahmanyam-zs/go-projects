@@ -12,6 +12,11 @@ import (
 )
 
 func Test_create(t *testing.T) {
+	var (
+		rwxMode = os.FileMode(migration.RWXMode)
+		rwMode  = os.FileMode(migration.RWMode)
+	)
+
 	ctrl := gomock.NewController(t)
 
 	defer func() {
@@ -35,34 +40,34 @@ func Test_create(t *testing.T) {
 		wantErr   bool
 	}{
 		{"mkdir error", "testing", []*gomock.Call{
-			mockFS.EXPECT().Stat("migrations").Return(nil, &errors.Response{Reason: "test error"}).AnyTimes(),
-			mockFS.EXPECT().IsNotExist(gomock.Any()).Return(true).AnyTimes(),
-			mockFS.EXPECT().Mkdir(gomock.Any(), gomock.Any()).Return(&errors.Response{Reason: "test error"}).Times(1),
+			mockFS.EXPECT().Stat("migrations").Return(nil, &errors.Response{Reason: "test error"}).MaxTimes(6),
+			mockFS.EXPECT().IsNotExist(&errors.Response{Reason: "test error"}).Return(true).MaxTimes(6),
+			mockFS.EXPECT().Mkdir("migrations", rwxMode).Return(&errors.Response{Reason: "test error"}).Times(1),
 		}, true},
 
 		{"chdir error", "testing", []*gomock.Call{
-			mockFS.EXPECT().Mkdir(gomock.Any(), gomock.Any()).Return(nil).AnyTimes(),
-			mockFS.EXPECT().Chdir(gomock.Any()).Return(&errors.Response{Reason: "test error"}).Times(1),
+			mockFS.EXPECT().Mkdir("migrations", rwxMode).Return(nil).MaxTimes(5),
+			mockFS.EXPECT().Chdir("migrations").Return(&errors.Response{Reason: "test error"}).Times(1),
 		}, true},
 
 		{"unable to openfile", "testing", []*gomock.Call{
-			mockFS.EXPECT().Chdir(gomock.Any()).Return(nil).AnyTimes(),
-			mockFS.EXPECT().OpenFile(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil, &errors.Response{Reason: "test error"}).Times(1),
+			mockFS.EXPECT().Chdir("migrations").Return(nil).MaxTimes(4),
+			mockFS.EXPECT().OpenFile(gomock.Any(), os.O_CREATE|os.O_WRONLY, rwMode).Return(nil, &errors.Response{Reason: "test error"}).Times(1),
 		}, true},
 
 		{"template execution error", "testing", []*gomock.Call{
-			mockFS.EXPECT().OpenFile(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil, nil).Times(1),
+			mockFS.EXPECT().OpenFile(gomock.Any(), os.O_CREATE|os.O_WRONLY, rwMode).Return(nil, nil).Times(1),
 		}, true},
 
 		{"read dir error", "testing", []*gomock.Call{
-			mockFS.EXPECT().OpenFile(gomock.Any(), gomock.Any(), gomock.Any()).Return(file, nil).Times(1),
+			mockFS.EXPECT().OpenFile(gomock.Any(), os.O_CREATE|os.O_WRONLY, rwMode).Return(file, nil).Times(1),
 			mockFS.EXPECT().ReadDir(gomock.Any()).Return(nil, &errors.Response{Reason: "test error"}).Times(1),
 		}, true},
 
 		{"create file error", "testing", []*gomock.Call{
-			mockFS.EXPECT().OpenFile(gomock.Any(), gomock.Any(), gomock.Any()).Return(file1, nil).AnyTimes(),
-			mockFS.EXPECT().ReadDir(gomock.Any()).Return(allFiles, nil).AnyTimes(),
-			mockFS.EXPECT().Create(gomock.Any()).Return(nil, &errors.Response{Reason: "test error"}).Times(1),
+			mockFS.EXPECT().OpenFile(gomock.Any(), os.O_CREATE|os.O_WRONLY, rwMode).Return(file1, nil),
+			mockFS.EXPECT().ReadDir("./").Return(allFiles, nil),
+			mockFS.EXPECT().Create("000_all.go").Return(nil, &errors.Response{Reason: "test error"}).Times(1),
 		}, true},
 	}
 	for _, tt := range tests {
@@ -103,7 +108,7 @@ func Test_getPrefixes(t *testing.T) {
 		{"Error in Reading files", nil, errors.Error("Error while reading file"), nil},
 	}
 	for i, tc := range tests {
-		mockFS.EXPECT().ReadDir(gomock.Any()).Return(tc.mockEntry, tc.err)
+		mockFS.EXPECT().ReadDir("./").Return(tc.mockEntry, tc.err)
 
 		result, err := getPrefixes(mockFS)
 
