@@ -256,14 +256,21 @@ func eventhubConfigFromEnv(c Config, prefix string) eventhub.Config {
 
 func eventbridgeConfigFromEnv(c Config, prefix string) *eventbridge.Config {
 	retryFrequency, _ := strconv.Atoi(c.Get(prefix + "EVENT_BRIDGE_RETRY_FREQUENCY"))
+	akId := c.Get(prefix + "EVENT_BRIDGE_ACCESS_KEY_ID")
+	secretAk := c.Get(prefix + "EVENT_BRIDGE_SECRET_ACCESS_KEY")
+
+	if akId == "" {
+		akId = c.Get(prefix + "EVENTBRIDGE_ACCESS_KEY_ID")
+		secretAk = c.Get(prefix + "EVENTBRIDGE_SECRET_ACCESS_KEY")
+	}
 
 	return &eventbridge.Config{
 		ConnRetryDuration: retryFrequency,
 		EventBus:          c.Get(prefix + "EVENT_BRIDGE_BUS"),
 		EventSource:       c.Get(prefix + "EVENT_BRIDGE_SOURCE"),
 		Region:            c.Get(prefix + "EVENT_BRIDGE_REGION"),
-		AccessKeyID:       c.Get(prefix + "EVENTBRIDGE_ACCESS_KEY_ID"),
-		SecretAccessKey:   c.Get(prefix + "EVENTBRIDGE_SECRET_ACCESS_KEY"),
+		AccessKeyID:       akId,
+		SecretAccessKey:   secretAk,
 	}
 }
 
