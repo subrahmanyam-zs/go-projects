@@ -1,0 +1,182 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="AutoImportSettings">
+    <option name="autoReloadType" value="ALL" />
+  </component>
+  <component name="ChangeListManager">
+    <list default="true" id="87afb43b-2679-4690-9c2b-2252218d58d0" name="Changes" comment="">
+      <change afterPath="$PROJECT_DIR$/Customer/datastore/interface.go" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Customer/datastore/sql.go" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Customer/driver/dbConn.go" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Customer/go.mod" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Customer/go.sum" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Customer/handler/http.go" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Customer/main.go" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Customer/models/Customer.go" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Customer/service/interface.go" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Customer/service/service.go" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Customer/temp.go" afterDir="false" />
+    </list>
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="CoverageOptionsProvider">
+    <option name="myAddOrReplace" value="0" />
+  </component>
+  <component name="FileTemplateManagerImpl">
+    <option name="RECENT_TEMPLATES">
+      <list>
+        <option value="Go File" />
+      </list>
+    </option>
+  </component>
+  <component name="GOROOT" url="file:///usr/local/go" />
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+  </component>
+  <component name="MarkdownSettingsMigration">
+    <option name="stateVersion" value="1" />
+  </component>
+  <component name="ProjectId" id="2BWFk2ExDJSKezygSf0UsII4Dsm" />
+  <component name="ProjectLevelVcsManager">
+    <ConfirmationsSetting value="2" id="Add" />
+  </component>
+  <component name="ProjectViewState">
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showLibraryContents" value="true" />
+  </component>
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "ASKED_ADD_EXTERNAL_FILES": "true",
+    "DefaultGoTemplateProperty": "Go File",
+    "RunOnceActivity.OpenProjectViewOnStart": "true",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "RunOnceActivity.go.formatter.settings.were.checked": "true",
+    "RunOnceActivity.go.migrated.go.modules.settings": "true",
+    "RunOnceActivity.go.modules.go.list.on.any.changes.was.set": "true",
+    "RunOnceActivity.go.watchers.conflict.with.on.save.actions.check.performed": "true",
+    "WebServerToolWindowFactoryState": "false",
+    "go.import.settings.migrated": "true",
+    "go.sdk.automatically.set": "true",
+    "last_opened_file_path": "/home/raramuri/Music/GoLang-Interns-2022",
+    "settings.editor.selected.configurable": "watcher.settings"
+  }
+}]]></component>
+  <component name="RunManager" selected="Go Test.TestServiceBook_PostBook in AuthorBook3L/service/book">
+    <configuration name="TestBookHandlerGetSuccess in AuthorBook3L/handler/book" type="GoTestRunConfiguration" factoryName="Go Test" temporary="true" nameIsGenerated="true">
+      <module name="GoLang-Interns-2022" />
+      <working_directory value="$PROJECT_DIR$/AuthorBook3L/handler/book" />
+      <root_directory value="$PROJECT_DIR$/AuthorBook3L" />
+      <kind value="PACKAGE" />
+      <package value="AuthorBook3L/handler/book" />
+      <directory value="$PROJECT_DIR$" />
+      <filePath value="$PROJECT_DIR$" />
+      <framework value="gotest" />
+      <pattern value="^\QTestBookHandlerGetSuccess\E$" />
+      <method v="2" />
+    </configuration>
+    <configuration name="TestServiceBook_PostBook in AuthorBook3L/service/book" type="GoTestRunConfiguration" factoryName="Go Test" temporary="true" nameIsGenerated="true">
+      <module name="GoLang-Interns-2022" />
+      <working_directory value="$PROJECT_DIR$/AuthorBook3L/service/book" />
+      <root_directory value="$PROJECT_DIR$/AuthorBook3L" />
+      <kind value="PACKAGE" />
+      <package value="AuthorBook3L/service/book" />
+      <directory value="$PROJECT_DIR$" />
+      <filePath value="$PROJECT_DIR$" />
+      <framework value="gotest" />
+      <pattern value="^\QTestServiceBook_PostBook\E$" />
+      <method v="2" />
+    </configuration>
+    <configuration name="go test AuthorBook3L" type="GoTestRunConfiguration" factoryName="Go Test" temporary="true" nameIsGenerated="true">
+      <module name="GoLang-Interns-2022" />
+      <working_directory value="$PROJECT_DIR$/AuthorBook3L" />
+      <kind value="DIRECTORY" />
+      <directory value="$PROJECT_DIR$/AuthorBook3L" />
+      <filePath value="$PROJECT_DIR$" />
+      <framework value="gotest" />
+      <method v="2" />
+    </configuration>
+    <configuration name="go test AuthorBook3L/service/author" type="GoTestRunConfiguration" factoryName="Go Test" temporary="true" nameIsGenerated="true">
+      <module name="GoLang-Interns-2022" />
+      <working_directory value="$PROJECT_DIR$/AuthorBook3L/service/author" />
+      <root_directory value="$PROJECT_DIR$/AuthorBook3L" />
+      <kind value="PACKAGE" />
+      <package value="AuthorBook3L/service/author" />
+      <directory value="$PROJECT_DIR$" />
+      <filePath value="$PROJECT_DIR$" />
+      <framework value="gotest" />
+      <method v="2" />
+    </configuration>
+    <configuration name="go test AuthorBook3L/service/book" type="GoTestRunConfiguration" factoryName="Go Test" temporary="true" nameIsGenerated="true">
+      <module name="GoLang-Interns-2022" />
+      <working_directory value="$PROJECT_DIR$/AuthorBook3L/service/book" />
+      <root_directory value="$PROJECT_DIR$/AuthorBook3L" />
+      <kind value="PACKAGE" />
+      <package value="AuthorBook3L/service/book" />
+      <directory value="$PROJECT_DIR$" />
+      <filePath value="$PROJECT_DIR$" />
+      <framework value="gotest" />
+      <method v="2" />
+    </configuration>
+    <configuration default="true" type="SwaggerCodegen">
+      <option name="activeConfigurationType" value="FILE" />
+      <option name="configurationPath" value="" />
+      <option name="customJreEnabled" value="false" />
+      <option name="customTemplatesPath" value="" />
+      <option name="enableDebugLogging" value="false" />
+      <option name="generateToPath" value="$PROJECT_DIR$/gen" />
+      <option name="generationParameters">
+        <list />
+      </option>
+      <option name="generatorPath" value="https://repo1.maven.org/maven2/org/openapitools/openapi-generator-cli/5.0.0/openapi-generator-cli-5.0.0.jar" />
+      <option name="jdkPath" value="" />
+      <option name="language" value="java" />
+      <option name="specificationPath" value="$PROJECT_DIR$/AuthorBook3L/swagger/swagger.yaml" />
+      <method v="2" />
+    </configuration>
+    <recent_temporary>
+      <list>
+        <item itemvalue="Go Test.TestServiceBook_PostBook in AuthorBook3L/service/book" />
+        <item itemvalue="Go Test.go test AuthorBook3L/service/book" />
+        <item itemvalue="Go Test.TestBookHandlerGetSuccess in AuthorBook3L/handler/book" />
+        <item itemvalue="Go Test.go test AuthorBook3L" />
+        <item itemvalue="Go Test.go test AuthorBook3L/service/author" />
+      </list>
+    </recent_temporary>
+  </component>
+  <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="application-level" UseSingleDictionary="true" transferred="true" />
+  <component name="TypeScriptGeneratedFilesManager">
+    <option name="version" value="3" />
+  </component>
+  <component name="Vcs.Log.Tabs.Properties">
+    <option name="TAB_STATES">
+      <map>
+        <entry key="MAIN">
+          <value>
+            <State />
+          </value>
+        </entry>
+      </map>
+    </option>
+  </component>
+  <component name="VcsManagerConfiguration">
+    <option name="ADD_EXTERNAL_FILES_SILENTLY" value="true" />
+  </component>
+  <component name="VgoProject">
+    <settings-migrated>true</settings-migrated>
+  </component>
+  <component name="com.intellij.coverage.CoverageDataManagerImpl">
+    <SUITE FILE_PATH="coverage/GoLang_Interns_2022$TestBookHandler_GetByID_in_AuthorBook3L_handler_book.out" NAME="TestBookHandler_GetByID in AuthorBook3L/handler/book Coverage Results" MODIFIED="1657480692949" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="GoCoverage" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" />
+    <SUITE FILE_PATH="coverage/GoLang_Interns_2022$go_test_AuthorBook3L_handler_author.out" NAME="go test AuthorBook3L/handler/author Coverage Results" MODIFIED="1657520809737" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="GoCoverage" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" />
+    <SUITE FILE_PATH="coverage/GoLang_Interns_2022$go_test_AuthorBook3L_service_book.out" NAME="go test AuthorBook3L/service/book Coverage Results" MODIFIED="1657521041612" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="GoCoverage" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" />
+    <SUITE FILE_PATH="coverage/GoLang_Interns_2022$go_test_AuthorBook3L_Handler_book.out" NAME="go test AuthorBook3L/Handler/book Coverage Results" MODIFIED="1657091190107" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="GoCoverage" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" />
+    <SUITE FILE_PATH="coverage/GoLang_Interns_2022$go_test_AuthorBook3L_datastore_book.out" NAME="go test AuthorBook3L/datastore/book Coverage Results" MODIFIED="1657472446703" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="GoCoverage" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" />
+    <SUITE FILE_PATH="coverage/GoLang_Interns_2022$go_test_AuthorBook3L_datastore_author.out" NAME="go test AuthorBook3L/datastore/author Coverage Results" MODIFIED="1657472428894" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="GoCoverage" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" />
+    <SUITE FILE_PATH="coverage/GoLang_Interns_2022$go_test_AuthorBook3L_handler_book.out" NAME="go test AuthorBook3L/handler/book Coverage Results" MODIFIED="1657570122721" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="GoCoverage" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" />
+    <SUITE FILE_PATH="coverage/GoLang_Interns_2022$go_test_AuthorBook3L_service_author.out" NAME="go test AuthorBook3L/service/author Coverage Results" MODIFIED="1657606133529" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="GoCoverage" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" />
+    <SUITE FILE_PATH="coverage/GoLang_Interns_2022$go_test_AuthorBook3L_Handler_author.out" NAME="go test AuthorBook3L/Handler/author Coverage Results" MODIFIED="1657091215744" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="GoCoverage" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" />
+    <SUITE FILE_PATH="coverage/GoLang_Interns_2022$go_test_AuthorBook3L.out" NAME="go test AuthorBook3L Coverage Results" MODIFIED="1657620781470" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="GoCoverage" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" />
+  </component>
+</project>
