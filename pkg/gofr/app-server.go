@@ -227,7 +227,7 @@ func (s *server) Done() {
 
 // UseMiddleware is a setter method for passing user defined custom middleware
 func (s *server) UseMiddleware(mws ...Middleware) {
-	s.mws = mws
+	s.mws = append(s.mws, mws...)
 }
 
 type contextKey int
