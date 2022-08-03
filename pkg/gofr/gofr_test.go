@@ -135,6 +135,23 @@ func TestGofrUseMiddleware(t *testing.T) {
 	}
 }
 
+func TestGofrUseMiddlewarePopulated(t *testing.T) {
+	k := New()
+	k.Server.mws = []Middleware{
+		sampleMW1,
+	}
+
+	mws := []Middleware{
+		sampleMW2,
+	}
+
+	k.Server.UseMiddleware(mws...)
+
+	if len(k.Server.mws) != 2 || reflect.DeepEqual(k.Server.mws, []Middleware{sampleMW1, sampleMW2}) {
+		t.Errorf("FAILED, Expected: %v, Got: %v", mws, k.Server.mws)
+	}
+}
+
 func sampleMW1(h http.Handler) http.Handler {
 	return h
 }
