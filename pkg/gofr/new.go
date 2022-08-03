@@ -113,7 +113,7 @@ func NewWithConfig(c Config) (k *Gofr) {
 	// If Tracing is set, Set tracing
 	enableTracing(c, logger)
 
-	initializeDataStores(c, gofr)
+	initializeDataStores(c, logger, gofr)
 
 	initializeNotifiers(c, gofr)
 
@@ -131,7 +131,7 @@ func (s *server) initializeMetricServerConfig(c Config) {
 	}
 }
 
-func initializePubSub(c Config, k *Gofr) {
+func initializePubSub(c Config, logger log.Logger, k *Gofr) {
 	pubsubBackend := c.Get("PUBSUB_BACKEND")
 	if pubsubBackend == "" {
 		return
@@ -143,7 +143,7 @@ func initializePubSub(c Config, k *Gofr) {
 	case pkg.EventHub:
 		initializeEventhub(c, k)
 	case pkg.EventBridge:
-		initializeEventBridge(c, k)
+		initializeEventBridge(c, logger, k)
 	}
 }
 
@@ -163,7 +163,7 @@ func InitializePubSubFromConfigs(c Config, l log.Logger, prefix string) (pubsub.
 	case pkg.EventHub:
 		return initializeEventhubFromConfigs(c, prefix)
 	case pkg.EventBridge:
-		return initializeEventBridgeFromConfigs(c, prefix)
+		return initializeEventBridgeFromConfigs(c, l, prefix)
 	}
 
 	return nil, errors.DataStoreNotInitialized{DBName: "Pubsub", Reason: "invalid pubsub backend"}
@@ -262,7 +262,7 @@ func enableTracing(c Config, logger log.Logger) {
 
 // initializeDataStores initializes the Gofr struct with all the data stores for which
 // correct config is set in the environment
-func initializeDataStores(c Config, k *Gofr) {
+func initializeDataStores(c Config, logger log.Logger, k *Gofr) {
 	// Redis
 	initializeRedis(c, k)
 
@@ -276,7 +276,7 @@ func initializeDataStores(c Config, k *Gofr) {
 	initializeMongoDB(c, k)
 
 	// PubSub
-	initializePubSub(c, k)
+	initializePubSub(c, logger, k)
 
 	// Elasticsearch
 	initializeElasticsearch(c, k)
@@ -491,9 +491,9 @@ func initializeKafkaFromConfigs(c Config, l log.Logger, prefix string) (pubsub.P
 	return k, nil
 }
 
-func initializeEventBridge(c Config, k *Gofr) {
+func initializeEventBridge(c Config, l log.Logger, k *Gofr) {
 	if c.Get("EVENT_BRIDGE_BUS") != "" {
-		cfg := eventbridgeConfigFromEnv(c, "")
+		cfg := eventbridgeConfigFromEnv(c, l, "")
 
 		var err error
 
@@ -511,8 +511,8 @@ func initializeEventBridge(c Config, k *Gofr) {
 }
 
 // InitializeEventBridgeFromConfigs initializes eventbridge
-func initializeEventBridgeFromConfigs(c Config, prefix string) (*eventbridge.Client, error) {
-	cfg := eventbridgeConfigFromEnv(c, prefix)
+func initializeEventBridgeFromConfigs(c Config, l log.Logger, prefix string) (*eventbridge.Client, error) {
+	cfg := eventbridgeConfigFromEnv(c, l, prefix)
 	return eventbridge.New(cfg)
 }
 

@@ -266,7 +266,7 @@ func Test_AWSEventBridgeRetry(t *testing.T) {
 	logger := log.NewMockLogger(b)
 	k.Logger = logger
 	c := config.NewGoDotEnvProvider(logger, "../../configs")
-	cfg := eventbridgeConfigFromEnv(c, "")
+	cfg := eventbridgeConfigFromEnv(c, logger, "")
 	cfg.ConnRetryDuration = 1
 
 	go eventbridgeRetry(cfg, &k)

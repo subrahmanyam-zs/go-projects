@@ -359,7 +359,7 @@ func Test_PubSub(t *testing.T) {
 
 	for i, tc := range testCases {
 		b.Reset()
-		initializePubSub(tc.configLoc, k)
+		initializePubSub(tc.configLoc, logger, k)
 
 		if !strings.Contains(b.String(), tc.expectedStr) {
 			t.Errorf("[FAILED %v], expected: `%v` in the logs, got: %v", i, tc.expectedStr, b.String())
@@ -517,7 +517,7 @@ func Test_initializeEventBridge(t *testing.T) {
 		},
 	}
 	k := &Gofr{Logger: logger}
-	initializeEventBridge(c, k)
+	initializeEventBridge(c, logger, k)
 
 	assert.Contains(t, b.String(), "AWS EventBridge initialized successfully")
 }
@@ -743,6 +743,7 @@ func Test_initializeEventhubFromConfigs(t *testing.T) {
 }
 
 func Test_initializeEventBridgeFromConfigs(t *testing.T) {
+	logger := log.NewMockLogger(io.Discard)
 	cfg := &config.MockConfig{
 		Data: map[string]string{
 			"EVENT_BRIDGE_REGION": "us-east-1",
@@ -751,7 +752,7 @@ func Test_initializeEventBridgeFromConfigs(t *testing.T) {
 		},
 	}
 
-	conn, err := initializeEventBridgeFromConfigs(cfg, "")
+	conn, err := initializeEventBridgeFromConfigs(cfg, logger, "")
 	if err != nil {
 		t.Errorf("Test case failed. Expected: %v, got: %v", nil, err)
 	}
