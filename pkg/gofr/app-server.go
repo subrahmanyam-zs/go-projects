@@ -228,9 +228,7 @@ func (s *server) Done() {
 // UseMiddleware is a setter method for passing user defined custom middleware
 func (s *server) UseMiddleware(mws ...Middleware) {
 	if s.mws != nil {
-		for _, m := range mws {
-			s.mws = append(s.mws, m)
-		}
+		s.mws = append(s.mws, mws...)
 
 		return
 	}
