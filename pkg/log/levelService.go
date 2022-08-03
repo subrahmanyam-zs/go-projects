@@ -44,29 +44,30 @@ func newLevelService(l Logger, appName string) *levelService {
 		if rls.url != "" {
 			rls.init = true
 
-			go func() {
+			req, _ := http.NewRequest(http.MethodGet, rls.url+"/configs?serviceName="+rls.app, http.NoBody)
+
+			tr := &http.Transport{
+				//nolint:gosec // need this to skip TLS verification
+				TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+			}
+			client := &http.Client{Transport: tr}
+
+			go func(c *http.Client, r *http.Request) {
 				for {
-					rls.updateRemoteLevel()
+					rls.updateRemoteLevel(c, r)
 					time.Sleep(LevelFetchInterval * time.Second)
 				}
-			}()
+			}(client, req)
 		}
 	}
 
 	return &rls
 }
 
-func (s *levelService) updateRemoteLevel() {
+func (s *levelService) updateRemoteLevel(client *http.Client, req *http.Request) {
 	rls.logger.Debugf("Making request to remote logging service %s", s.url)
 
-	req, _ := http.NewRequest(http.MethodGet, s.url+"/configs?serviceName="+s.app, http.NoBody)
-
-	tr := &http.Transport{
-		//nolint:gosec // need this to skip TLS verification
-		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
-	}
-
-	resp, err := (&http.Client{Transport: tr}).Do(req)
+	resp, err := client.Do(req)
 	if err != nil {
 		s.logger.Warnf("Could not create log service client. err:%v", err)
 		s.failureCount++
