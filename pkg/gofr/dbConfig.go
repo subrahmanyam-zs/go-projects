@@ -305,9 +305,21 @@ func kvDataConfigFromEnv(c Config) kvdata.Config {
 		sk = c.Get("KV_CSP_SHARED_KEY_FWK")
 	}
 
-	return kvdata.Config{
-		URL:       c.Get("KV_URL"),
+	cspConfig := kvdata.CSPConfigs{
 		AppKey:    ak,
 		SharedKey: sk,
+	}
+
+	jwtConfig := kvdata.JWTConfigs{
+		ClientID:       c.Get("KV_CLIENT_ID"),
+		ClientSecret:   c.Get("KV_CLIENT_SECRET"),
+		KeyProviderURL: c.Get("KV_KEY_PROVIDER_URL"),
+		Audience:       c.Get("KV_AUDIENCE"),
+	}
+
+	return kvdata.Config{
+		URL:        c.Get("KV_URL"),
+		CSPConfigs: cspConfig,
+		JWTConfigs: jwtConfig,
 	}
 }

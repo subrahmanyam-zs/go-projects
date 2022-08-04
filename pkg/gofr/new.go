@@ -7,9 +7,8 @@ import (
 	"strings"
 	"time"
 
-	"github.int.mcafee.com/mcafee/cnsr-gofr-csp-auth/generator"
-
 	"github.com/prometheus/client_golang/prometheus"
+	"github.int.mcafee.com/mcafee/cnsr-gofr-csp-auth/generator"
 
 	"go.opentelemetry.io/otel"
 
@@ -782,8 +781,16 @@ func getConfigFolder() (configFolder string) {
 func initializeKvData(c Config, app *Gofr) {
 	cfg := kvDataConfigFromEnv(c)
 	if cfg.URL != "" {
-		options := &service.Options{Auth: &service.Auth{CSPSecurityOption: &generator.Option{AppKey: cfg.AppKey, SharedKey: cfg.SharedKey}}}
-		kvSvc := service.NewHTTPServiceWithOptions(cfg.URL, app.Logger, options)
+		var options service.Options
+
+		if cfg.ClientID != "" {
+			options.Auth = &service.Auth{OAuthOption: &service.OAuthOption{ClientID: cfg.ClientID,
+				ClientSecret: cfg.ClientSecret, KeyProviderURL: cfg.KeyProviderURL, Audience: cfg.Audience}}
+		} else {
+			options.Auth = &service.Auth{CSPSecurityOption: &generator.Option{AppKey: cfg.AppKey, SharedKey: cfg.SharedKey}}
+		}
+
+		kvSvc := service.NewHTTPServiceWithOptions(cfg.URL, app.Logger, &options)
 
 		app.ServiceHealth = append(app.ServiceHealth, kvSvc.HealthCheck)
 		kv := kvData.New(kvSvc)

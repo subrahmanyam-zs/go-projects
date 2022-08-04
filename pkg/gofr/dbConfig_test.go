@@ -438,27 +438,37 @@ func Test_kvDataConfigFromEnv(t *testing.T) {
 			"KV_URL":                "http://localhost:2021",
 			"KV_CSP_APP_KEY_FWK":    "test key",
 			"KV_CSP_SHARED_KEY_FWK": "test key",
+			"KV_CLIENT_ID":          "testID",
+			"KV_CLIENT_SECRET":      "testSecret",
+			"KV_KEY_PROVIDER_URL":   "testURL",
+			"KV_AUDIENCE":           "testAud",
 		},
 	}
-
-	expConfig1 := kvdata.Config{
-		URL:       "http://localhost:2021",
-		AppKey:    "test key",
+	expJwt := kvdata.JWTConfigs{ClientID: "testID",
+		ClientSecret:   "testSecret",
+		KeyProviderURL: "testURL",
+		Audience:       "testAud",
+	}
+	expCsp := kvdata.CSPConfigs{AppKey: "test key",
 		SharedKey: "test key",
+	}
+	expConfig1 := kvdata.Config{
+		URL:        "http://localhost:2021",
+		JWTConfigs: expJwt,
+		CSPConfigs: expCsp,
 	}
 
 	mockCfg2 := &config.MockConfig{
 		Data: map[string]string{
 			"KV_URL":            "http://localhost:2021",
-			"KV_CSP_APP_KEY":    "test",
-			"KV_CSP_SHARED_KEY": "test",
+			"KV_CSP_APP_KEY":    "test key",
+			"KV_CSP_SHARED_KEY": "test key",
 		},
 	}
 
 	expConfig2 := kvdata.Config{
-		URL:       "http://localhost:2021",
-		AppKey:    "test",
-		SharedKey: "test",
+		URL:        "http://localhost:2021",
+		CSPConfigs: expCsp,
 	}
 
 	testcases := []struct {
