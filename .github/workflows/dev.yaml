@@ -2,7 +2,7 @@ name: Deploy Sample API on DEV and QA
 
 on:
   push:
-    branches: [ development ]
+    branches: [ development]
 
 env:
   IMAGE_URL: ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.us-west-2.amazonaws.com/${{ secrets.AWS_ECR_REPO }}:${{ github.sha }}
@@ -68,7 +68,7 @@ jobs:
                -Dsonar.login=${{ secrets.SONAR_USER }}
 
       - name: Sonar scan browse url
-        run: echo "http://10.95.114.134:9000/dashboard?id=cnsr-gofr"
+        run: echo "http://10.171.64.68:9000/dashboard?id=cnsr-gofr"
 
   Dockerize:
     needs: scans

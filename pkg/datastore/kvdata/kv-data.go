@@ -9,7 +9,19 @@ import (
 )
 
 type Config struct {
-	URL       string
+	URL string
+	JWTConfigs
+	CSPConfigs
+}
+
+type JWTConfigs struct {
+	ClientID       string
+	ClientSecret   string
+	KeyProviderURL string
+	Audience       string
+}
+
+type CSPConfigs struct {
 	AppKey    string
 	SharedKey string
 }

@@ -12,6 +12,7 @@ import (
 	"developer.zopsmart.com/go/gofr/pkg/datastore/pubsub/eventbridge"
 	"developer.zopsmart.com/go/gofr/pkg/datastore/pubsub/eventhub"
 	"developer.zopsmart.com/go/gofr/pkg/datastore/pubsub/kafka"
+	"developer.zopsmart.com/go/gofr/pkg/log"
 	awssns "developer.zopsmart.com/go/gofr/pkg/notifier/aws-sns"
 
 	"github.com/gocql/gocql"
@@ -254,16 +255,28 @@ func eventhubConfigFromEnv(c Config, prefix string) eventhub.Config {
 	}
 }
 
-func eventbridgeConfigFromEnv(c Config, prefix string) *eventbridge.Config {
+func eventbridgeConfigFromEnv(c Config, logger log.Logger, prefix string) *eventbridge.Config {
 	retryFrequency, _ := strconv.Atoi(c.Get(prefix + "EVENT_BRIDGE_RETRY_FREQUENCY"))
+	akID := c.Get(prefix + "EVENT_BRIDGE_ACCESS_KEY_ID")
+	secretAk := c.Get(prefix + "EVENT_BRIDGE_SECRET_ACCESS_KEY")
+
+	if akID == "" {
+		akID = c.Get(prefix + "EVENTBRIDGE_ACCESS_KEY_ID")
+		secretAk = c.Get(prefix + "EVENTBRIDGE_SECRET_ACCESS_KEY")
+
+		if akID != "" {
+			logger.Warn("Usage of EVENTBRIDGE_ACCESS_KEY_ID and EVENTBRIDGE_SECRET_ACCESS_KEY is deprecated. " +
+				"Instead use EVENT_BRIDGE_ACCESS_KEY_ID and EVENT_BRIDGE_SECRET_ACCESS_KEY")
+		}
+	}
 
 	return &eventbridge.Config{
 		ConnRetryDuration: retryFrequency,
 		EventBus:          c.Get(prefix + "EVENT_BRIDGE_BUS"),
 		EventSource:       c.Get(prefix + "EVENT_BRIDGE_SOURCE"),
 		Region:            c.Get(prefix + "EVENT_BRIDGE_REGION"),
-		AccessKeyID:       c.Get(prefix + "EVENTBRIDGE_ACCESS_KEY_ID"),
-		SecretAccessKey:   c.Get(prefix + "EVENTBRIDGE_SECRET_ACCESS_KEY"),
+		AccessKeyID:       akID,
+		SecretAccessKey:   secretAk,
 	}
 }
 
@@ -305,9 +318,21 @@ func kvDataConfigFromEnv(c Config) kvdata.Config {
 		sk = c.Get("KV_CSP_SHARED_KEY_FWK")
 	}
 
-	return kvdata.Config{
-		URL:       c.Get("KV_URL"),
+	cspConfig := kvdata.CSPConfigs{
 		AppKey:    ak,
 		SharedKey: sk,
+	}
+
+	jwtConfig := kvdata.JWTConfigs{
+		ClientID:       c.Get("KV_CLIENT_ID"),
+		ClientSecret:   c.Get("KV_CLIENT_SECRET"),
+		KeyProviderURL: c.Get("KV_KEY_PROVIDER_URL"),
+		Audience:       c.Get("KV_AUDIENCE"),
+	}
+
+	return kvdata.Config{
+		URL:        c.Get("KV_URL"),
+		CSPConfigs: cspConfig,
+		JWTConfigs: jwtConfig,
 	}
 }

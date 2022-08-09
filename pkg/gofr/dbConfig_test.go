@@ -2,6 +2,7 @@ package gofr
 
 import (
 	"crypto/tls"
+	"io"
 	"reflect"
 	"testing"
 
@@ -10,6 +11,7 @@ import (
 	"developer.zopsmart.com/go/gofr/pkg/datastore/pubsub/eventbridge"
 	"developer.zopsmart.com/go/gofr/pkg/datastore/pubsub/kafka"
 	"developer.zopsmart.com/go/gofr/pkg/gofr/config"
+	"developer.zopsmart.com/go/gofr/pkg/log"
 	awssns "developer.zopsmart.com/go/gofr/pkg/notifier/aws-sns"
 
 	"github.com/gocql/gocql"
@@ -409,6 +411,7 @@ func Test_sqlDBConfigFromEnv(t *testing.T) {
 }
 
 func Test_eventBridgeConfigFromEnv(t *testing.T) {
+	logger := log.NewMockLogger(io.Discard)
 	c := &config.MockConfig{
 		Data: map[string]string{
 			"EVENT_BRIDGE_REGION":           "us-east-1",
@@ -419,7 +422,7 @@ func Test_eventBridgeConfigFromEnv(t *testing.T) {
 			"EVENTBRIDGE_SECRET_ACCESS_KEY": "test",
 		}}
 
-	cfg := eventbridgeConfigFromEnv(c, "")
+	cfg := eventbridgeConfigFromEnv(c, logger, "")
 	expCfg := &eventbridge.Config{
 		ConnRetryDuration: 5,
 		EventBus:          "Gofr",
@@ -438,27 +441,37 @@ func Test_kvDataConfigFromEnv(t *testing.T) {
 			"KV_URL":                "http://localhost:2021",
 			"KV_CSP_APP_KEY_FWK":    "test key",
 			"KV_CSP_SHARED_KEY_FWK": "test key",
+			"KV_CLIENT_ID":          "testID",
+			"KV_CLIENT_SECRET":      "testSecret",
+			"KV_KEY_PROVIDER_URL":   "testURL",
+			"KV_AUDIENCE":           "testAud",
 		},
 	}
-
-	expConfig1 := kvdata.Config{
-		URL:       "http://localhost:2021",
-		AppKey:    "test key",
+	expJwt := kvdata.JWTConfigs{ClientID: "testID",
+		ClientSecret:   "testSecret",
+		KeyProviderURL: "testURL",
+		Audience:       "testAud",
+	}
+	expCsp := kvdata.CSPConfigs{AppKey: "test key",
 		SharedKey: "test key",
+	}
+	expConfig1 := kvdata.Config{
+		URL:        "http://localhost:2021",
+		JWTConfigs: expJwt,
+		CSPConfigs: expCsp,
 	}
 
 	mockCfg2 := &config.MockConfig{
 		Data: map[string]string{
 			"KV_URL":            "http://localhost:2021",
-			"KV_CSP_APP_KEY":    "test",
-			"KV_CSP_SHARED_KEY": "test",
+			"KV_CSP_APP_KEY":    "test key",
+			"KV_CSP_SHARED_KEY": "test key",
 		},
 	}
 
 	expConfig2 := kvdata.Config{
-		URL:       "http://localhost:2021",
-		AppKey:    "test",
-		SharedKey: "test",
+		URL:        "http://localhost:2021",
+		CSPConfigs: expCsp,
 	}
 
 	testcases := []struct {
