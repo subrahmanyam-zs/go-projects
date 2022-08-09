@@ -2,6 +2,7 @@ package gofr
 
 import (
 	"crypto/tls"
+	"io"
 	"reflect"
 	"testing"
 
@@ -10,6 +11,7 @@ import (
 	"developer.zopsmart.com/go/gofr/pkg/datastore/pubsub/eventbridge"
 	"developer.zopsmart.com/go/gofr/pkg/datastore/pubsub/kafka"
 	"developer.zopsmart.com/go/gofr/pkg/gofr/config"
+	"developer.zopsmart.com/go/gofr/pkg/log"
 	awssns "developer.zopsmart.com/go/gofr/pkg/notifier/aws-sns"
 
 	"github.com/gocql/gocql"
@@ -409,6 +411,7 @@ func Test_sqlDBConfigFromEnv(t *testing.T) {
 }
 
 func Test_eventBridgeConfigFromEnv(t *testing.T) {
+	logger := log.NewMockLogger(io.Discard)
 	c := &config.MockConfig{
 		Data: map[string]string{
 			"EVENT_BRIDGE_REGION":           "us-east-1",
@@ -419,7 +422,7 @@ func Test_eventBridgeConfigFromEnv(t *testing.T) {
 			"EVENTBRIDGE_SECRET_ACCESS_KEY": "test",
 		}}
 
-	cfg := eventbridgeConfigFromEnv(c, "")
+	cfg := eventbridgeConfigFromEnv(c, logger, "")
 	expCfg := &eventbridge.Config{
 		ConnRetryDuration: 5,
 		EventBus:          "Gofr",
