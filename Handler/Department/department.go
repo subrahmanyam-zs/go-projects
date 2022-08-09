@@ -4,7 +4,6 @@ import (
 	"EmployeeDepartment/Handler/Entities"
 	"EmployeeDepartment/Store"
 	"encoding/json"
-	"fmt"
 	"io"
 	"net/http"
 )
@@ -17,15 +16,15 @@ func New(department Store.Department) DepartmentHandler {
 	return DepartmentHandler{datastore: department}
 }
 
-func (e DepartmentHandler) PostHandler(w http.ResponseWriter, r *http.Request) {
+func (e DepartmentHandler) PostHandler(w http.ResponseWriter, req *http.Request) {
 	var department Entities.Department
 
-	body, _ := io.ReadAll(r.Body)
+	body, _ := io.ReadAll(req.Body)
 
 	err := json.Unmarshal(body, &department)
 	if err != nil {
-		fmt.Println(err)
-		_, _ = w.Write([]byte("invalid body"))
+		//fmt.Println(err)
+		_, _ = w.Write([]byte("Unmarshal Error"))
 		w.WriteHeader(http.StatusBadRequest)
 
 		return
@@ -33,7 +32,7 @@ func (e DepartmentHandler) PostHandler(w http.ResponseWriter, r *http.Request) {
 
 	resp, err := e.datastore.Create(department)
 	if err != nil {
-		_, _ = w.Write([]byte("could not create department"))
+		_, _ = w.Write([]byte("Invalid id"))
 		w.WriteHeader(http.StatusInternalServerError)
 
 		return

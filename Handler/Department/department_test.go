@@ -3,7 +3,7 @@ package Department
 import (
 	"EmployeeDepartment/Handler/Entities"
 	"bytes"
-	"encoding/json"
+	"errors"
 	"github.com/google/uuid"
 	"net/http/httptest"
 	"reflect"
@@ -13,25 +13,25 @@ import (
 func TestEmployeePost(t *testing.T) {
 
 	testCases := []struct {
-		reqBody  Entities.Department
-		respBody Entities.Department
+		desc           string
+		input          []byte
+		expectedOutput []byte
 	}{
-		{Entities.Department{1, "HR", 1}, Entities.Department{1, "HR", 1}},
-		{Entities.Department{}, Entities.Department{}},
+		{"Valid input", []byte(`{"id":1, "name":"HR","floorNo": 1}`), []byte(`{"Id":1,"Name":"HR","FloorNo":1}`)},
+		{"Invalid input", []byte(`{"id":0,"name":"Tech","floorNo":2}`), []byte("Invalid id")},
+		{"for Unmarshal error", []byte(`{"id":"2","name":"hr","floorNo":2}`), []byte("Unmarshal Error")},
 	}
 
-	for i, v := range testCases {
-		jsondatareq, _ := json.Marshal(v.reqBody)
-		jsondataresp, _ := json.Marshal(v.respBody)
-		req := httptest.NewRequest("POST", "/employee", bytes.NewReader(jsondatareq))
+	for i, tc := range testCases {
+		req := httptest.NewRequest("POST", "/employee", bytes.NewReader(tc.input))
 		w := httptest.NewRecorder()
 
 		a := New(mockDatastore{})
 
 		a.PostHandler(w, req)
 
-		if !reflect.DeepEqual(w.Body, bytes.NewBuffer(jsondataresp)) {
-			t.Errorf("[TEST%d]Failed. Got %v\tExpected %v\n", i+1, w.Body.String(), string(jsondataresp))
+		if !reflect.DeepEqual(w.Body, bytes.NewBuffer(tc.expectedOutput)) {
+			t.Errorf("[TEST%d]Failed. Got %v\tExpected %v\n", i+1, w.Body.String(), string(tc.expectedOutput))
 		}
 	}
 }
@@ -41,9 +41,9 @@ type mockDatastore struct {
 }
 
 func (m mockDatastore) Create(department Entities.Department) (Entities.Department, error) {
-	id := department.Id
-	if id == 0 {
-		return Entities.Department{}, nil
+	
+	if department.Id == 0 {
+		return Entities.Department{}, errors.New("error")
 	}
 
 	return Entities.Department{1, "HR", 1}, nil
