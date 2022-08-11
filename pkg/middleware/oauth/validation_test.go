@@ -20,42 +20,50 @@ import (
 
 func TestValidateErrors(t *testing.T) {
 	testcases := []struct {
-		token string
-		err   error
+		token  string
+		err    error
+		expLog string
 	}{
 		// no token
-		{"", middleware.ErrInvalidRequest},
+		{"", middleware.ErrInvalidRequest, "invalid format for authorization header"},
 		// invalid token
-		{"bearer ", middleware.ErrInvalidRequest},
+		{"bearer ", middleware.ErrInvalidRequest, "invalid format for authorization header"},
 		// invalid jwt
-		{"bearer aaa.bbb", middleware.ErrInvalidToken},
+		{"bearer aaa.bbb", middleware.ErrInvalidToken, "jwt token is not of the format hhh.ppp.sss"},
 		// invalid jwt parse
-		{"bearer aaa.bbb.vvv", middleware.ErrInvalidToken},
+		{"bearer aaa.bbb.vvv", middleware.ErrInvalidToken, "Failed to unmarshal jwt header"},
 		// invalid claim
 		{"bearer eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6IjIwMTEtMDQtMjk9PSJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwiYXV" +
 			"kIjoiSm9obiBEb2UiLCJhZG1pbiI6dHJ1ZSwiaWF0IjoxNTE2MjM5MDIyfQ.Uaf0IkswiDKIK-zihvB5oK9JrbcXNA1ioKAt-6KI6V6KdmG" +
 			"8wWVkLRA5IT0IY9ypInnf7fRx3ieNIodSF08-h8jBXurcjdOvgKBiCl8rNz7mQ_jNDP6ulDSzQAR_wRrLVRs4ObBEWcGYgMwlQ2Vk1EWOkv" +
 			"hkxwU9c5_ulDXHD8UMmWy4dM9fiw8Hstjm3zEDPMmQ_jYJ4KCRIWGeDcBTc4MKbkjoa1-zbsKokFYQRqwBzqVkFSbsNlIYZNwkXK6x_nTIg" +
-			"WG97bBZCBXTSBnoPoU7_4AcjlSTc6upsdm4anZU8MKZQBHy9nPVZPAIV3ou3qpHxAhe1G1M7eub18mtew", middleware.ErrInvalidToken},
+			"WG97bBZCBXTSBnoPoU7_4AcjlSTc6upsdm4anZU8MKZQBHy9nPVZPAIV3ou3qpHxAhe1G1M7eub18mtew", middleware.ErrInvalidToken,
+			"Failed to parse token"},
 		// invalid request
 		{"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6IjIwMTEtMDQtMjk9PSJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwiYXVkIjoiSm9" +
-			"obiBEb2UiLCJhZG1pbiI6dHJ1ZSwiaWF0IjoxNTE2MjM5MDIyfQ.A8FnCpeKccTlE7gg8oebcjepg_O6DhcYcyq923low28", middleware.ErrInvalidRequest},
+			"obiBEb2UiLCJhZG1pbiI6dHJ1ZSwiaWF0IjoxNTE2MjM5MDIyfQ.A8FnCpeKccTlE7gg8oebcjepg_O6DhcYcyq923low28", middleware.ErrInvalidRequest,
+			"invalid format for authorization header"},
 		// invalid modulus
 		{"bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6IjIwMTEtMDQtMzA9PSJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwi" +
-			"YWRtaW4iOnRydWUsImlhdCI6MTUxNjIzOTAyMn0.AEFESFUc0QvP7T_KQt_E-18YG9WVwOUYGVTHokPFdc4", middleware.ErrInvalidToken},
+			"YWRtaW4iOnRydWUsImlhdCI6MTUxNjIzOTAyMn0.AEFESFUc0QvP7T_KQt_E-18YG9WVwOUYGVTHokPFdc4", middleware.ErrInvalidToken,
+			"Error while getting public key"},
 		// invalid signature
 		{"bearer eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6IjIwMTEtMDQtMjk9PSJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwiYXV" +
 			"kIjoiSm9obiBEb2UiLCJhZG1pbiI6dHJ1ZSwiaWF0IjoxNTE2MjM5MDIyfQ.Uaf0IkswiDKIK-zihvB5oK9JrbcXNA1ioKAt-6KI6V6Kdm" +
 			"G8wWVkLRA5IT0IY9ypInnf7fRx3ieNIodSF08-h8jBXurcjdOvgKBiCl8rNz7mQ_jNDP6ulDSzQAR_wRrLVRs4ObBEWcGYgMwlQ2Vk1EWOk" +
 			"vhkxwU9c5_ulDXHD8UMmWy4dM9fiw8Hstjm3zEDPMmQ_jYJ4KCRIWGeDcBTc4MKbkjoa1-zbsKokFYQRqwBzqVkFSbsNlIYZNwkXK6x_nTI" +
-			"gWG97bBZCBXTSBnoPoU7_4AcjlSTc6upsdm4anZU8MKZQBHy9nPVZPAIV3ou3qpHxAhe1G1M7eub18mtew", middleware.ErrInvalidToken},
+			"gWG97bBZCBXTSBnoPoU7_4AcjlSTc6upsdm4anZU8MKZQBHy9nPVZPAIV3ou3qpHxAhe1G1M7eub18mtew", middleware.ErrInvalidToken,
+			"Failed to parse token"},
 		// invalid algorithm
 		{"bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6IjIwMTEtMDQtMjk9PSJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwiYXV" +
 			"kIjoiSm9obiBEb2UiLCJhZG1pbiI6dHJ1ZSwiaWF0IjoxNTE2MjM5MDIyfQ.A8FnCpeKccTlE7gg8oebcjepg_O6DhcYcyq923low28",
-			middleware.ErrInvalidToken},
+			middleware.ErrInvalidToken, "Failed to parse token"},
 	}
 
 	for i, v := range testcases {
+		b := new(bytes.Buffer)
+		logger := log.NewMockLogger(b)
+
 		req := httptest.NewRequest(http.MethodGet, "/dummy", nil)
 		req.Header.Set("Authorization", v.token)
 
@@ -82,9 +90,13 @@ func TestValidateErrors(t *testing.T) {
 			},
 		}
 
-		_, err := oAuth.Validate(log.NewLogger(), req)
+		_, err := oAuth.Validate(logger, req)
 		if !errors.Is(err, v.err) {
 			t.Errorf("Testcase[%v] Failed, validate() = %v, \nwant %v", i+1, err, v.err)
+		}
+
+		if !strings.Contains(b.String(), v.expLog) {
+			t.Errorf("Testcase[%v] failed: Expected: %v, Got: %v", i, v.expLog, b.String())
 		}
 	}
 }
@@ -201,9 +213,9 @@ func TestGetJWT(t *testing.T) {
 		error      error
 		logMessage string
 	}{
-		{"", JWT{}, middleware.ErrInvalidRequest, "jwt token is missing"},
-		{"aksabdjkd", JWT{}, middleware.ErrInvalidRequest, "jwt token is missing"},
-		{"bear aksabdjkd", JWT{}, middleware.ErrInvalidRequest, "jwt token is missing"},
+		{"", JWT{}, middleware.ErrInvalidRequest, "invalid format for authorization header"},
+		{"aksabdjkd", JWT{}, middleware.ErrInvalidRequest, "invalid format for authorization header"},
+		{"bear aksabdjkd", JWT{}, middleware.ErrInvalidRequest, "invalid format for authorization header"},
 		{"bearer abc", JWT{}, middleware.ErrInvalidToken, "jwt token is not of the format hhh.ppp.sss"},
 		{"bearer abc.def", JWT{}, middleware.ErrInvalidToken, "jwt token is not of the format hhh.ppp.sss"},
 		{"bearer abc.def.ghi.jkl", JWT{}, middleware.ErrInvalidToken, "jwt token is not of the format hhh.ppp.sss"},
@@ -234,5 +246,9 @@ func TestGetJWT(t *testing.T) {
 
 		assert.Equal(t, testCase.error, err)
 		assert.Equal(t, testCase.JWT, got, i)
+
+		if !strings.Contains(b.String(), testCase.logMessage) {
+			t.Errorf("Testcase[%v] failed: Expected: %v, Got: %v", i, testCase.logMessage, b.String())
+		}
 	}
 }
