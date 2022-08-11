@@ -2,19 +2,20 @@ package Employee
 
 import (
 	"EmployeeDepartment/Handler/Entities"
-	"EmployeeDepartment/Store"
+	"EmployeeDepartment/Service"
 	"encoding/json"
 	"github.com/google/uuid"
 	"io"
 	"net/http"
+	"strconv"
 )
 
 type EmployeeHandler struct {
-	datastore Store.Employee
+	validate Service.Employee
 }
 
-func New(emp Store.Employee) EmployeeHandler {
-	return EmployeeHandler{datastore: emp}
+func New(emp Service.Employee) EmployeeHandler {
+	return EmployeeHandler{validate: emp}
 }
 
 func (e EmployeeHandler) PostHandler(res http.ResponseWriter, req *http.Request) {
@@ -29,7 +30,7 @@ func (e EmployeeHandler) PostHandler(res http.ResponseWriter, req *http.Request)
 		return
 	}
 
-	resp, err := e.datastore.Create(employee)
+	resp, err := e.validate.Create(employee)
 	if err != nil {
 		_, _ = res.Write([]byte("Invalid Body"))
 		res.WriteHeader(http.StatusInternalServerError)
@@ -50,7 +51,7 @@ func (e EmployeeHandler) GetHandler(res http.ResponseWriter, req *http.Request) 
 	}
 	uid := uuid.MustParse(id)
 
-	resp, err := e.datastore.Read(uid)
+	resp, err := e.validate.Read(uid)
 	body, _ := json.Marshal(resp)
 	if err != nil {
 		_, _ = res.Write([]byte("Id not found"))
@@ -69,17 +70,38 @@ func (e EmployeeHandler) PutHandler(res http.ResponseWriter, req *http.Request) 
 		res.Write([]byte("Unmarshall error"))
 		return
 	}
-
-	if len(id) != 36 {
-		res.Write([]byte("Invalid id"))
-		return
-	}
 	uid := uuid.MustParse(id)
-	resp, err := e.datastore.Update(uid, employee)
-	body, _ := json.Marshal(resp)
+	resp, err := e.validate.Update(uid, employee)
 	if err != nil {
-		_, _ = res.Write(body)
+		_, _ = res.Write([]byte("Id not found"))
 		return
 	}
-	res.Write(reader)
+	body, _ := json.Marshal(resp)
+	res.Write(body)
+}
+
+func (e EmployeeHandler) DeleteHandler(res http.ResponseWriter, req *http.Request) {
+	id := uuid.MustParse(req.URL.Path[10:])
+	resp, err := e.validate.Delete(id)
+	if err != nil {
+		res.WriteHeader(http.StatusNotFound)
+		return
+	}
+	res.WriteHeader(resp)
+
+}
+
+func (e EmployeeHandler) GetAll(res http.ResponseWriter, req *http.Request) {
+	name := req.URL.Query().Get("name")
+	includeDepartment := req.URL.Query().Get("includeDepartment")
+
+	b, err := strconv.ParseBool(includeDepartment)
+	//log.Print(err)
+	resp, err := e.validate.ReadAll(name, b)
+	if err != nil {
+		res.Write([]byte("Unmarshal Error"))
+		return
+	}
+	data, err := json.Marshal(resp)
+	res.Write(data)
 }

@@ -4,7 +4,8 @@ import (
 	"EmployeeDepartment/Handler/Entities"
 	"bytes"
 	"errors"
-	"github.com/google/uuid"
+	"fmt"
+	"net/http"
 	"net/http/httptest"
 	"reflect"
 	"testing"
@@ -26,7 +27,7 @@ func TestEmployeePost(t *testing.T) {
 		req := httptest.NewRequest("POST", "/employee", bytes.NewReader(tc.input))
 		w := httptest.NewRecorder()
 
-		a := New(mockDatastore{})
+		a := New(mockService{})
 
 		a.PostHandler(w, req)
 
@@ -36,15 +37,80 @@ func TestEmployeePost(t *testing.T) {
 	}
 }
 
-type mockDatastore struct {
-	id uuid.UUID
-}
+func (m mockService) Create(department Entities.Department) (Entities.Department, error) {
 
-func (m mockDatastore) Create(department Entities.Department) (Entities.Department, error) {
-	
 	if department.Id == 0 {
 		return Entities.Department{}, errors.New("error")
 	}
 
 	return Entities.Department{1, "HR", 1}, nil
+}
+
+func TestPutHandler(t *testing.T) {
+	testcases := []struct {
+		desc           string
+		input          int
+		dataToUpdate   []byte
+		expectedOutput []byte
+	}{
+		{"valid case", 1, []byte(`{"id":1, "name":"tech","floorNo": 2}`), []byte(`{"Id":1,"Name":"tech","FloorNo":2}`)},
+		{"Testcase for Unmarshal Error", 2, []byte(nil), []byte("Unmarshal Error")},
+		{"Invalid Id", 4, []byte(`{"Id":2,"Name":"tech","FloorNo":2}`), []byte("Id not found")},
+	}
+
+	for i, tc := range testcases {
+		path := fmt.Sprintf("/department/%v", tc.input)
+		req := httptest.NewRequest(http.MethodPut, path, bytes.NewReader(tc.dataToUpdate))
+		res := httptest.NewRecorder()
+
+		a := New(mockService{})
+
+		a.PutHandler(res, req)
+
+		if !reflect.DeepEqual(res.Body, bytes.NewBuffer(tc.expectedOutput)) {
+			t.Errorf("[TEST%d]Failed. Got %v\nExpected %v\n", i+1, res.Body.String(), string(tc.expectedOutput))
+		}
+	}
+}
+
+func (m mockService) Update(id int, department Entities.Department) (Entities.Department, error) {
+	if id == 1 {
+		return Entities.Department{1, "tech", 2}, nil
+	}
+	return Entities.Department{}, errors.New("error")
+}
+
+func TestDeleteHandler(t *testing.T) {
+	testcases := []struct {
+		desc           string
+		input          int
+		expectedOutput int
+	}{
+		{"Valid Id", 1, 204},
+		{"Id not found", 4, 404},
+	}
+	for i, tc := range testcases {
+		path := fmt.Sprintf("/department/%v", tc.input)
+		req := httptest.NewRequest(http.MethodDelete, path, nil)
+		res := httptest.NewRecorder()
+
+		a := New(mockService{})
+		a.DeleteHandler(res, req)
+
+		if res.Result().StatusCode != tc.expectedOutput {
+			t.Errorf("[TEST%d]Failed. Got %v\nExpected %v\n", i+1, res.Result().StatusCode, tc.expectedOutput)
+		}
+	}
+}
+
+func (m mockService) Delete(id int) (int, error) {
+	if id == 1 {
+		return http.StatusNoContent, nil
+	}
+	return http.StatusNotFound, errors.New("error")
+
+}
+
+type mockService struct {
+	id int
 }

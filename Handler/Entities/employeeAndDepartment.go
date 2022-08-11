@@ -1,11 +1,10 @@
 package Entities
 
 type EmployeeAndDepartment struct {
-	id      string
-	name    string
-	dob     string
-	majors  string
-	dId     int
-	dName   string
-	floorNo int
+	Id     string
+	Name   string
+	Dob    string
+	City   string
+	Majors string
+	Dept   Department
 }

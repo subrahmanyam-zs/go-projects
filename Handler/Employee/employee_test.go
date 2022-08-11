@@ -12,7 +12,7 @@ import (
 	"testing"
 )
 
-var uid uuid.UUID = generateUUID()
+var uid uuid.UUID = uuid.New()
 
 func TestPostHandler(t *testing.T) {
 	testcases := []struct {
@@ -32,7 +32,7 @@ func TestPostHandler(t *testing.T) {
 		req := httptest.NewRequest(http.MethodPost, "/post", reader)
 		res := httptest.NewRecorder()
 
-		a := New(mockDatastore{})
+		a := New(mockService{})
 
 		a.PostHandler(res, req)
 
@@ -40,6 +40,14 @@ func TestPostHandler(t *testing.T) {
 			t.Errorf("testcase %d failed got %v \n expected %v", i+1, res.Body.String(), string(tc.expectedOutput))
 		}
 	}
+}
+
+func (m mockService) Create(employee Entities.Employee) (Entities.Employee, error) {
+	name := employee.Name
+	if name == "" {
+		return Entities.Employee{}, errors.New("error")
+	}
+	return Entities.Employee{uid, "jason", "12-06-2002", "Bangalore", "CSE", 1}, nil
 }
 
 func TestGetHandler(t *testing.T) {
@@ -58,7 +66,7 @@ func TestGetHandler(t *testing.T) {
 		req := httptest.NewRequest("GET", path, nil)
 		res := httptest.NewRecorder()
 
-		a := New(mockDatastore{})
+		a := New(mockService{})
 
 		a.GetHandler(res, req)
 
@@ -67,6 +75,14 @@ func TestGetHandler(t *testing.T) {
 		}
 	}
 }
+
+func (m mockService) Read(id uuid.UUID) (Entities.Employee, error) {
+	if uid == id {
+		return Entities.Employee{uid, "jason", "12-06-2002", "Bangalore", "CSE", 1}, nil
+	}
+	return Entities.Employee{}, errors.New("error")
+}
+
 func TestPutHandler(t *testing.T) {
 	testcases := []struct {
 		desc           string
@@ -74,9 +90,11 @@ func TestPutHandler(t *testing.T) {
 		dataToUpdate   []byte
 		expectedOutput []byte
 	}{
-		{"Valid case", uid.String(), []byte(fmt.Sprintf(`{"Id":"%v","Name":"jason","Dob":"12-06-2002","City":"Bangalore","Majors":"CSE","DId":1}`, uid)), []byte(fmt.Sprintf(`{"Id":"%v","Name":"jason","Dob":"12-06-2002","City":"Bangalore","Majors":"CSE","DId":1}`, uid))},
+		{"Valid case", uid.String(), []byte(fmt.Sprintf(`{"Id":"%v","Name":"jason","Dob":"12-06-2002","City":"Bangalore","Majors":"CSE","DId":1}`, uid)),
+			[]byte(fmt.Sprintf(`{"Id":"%v","Name":"jason","Dob":"12-06-2002","City":"Bangalore","Majors":"CSE","DId":1}`, uid))},
 		{"for unmarshal error", uid.String(), []byte(nil), []byte("Unmarshall error")},
-		//{"Invalid Id", "123e4567-e89b-12d3-a456-426614174000", []byte(fmt.Sprintf(`{"Id":"%v","Name":"jason","Dob":"12-06-2002","City":"Bangalore","Majors":"CSE","DId":1}`, uid)), []byte(`{"Id":"00000000-0000-0000-0000-000000000000","Name":"","Dob":"","City":"","Majors":"","DId":0} `)},
+		{"Invalid Id", "123e4567-e89b-12d3-a456-426614174000", []byte(fmt.Sprintf(`{"Id":"%v","Name":"jason","Dob":"12-06-2002","City":"Bangalore","Majors":"CSE","DId":1}`, uid)),
+			[]byte(`Id not found`)},
 	}
 
 	for i, tc := range testcases {
@@ -84,7 +102,7 @@ func TestPutHandler(t *testing.T) {
 		req := httptest.NewRequest(http.MethodPut, path, bytes.NewReader(tc.dataToUpdate))
 		res := httptest.NewRecorder()
 
-		a := New(mockDatastore{})
+		a := New(mockService{})
 
 		a.PutHandler(res, req)
 		if !reflect.DeepEqual(res.Body, bytes.NewBuffer(tc.expectedOutput)) {
@@ -93,26 +111,81 @@ func TestPutHandler(t *testing.T) {
 	}
 }
 
-type mockDatastore struct{}
-
-func (m mockDatastore) Create(employee Entities.Employee) (Entities.Employee, error) {
-	name := employee.Name
-	if name == "" {
-		return Entities.Employee{}, errors.New("error")
-	}
-	return Entities.Employee{uid, "jason", "12-06-2002", "Bangalore", "CSE", 1}, nil
-}
-
-func (m mockDatastore) Read(id uuid.UUID) (Entities.Employee, error) {
+func (m mockService) Update(id uuid.UUID, employee Entities.Employee) (Entities.Employee, error) {
 	if uid == id {
 		return Entities.Employee{uid, "jason", "12-06-2002", "Bangalore", "CSE", 1}, nil
 	}
 	return Entities.Employee{}, errors.New("error")
 }
 
-func (m mockDatastore) Update(id uuid.UUID, employee Entities.Employee) (Entities.Employee, error) {
-	if uid == id {
-		return Entities.Employee{uid, "jason", "12-06-2002", "Bangalore", "CSE", 1}, nil
+func TestDeleteHandler(t *testing.T) {
+	testcases := []struct {
+		desc           string
+		input          string
+		expectedOutput int
+	}{
+		{"Valid Id", uid.String(), 204},
+		{"Id not found", "123e4567-e89b-12d3-a456-426614174000", 404},
 	}
-	return Entities.Employee{}, errors.New("error")
+
+	for i, tc := range testcases {
+		path := fmt.Sprintf("/employee/%v", tc.input)
+		req := httptest.NewRequest(http.MethodDelete, path, nil)
+		res := httptest.NewRecorder()
+
+		a := New(mockService{})
+
+		a.DeleteHandler(res, req)
+
+		if res.Result().StatusCode != tc.expectedOutput {
+			t.Errorf("testcase %d failed got %v \n expected %v", i+1, res.Body.String(), tc.expectedOutput)
+		}
+	}
 }
+
+func (m mockService) Delete(id uuid.UUID) (int, error) {
+	if id == uid {
+		return http.StatusNoContent, nil
+	}
+	return http.StatusNotFound, errors.New("error")
+}
+
+func TestGetAll(t *testing.T) {
+	testcases := []struct {
+		desc              string
+		name              string
+		includeDepartment bool
+		expectedOutput    []byte
+	}{
+		{"valid name and including dept ", "jason", true,
+			[]byte(fmt.Sprintf(`{"Id":"%v","Name":"jason","Dob":"12-06-1998","City":"Bangalore","Majors":"CSE","Dept":{"Id":1,"Name":"HR","FloorNo":1}}`, uid))},
+		{"valid name and not including dept ", "jason", false,
+			[]byte(fmt.Sprintf(`{"Id":"%v","Name":"jason","Dob":"12-06-1998","City":"Bangalore","Majors":"CSE","Dept":{"Id":0,"Name":"","FloorNo":0}}`, uid))},
+		{"invalid name and includeDepartment is true", "", true,
+			[]byte("Unmarshal Error")},
+	}
+	for i, tc := range testcases {
+		path := fmt.Sprintf("/employee?name=%v&includeDepartment=%v", tc.name, tc.includeDepartment)
+		req := httptest.NewRequest(http.MethodGet, path, nil)
+		res := httptest.NewRecorder()
+
+		a := New(mockService{})
+
+		a.GetAll(res, req)
+
+		if !reflect.DeepEqual(res.Body, bytes.NewBuffer(tc.expectedOutput)) {
+			t.Errorf("testcase %d failed got %v \n expected %v", i+1, res.Body.String(), string(tc.expectedOutput))
+		}
+	}
+}
+
+func (m mockService) ReadAll(name string, includeDepartment bool) (Entities.EmployeeAndDepartment, error) {
+	if (name != "") && (includeDepartment == true) {
+		return Entities.EmployeeAndDepartment{uid.String(), "jason", "12-06-1998", "Bangalore", "CSE", Entities.Department{1, "HR", 1}}, nil
+	} else if (name != "") && (includeDepartment == false) {
+		return Entities.EmployeeAndDepartment{uid.String(), "jason", "12-06-1998", "Bangalore", "CSE", Entities.Department{}}, nil
+	}
+	return Entities.EmployeeAndDepartment{}, errors.New("error")
+}
+
+type mockService struct{}
