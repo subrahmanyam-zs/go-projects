@@ -25,6 +25,61 @@ import (
 	"developer.zopsmart.com/go/gofr/pkg/log"
 )
 
+func TestNewKafka(t *testing.T) {
+	conf := sarama.NewConfig()
+	conf.Consumer.Group.Session.Timeout = 1
+
+	logger := log.NewMockLogger(io.Discard)
+
+	testCases := []struct {
+		k       Config
+		wantErr bool
+	}{
+		{
+			Config{
+				Brokers:           "localhost:2008,localhost:2009",
+				Topics:            []string{"test-topic"},
+				MaxRetry:          4,
+				RetryFrequency:    300,
+				DisableAutoCommit: true,
+			}, false,
+		},
+		{
+			Config{
+				Brokers:           "localhost:2008,localhost:2009",
+				Topics:            []string{"test-topic"},
+				MaxRetry:          4,
+				RetryFrequency:    300,
+				DisableAutoCommit: false,
+			}, false,
+		},
+		{
+			Config{
+				Brokers: "localhost:2009",
+				Topics:  []string{"test-topic"},
+				Config:  conf,
+			}, true,
+		},
+		{
+			Config{
+				Brokers: "localhost:0000",
+				Topics:  []string{"test-topic"},
+			}, true,
+		},
+	}
+
+	for i, tt := range testCases {
+		_, err := New(&tt.k, logger)
+		if !tt.wantErr && err != nil {
+			t.Errorf("FAILED[%v], expected: %v, got: %v", i+1, tt.wantErr, err)
+		}
+
+		if tt.wantErr && err == nil {
+			t.Errorf("FAILED[%v], expected: %v, got: %v", i+1, tt.wantErr, err)
+		}
+	}
+}
+
 func TestNewKafkaProducer(t *testing.T) {
 	tests := []struct {
 		config *Config
@@ -108,61 +163,6 @@ func TestNewKafkaFromEnv(t *testing.T) {
 	}
 }
 
-func TestNewKafka(t *testing.T) {
-	conf := sarama.NewConfig()
-	conf.Consumer.Group.Session.Timeout = 1
-
-	logger := log.NewMockLogger(io.Discard)
-
-	testCases := []struct {
-		k       Config
-		wantErr bool
-	}{
-		{
-			Config{
-				Brokers:           "localhost:2008,localhost:2009",
-				Topics:            []string{"test-topic"},
-				MaxRetry:          4,
-				RetryFrequency:    300,
-				DisableAutoCommit: true,
-			}, false,
-		},
-		{
-			Config{
-				Brokers:           "localhost:2008,localhost:2009",
-				Topics:            []string{"test-topic"},
-				MaxRetry:          4,
-				RetryFrequency:    300,
-				DisableAutoCommit: false,
-			}, false,
-		},
-		{
-			Config{
-				Brokers: "localhost:2009",
-				Topics:  []string{"test-topic"},
-				Config:  conf,
-			}, true,
-		},
-		{
-			Config{
-				Brokers: "localhost:0000",
-				Topics:  []string{"test-topic"},
-			}, true,
-		},
-	}
-
-	for i, tt := range testCases {
-		_, err := New(&tt.k, logger)
-		if !tt.wantErr && err != nil {
-			t.Errorf("FAILED[%v], expected: %v, got: %v", i+1, tt.wantErr, err)
-		}
-
-		if tt.wantErr && err == nil {
-			t.Errorf("FAILED[%v], expected: %v, got: %v", i+1, tt.wantErr, err)
-		}
-	}
-}
-
 func Test_PubSub(t *testing.T) {
 	logger := log.NewLogger()
 	c := config.NewGoDotEnvProvider(logger, "../../../../configs")
@@ -182,6 +182,8 @@ func Test_PubSub(t *testing.T) {
 	PublishEvent(t, k)
 	SubscribeWithCommit(t, k, c.Get("KAFKA_TOPIC"))
 	Subscribe(t, k)
+	Pause(t, k)
+	Resume(t, k)
 }
 
 // Test_PubSubWithOffset check the subscribe operation with custom initial offset value.
@@ -324,6 +326,19 @@ func Ping(t *testing.T, k *Kafka) {
 	}
 }
 
+func Pause(t *testing.T, k *Kafka) {
+	err := k.Pause()
+	if err != nil {
+		t.Errorf("FAILED, expected: successful Pause, got: %v", err)
+	}
+}
+
+func Resume(t *testing.T, k *Kafka) {
+	err := k.Resume()
+	if err != nil {
+		t.Errorf("FAILED, expected: successful Resume, got: %v", err)
+	}
+}
 func Test_convertKafkaConfig(t *testing.T) {
 	expectedConfig := sarama.NewConfig()
 	setDefaultConfig(expectedConfig)

@@ -627,6 +627,15 @@ func (k *Kafka) Ping() error {
 
 	return nil
 }
+func (k *Kafka) Pause() error {
+	k.Consumer.ConsumerGroup.PauseAll()
+	return nil
+}
+
+func (k *Kafka) Resume() error {
+	k.Consumer.ConsumerGroup.ResumeAll()
+	return nil
+}
 
 type brokersErr struct{}
 

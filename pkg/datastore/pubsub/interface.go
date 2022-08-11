@@ -105,3 +105,15 @@ type PublisherSubscriber interface {
 	// IsSet can be used to check if PubSub is initialized with a valid connection or not
 	IsSet() bool
 }
+
+// PublisherSubscriberV2 interface for publisher subscriber model
+// This one will implement the new function Pause and Resume
+type PublisherSubscriberV2 interface {
+	PublisherSubscriber
+
+	// Pause will be used to pause the processing in kafka/sarama
+	Pause() error
+
+	// resume will be used to resume all the consumer groups in kafka/sarama
+	Resume() error
+}
