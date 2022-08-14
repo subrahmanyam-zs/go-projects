@@ -1,8 +1,8 @@
-package Employee
+package employee
 
 import (
-	"EmployeeDepartment/Handler/Entities"
-	"EmployeeDepartment/Store"
+	entities2 "EmployeeDepartment/entities"
+	"EmployeeDepartment/store"
 	"github.com/google/uuid"
 	"golang.org/x/exp/slices"
 	"net/http"
@@ -12,10 +12,10 @@ import (
 )
 
 type EmployeeHandler struct {
-	datastore Store.Employee
+	datastore store.Employee
 }
 
-func New(emp Store.Employee) EmployeeHandler {
+func New(emp store.Employee) EmployeeHandler {
 	return EmployeeHandler{datastore: emp}
 }
 
@@ -52,7 +52,7 @@ func validateMajors(s string) bool {
 	}
 	return false
 }
-func validateDepartment(majors string, department Entities.Department) bool {
+func validateDepartment(majors string, department entities2.Department) bool {
 	switch majors {
 	case "CSE":
 	case "MCA":
@@ -75,7 +75,7 @@ func validateDepartment(majors string, department Entities.Department) bool {
 	return false
 }
 
-func (e EmployeeHandler) GetDepartment(id int) Entities.Department {
+func (e EmployeeHandler) GetDepartment(id int) entities2.Department {
 	res, err := e.datastore.ReadDepartment(id)
 	if err != nil {
 		return res
@@ -83,27 +83,27 @@ func (e EmployeeHandler) GetDepartment(id int) Entities.Department {
 	return res
 }
 
-func (e EmployeeHandler) validatePost(employee Entities.Employee) Entities.Employee {
+func (e EmployeeHandler) validatePost(employee entities2.Employee) entities2.Employee {
 	dept := e.GetDepartment(employee.DId)
 	if validateId(employee.Id) && validateDob(employee.Dob) && validateCity(employee.City) && validateMajors(employee.Majors) && validateDepartment(employee.Majors, dept) {
 		res, err := e.datastore.Create(employee)
 		if err != nil {
-			return Entities.Employee{}
+			return entities2.Employee{}
 		}
 		return res
 	}
-	return Entities.Employee{}
+	return entities2.Employee{}
 }
 
-func (e EmployeeHandler) validatePut(id string, employee Entities.Employee) Entities.Employee {
+func (e EmployeeHandler) validatePut(id string, employee entities2.Employee) entities2.Employee {
 	if validateId(employee.Id) && validateDob(employee.Dob) && validateCity(employee.City) && validateMajors(employee.Majors) {
 		res, err := e.datastore.Update(id, employee)
 		if err != nil {
-			return Entities.Employee{}
+			return entities2.Employee{}
 		}
 		return res
 	}
-	return Entities.Employee{}
+	return entities2.Employee{}
 }
 
 func (e EmployeeHandler) validateDelete(id string) int {
@@ -118,7 +118,7 @@ func (e EmployeeHandler) validateDelete(id string) int {
 	return http.StatusNotFound
 }
 
-func (e EmployeeHandler) validateGetById(id uuid.UUID) []Entities.EmployeeAndDepartment {
+func (e EmployeeHandler) validateGetById(id uuid.UUID) []entities2.EmployeeAndDepartment {
 	if validateId(id) {
 		res, err := e.datastore.Read(id)
 		if err != nil {
@@ -126,10 +126,10 @@ func (e EmployeeHandler) validateGetById(id uuid.UUID) []Entities.EmployeeAndDep
 		}
 		return res
 	}
-	return []Entities.EmployeeAndDepartment{}
+	return []entities2.EmployeeAndDepartment{}
 }
 
-func (e EmployeeHandler) validateGetAll(name string, includeDepartment bool) []Entities.EmployeeAndDepartment {
+func (e EmployeeHandler) validateGetAll(name string, includeDepartment bool) []entities2.EmployeeAndDepartment {
 	res, err := e.datastore.ReadAll(name, includeDepartment)
 	if err != nil {
 		return res

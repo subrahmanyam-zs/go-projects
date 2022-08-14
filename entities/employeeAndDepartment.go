@@ -1,4 +1,4 @@
-package Entities
+package entities
 
 type EmployeeAndDepartment struct {
 	Id     string

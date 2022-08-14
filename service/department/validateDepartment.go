@@ -1,17 +1,17 @@
-package Department
+package department
 
 import (
-	"EmployeeDepartment/Handler/Entities"
-	"EmployeeDepartment/Store"
+	"EmployeeDepartment/entities"
+	"EmployeeDepartment/store"
 	"golang.org/x/exp/slices"
 	"strings"
 )
 
 type DepartmentHandelr struct {
-	dataStore Store.Department
+	dataStore store.Department
 }
 
-func New(dept Store.Department) DepartmentHandelr {
+func New(dept store.Department) DepartmentHandelr {
 	return DepartmentHandelr{dataStore: dept}
 }
 
@@ -31,7 +31,7 @@ func validateFloorNo(floorNo int) bool {
 	return false
 }
 
-func (d DepartmentHandelr) validatePost(department Entities.Department) Entities.Department {
+func (d DepartmentHandelr) validatePost(department entities.Department) entities.Department {
 	if validateName(department.Name) && validateFloorNo(department.FloorNo) {
 		res, err := d.dataStore.Create(department)
 		if err != nil {
@@ -39,10 +39,10 @@ func (d DepartmentHandelr) validatePost(department Entities.Department) Entities
 		}
 		return res
 	}
-	return Entities.Department{}
+	return entities.Department{}
 }
 
-func (d DepartmentHandelr) validatePut(id int, department Entities.Department) Entities.Department {
+func (d DepartmentHandelr) validatePut(id int, department entities.Department) entities.Department {
 	if validateName(department.Name) && validateFloorNo(department.FloorNo) {
 		res, err := d.dataStore.Update(id, department)
 		if err != nil {
@@ -50,7 +50,7 @@ func (d DepartmentHandelr) validatePut(id int, department Entities.Department) E
 		}
 		return res
 	}
-	return Entities.Department{}
+	return entities.Department{}
 }
 
 func (d DepartmentHandelr) validateDelete(id int) int {

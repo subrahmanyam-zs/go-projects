@@ -1,107 +1,43 @@
-openapi: 3.0.3
+openapi: 3.0.0
 info:
-  title: API for employee DB
-  description: | 
-    This API can be used to perform fetch (GET), retrieve (POST), update(PUT) and delete (DELETE) operations on employee database.
-    
+  title: employee Data Fetch API
+  description: This API can be used to perform fetch (GET), retrieve (POST), update(PUT) and delete (DELETE) operations on employee database.
   contact:
     name: ZopSmart
     url: https://zopsmart.com
   version: 1.0.0
 servers:
-  - url: https://localhost:8000
+  - url: http://localhost:8000
 tags:
   - name: employee
     description: Details of employee
     
-  - name: department
-    description: Access to department 
+  - name: Department
+    description: Access to Department
     
 paths:
-<<<<<<< HEAD
-  /employee/{id}:
-=======
-  /employee/{uId}:
->>>>>>> 50ee040905d85d5b044dce97c16c405c19483efe
-    put:
+  /employee:
+    
+    
+    post:
       tags:
-        - employee
-      summary: Update an existing employee
-      description: Update an existing employee by Id
-      operationId: updateId
-      parameters:
-<<<<<<< HEAD
-        - name: id
-=======
-        - name: uId
->>>>>>> 50ee040905d85d5b044dce97c16c405c19483efe
-          in: path
-          description: ID of employee to be  updated
-          required: true
-          schema:
-            type: string
+       - employee
+      description: sending employee data to the server to store in database
       requestBody:
-        description: Update an existent employee in the db
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-<<<<<<< HEAD
-=======
-                  uuid:
-                    type: string
-                    example: "705e4dcb-3ecd-24f3-3a35-3e926e4bded5"
->>>>>>> 50ee040905d85d5b044dce97c16c405c19483efe
-                  empName:
-                    type: string
-                    example: "jason"
-                  dob:
-                    type: string
-                    example: "12-06-2002"
-                  city:
-                    type: string
-                    example: "Banglore"
-                  majors:
-                    type: string
-                    example: "CSE"
-                  dId:
-                    type: integer
-                    example: 2
-                  
-      responses:
-        '200':
-          description: Successful operation
           content:
             application/json:
-              schema:
-                type: object
-                properties:
-<<<<<<< HEAD
-                  id:
-=======
-                  uuid:
->>>>>>> 50ee040905d85d5b044dce97c16c405c19483efe
-                    type: string
-                    example: "705e4dcb-3ecd-24f3-3a35-3e926e4bded5"
-                  empName:
-                    type: string
-                    example: "jason"
-                  dob:
-                    type: string
-                    example: "12-06-2002"
-                  city:
-                    type: string
-                    example: "Banglore"
-                  majors:
-                    type: string
-                    example: "CSE"
-                  dId:
-                    type: integer
-                    example: 2
-<<<<<<< HEAD
-        
-        
+             schema:
+                $ref: '#/components/schemas/Employee'
+           
+                
+                 
+      responses:
+        '201':
+          description: created
+          content:
+            application/json:
+             schema:
+                $ref: '#/components/schemas/GetEmployee'
         '400':
           description: Bad Request
           content:
@@ -114,31 +50,68 @@ paths:
             application/json:
              schema:
                 $ref: '#/components/schemas/error500'  
-          
     get:
       tags:
-        - employee
-      summary: Finds Employee
-      description: Retrieve information of employee using uID
-      operationId: empUId
+       - employee
+      description:  getting employee data
+      operationId: getAll
       parameters:
-        - name: id
-          in: path
-          
-          required: true
+        - name: empname
+          in: query
+          description: ID of order that needs to be fetched
           schema:
             type: string
-            
+            example: ravi
+        - name: includeAll  
+          in: query
+          schema:
+            type: boolean
+            example: true
+      
       responses:
         '200':
-          description: successful operation
+          description: success code
+          content:  
+           application/json:
+              schema:
+                $ref: '#/components/schemas/EmployeeAndDepartmentArray'
+            
+        '404':
+          description: Not Found
           content:
             application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/employee'          
+             schema:
+                $ref: '#/components/schemas/error404'
+        '500':   
+          description: internal server error
+          content:
+            application/json:
+             schema:
+                $ref: '#/components/schemas/error500'              
+           
+   
+   
+      
+  /department:        
+    post:
+      tags:
+       - Department
+      description: sending employee data to the server to store in database
+      requestBody:
+          content:
+            application/json:
+             schema:
+                $ref: '#/components/schemas/PostDepartment'
             
+                
+                 
+      responses:
+        '201':
+          description: created
+          content:
+            application/json:
+             schema:
+                $ref: '#/components/schemas/GetDepartment'
         '400':
           description: Bad Request
           content:
@@ -150,242 +123,149 @@ paths:
           content:
             application/json:
              schema:
-                $ref: '#/components/schemas/error500'
+                $ref: '#/components/schemas/error500'  
+           
           
-    
+  /department/{id}:   
     delete:
       tags:
-        - employee
-      summary: Deletes an employee
-      description: delete an emplyee by using given uid
-      operationId: employeeid
+       - Department
+      
+      
+      description: For valid response try uuid
+      operationId: deleteEmployeeByDeptId
       parameters:
         - name: id
           in: path
+          description: ID of the employee that needs to be deleted
           required: true
           schema:
             type: integer
             format: int64
       responses:
-        '200':
-          description: sucessfully deleted
+        '204':
+          description: No Content
+          
+        
+        '404':
+          description: Not found
           content:
             application/json:
              schema:
-                $ref: '#/components/schemas/error200'
-        '400':
-          description: Bad Request
-          content:
-            application/json:
-             schema:
-                $ref: '#/components/schemas/error400'
+                $ref: '#/components/schemas/error404'
         '500':   
           description: internal server error
           content:
             application/json:
              schema:
-                $ref: '#/components/schemas/error500'
-=======
-        '400':
-          description: Invalid ID supplied
-        '404':
-          description: Employee not found
->>>>>>> 50ee040905d85d5b044dce97c16c405c19483efe
-
-            
-            
-            
-  /department/{id}:
+                $ref: '#/components/schemas/error500'    
+    
     put:
       tags:
-        - department
-      summary: Update  department information
-<<<<<<< HEAD
-      description: Update department information  by id
-      operationId: updateid
-=======
-      description: Update department information  by dId
-      operationId: updatedId
->>>>>>> 50ee040905d85d5b044dce97c16c405c19483efe
+       - Department  
+      
+      description: Update an existing Department by DeptId
+      operationId: updateDept
       parameters:
         - name: id
           in: path
+          description: ID of the employee that needs to be deleted
           required: true
           schema:
             type: integer
             format: int64
       requestBody:
-        description: Update an existent department in the db
+        description: Update an existent Dept in the database
         content:
           application/json:
             schema:
-             type: object
-             properties: 
-<<<<<<< HEAD
-=======
-                  dId:
-                    type: integer
-                    example: 2
->>>>>>> 50ee040905d85d5b044dce97c16c405c19483efe
-                  deptName: 
-                    type: string
-                    example: "tech"
-                  floorNo:
-                    type: integer
-                    example: 1
-                  
+              $ref: '#/components/schemas/PostDepartment'
+         
+        required: true
       responses:
-        
-        '200':
-          description: Successful operation
+        '201':
+          description: created
           content:
             application/json:
               schema:
-                type: object
-                properties: 
-                  dId:
-                    type: integer
-                    example: 2
-                  deptName: 
-                    type: string
-                    example: "tech"
-                  floorNo:
-                    type: integer
-                    example: 1
-<<<<<<< HEAD
-        
+                $ref: '#/components/schemas/GetDepartment'          
+           
         '400':
           description: Bad Request
           content:
             application/json:
              schema:
                 $ref: '#/components/schemas/error400'
-        '500':   
-          description: internal server error
-          content:
-            application/json:
-             schema:
-                $ref: '#/components/schemas/error500'
-=======
-        '400':
-          description: Invalid ID supplied
         '404':
-          description: Department Id not found
->>>>>>> 50ee040905d85d5b044dce97c16c405c19483efe
-       
-            
-            
-    delete:
+          description: Not Found
+          content:
+            application/json:
+             schema:
+                $ref: '#/components/schemas/error404'        
+        '500':   
+          description: internal server error
+          content:
+            application/json:
+             schema:
+                $ref: '#/components/schemas/error500'       
+  /employee/{id}:         
+    get:
       tags:
-        - department
-      summary: Deletes a department
-      description: delete a corresponding row based on the dId given
-<<<<<<< HEAD
-      operationId: deleteid
-=======
-      operationId: deletedId
->>>>>>> 50ee040905d85d5b044dce97c16c405c19483efe
+       - employee
+      description: Here we get  data of employee with given query parameter from database 
+     
       parameters:
         - name: id
           in: path
-          description: Department id to delete
+          description: ID of order that needs to be fetched
           required: true
           schema:
-            type: integer
-            format: int64
+            type: string
+            format: uuid 
+           
+           
       responses:
         '200':
-          description: sucessfully deleted
-          content:
-            application/json:
-             schema:
-                $ref: '#/components/schemas/error200'
-        '400':
-<<<<<<< HEAD
+          description: success code
+          content:  
+           application/json:
+              schema:
+                $ref: '#/components/schemas/EmployeeAndDepartment'
+           
+        '404':
           description: Bad Request
           content:
             application/json:
              schema:
-                $ref: '#/components/schemas/error400'
+                $ref: '#/components/schemas/error404'
         '500':   
           description: internal server error
           content:
             application/json:
              schema:
-                $ref: '#/components/schemas/error500'
-=======
-          description: Invalid department id
->>>>>>> 50ee040905d85d5b044dce97c16c405c19483efe
-     
-            
-  /employee:          
-    post:
-      tags:
-        - employee
-      summary: Add a new employee 
-      description: Add a new employee to the db
-      operationId: empUID
-      requestBody:
-        description: Create a new employee in the db
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/employee'
-        required: true
-      responses:
-        '200':
-          description: Successful operation
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/employee'          
-            application/xml:
-              schema:
-                $ref: '#/components/schemas/employee'
-<<<<<<< HEAD
-       
-        '400':
-          description: Bad Request
-          content:
-            application/json:
-             schema:
-                $ref: '#/components/schemas/error400'
-        '500':   
-          description: internal server error
-          content:
-            application/json:
-             schema:
-                $ref: '#/components/schemas/error500'
-=======
-        '405':
-          description: Invalid uid
->>>>>>> 50ee040905d85d5b044dce97c16c405c19483efe
-
-            
+                $ref: '#/components/schemas/error500'  
   
-  /department:          
-    post:
+    put:
       tags:
-        - department
-      summary: Add a new department
-      description: Add a new department to the db
-      operationId: dId
+       - employee
+      
+      description: Update an existing employee by Id
+      operationId: updateEmp
+      parameters:
+        - name: id
+          in: path
+          description: ID of order that needs to be fetched
+          required: true
+          schema:
+            type: string
+            format: uuid 
       requestBody:
-        description: Create a new department in the db
+        description: Update an existent employee in the database
         content:
           application/json:
             schema:
-<<<<<<< HEAD
-              $ref: '#/components/schemas/department'
-          application/xml:
-            schema:
-              $ref: '#/components/schemas/department'
-=======
-              $ref: '#/components/schemas/employee'
-          application/xml:
-            schema:
-              $ref: '#/components/schemas/employee'
->>>>>>> 50ee040905d85d5b044dce97c16c405c19483efe
+              $ref: '#/components/schemas/Employee'
+         
         required: true
       responses:
         '200':
@@ -393,195 +273,230 @@ paths:
           content:
             application/json:
               schema:
-<<<<<<< HEAD
-                $ref: '#/components/schemas/department'          
-            application/xml:
-              schema:
-                $ref: '#/components/schemas/department'
-        
-        '400':
-          description: Bad Request
+                $ref: '#/components/schemas/Employee'          
+           
+        '404':
+          description: Not found
           content:
             application/json:
              schema:
-                $ref: '#/components/schemas/error400'
+                $ref: '#/components/schemas/error404'
         '500':   
           description: internal server error
           content:
             application/json:
              schema:
-                $ref: '#/components/schemas/error500'
-    
-=======
-                $ref: '#/components/schemas/employee'          
-            application/xml:
-              schema:
-                $ref: '#/components/schemas/employee'
-        '405':
-          description: Invalid input
-    
-            
-            
-            
-  /employee/{Id}:
-    get:
-      tags:
-        - employee
-      summary: Finds Employee
-      description: Retrieve information of employee using uID
-      operationId: empUId
-      parameters:
-        - name: Id
-          in: path
-          
-          required: true
-          schema:
-            type: string
-            
-      responses:
-        '200':
-          description: successful operation
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/employee'          
-            
-        '400':
-          description: Invalid uID given as input
-      
->>>>>>> 50ee040905d85d5b044dce97c16c405c19483efe
-            
-      
-            
-<<<<<<< HEAD
-  /employee/:
-    get:
-      tags:
-        - employee
-      summary: Retrieves all the employees and department details 
-      description: It retrieves all the employees and department details from the employees
-      operationId: findAll
-      parameters:
-        - name: name 
-          in: query
-          description: getting the details of the employee by filtering with name
-          schema:
-            type: string
-        - name: includeDepartment
-          in: query
-          description: if includeDepartment  is true then department details are also displayed
-          schema:
-            type: boolean 
-=======
+                $ref: '#/components/schemas/error500'  
+  
     delete:
       tags:
-        - employee
-      summary: Deletes an employee
-      description: delete an emplyee by using given uid
-      operationId: employeeid
+       - employee
+      
+      
+      description: For valid response try uuid
+      operationId: deleteEmployee
       parameters:
-        - name: Id
+        - name: id
           in: path
+          description: ID of the employee that needs to be deleted
           required: true
           schema:
-            type: integer
-            format: int64
+            type: string
+            format: uuid
       responses:
-        '400':
-          description: Invalid employee id
-      
-            
-  /employee/::
-    get:
-      tags:
-        - employee
-      summary: Retrieve all the employees
-      description: It retrieves all the employees data in the db
-      operationId: findemployees
->>>>>>> 50ee040905d85d5b044dce97c16c405c19483efe
-      responses:
-        '200':
-          description: successfully retrieved
-          content:
-            application/json:
-              schema:
-                  $ref: '#/components/schemas/employee'          
-        '400':
-<<<<<<< HEAD
-          description: Bad Request
+        '204':
+          description: No content
+          
+        
+        '404':
+          description: Not Found
           content:
             application/json:
              schema:
-                $ref: '#/components/schemas/error400'
+                $ref: '#/components/schemas/error404'
         '500':   
           description: internal server error
           content:
             application/json:
              schema:
-                $ref: '#/components/schemas/error500'
-=======
-          description: No data in the db
->>>>>>> 50ee040905d85d5b044dce97c16c405c19483efe
- 
-   
+                $ref: '#/components/schemas/error500'  
+  
+           
 components:
   schemas:
-    employee:
+    Employee:
       type: object
       properties:
-<<<<<<< HEAD
-        id:
-=======
-        uid:
->>>>>>> 50ee040905d85d5b044dce97c16c405c19483efe
+        
+        name:
           type: string
-          example: "705e4dcb-3ecd-24f3-3a35-3e926e4bded5"
-        empName:
-          type: string
-          example: "jason"
+          example: ravi
         dob:
           type: string
-          example: "12-06-2002"
+          example: dd-mm-yyyy
         city:
           type: string
-          example: "Bangalore"
+          description: these cities needed only
+          example: Banglore
           enum:
-            - Banaglore
+            - Banglore
             - Kochi
             - Mysore
-        majors:
+              
+        major:
           type: string
-          description: Degree of the employee
-          example: "CSE"
+          description: type of measure
+          example: CSE
           enum:
             - CSE
-            - MBA
             - MCA
+            - MBA
             - CA
             - B.COM
-<<<<<<< HEAD
-        dId:
+            
+        deptId:
           type: integer
-          description: Department ID of the employee 
-        
-    department:
+          example: 12
+    GetEmployee:
       type: object
       properties:
-        id:
-          type: integer
-          example: 2
-        dName:
+        id: 
+         type: string
+         format: uuid
+         example: "123e4567-e89b-12d3-a456-426614174000"
+        name:
           type: string
-          example: "tech"
+          example: ravi
+        dob:
+          type: string
+          example: dd-mm-yyyy
+        city:
+          type: string
+          description: these cities needed only
+          example: Banglore
           enum:
-            - Tech
-            - HR
-            - Accounts
-        floorNo:
+            - Banglore
+            - Kochi
+            - Mysore
+              
+        major:
+          type: string
+          description: type of measure
+          example: CSE
+          enum:
+            - CSE
+            - MCA
+            - MBA
+            - CA
+            - B.COM
+            
+        deptId:
           type: integer
-          example: 1
+          example: 12      
+           
+    PostDepartment:
+      type: object
+      properties:
+          
+          name:
+            type: string
+            description: these are department name
+            example: HR
+            enum:
+            - HR
+            - TECH
+            - ACCOUNTS
+          floor:
+            type: integer
+            example: 2
+    GetDepartment:
+      type: object
+      properties:
+          id:
+            type: integer
+            example: 2345
+          name:
+            type: string
+            description: these are department name
+            example: HR
+            enum:
+            - HR
+            - TECH
+            - ACCOUNTS
+          floor:
+            type: integer
+            example: 2        
+    EmployeeAndDepartment: 
+        type: object
+        properties:
+         id:
+          type: string
+          format: uuid
+          example: 123e4567-e89b-12d3-a456-426614174000
+         name:
+          type: string
+          example: jason
+         dob:
+          type: string
+          example: dd-mm-yyyy
+         city:
+          type: string
+          description: these cities are only allowed
+          example: Banglore
+          enum:
+            - Banglore
+            - Kochi
+            - Mysore
+              
+         major:
+          type: string
+          description: type of majors
+          example: CSE
+          enum:
+            - CSE
+            - MCA
+            - MBA
+            - CA
+            - B.COM
+         department:  
+           $ref: '#/components/schemas/GetDepartment'
+    EmployeeAndDepartmentArray: 
+      type: array
+      items:
+        type: object
+        properties:
+         id:
+          type: string
+          format: uuid
+          example: 123e4567-e89b-12d3-a456-426614174000
+         name:
+          type: string
+          example: jason
+         dob:
+          type: string
+          example: dd-mm-yyyy
+         city:
+          type: string
+          description: these cities are only allowed
+          example: Banglore
+          enum:
+            - Banglore
+            - Kochi
+            - Mysore
+              
+         major:
+          type: string
+          description: type of majors
+          example: CSE
+          enum:
+            - CSE
+            - MCA
+            - MBA
+            - CA
+            - B.COM
+         department:  
+           $ref: '#/components/schemas/GetDepartment'       
+        
     error400:
         type: object
         properties:
@@ -591,6 +506,15 @@ components:
          error:
           type: string
           example: data is not in valid format
+    error404:
+        type: object
+        properties:
+         statusCode: 
+          type: integer
+          example: 404
+         error:
+          type: string
+          example: data is not found     
     error500:
         type: object
         properties:
@@ -599,15 +523,4 @@ components:
           example: 500
          error:
           type: string
-          example: internal server error  
-    error200:
-        type: object
-        properties:
-         statusCode: 
-          type: integer
-          example: 200
-         error:
-          type: string
-          example: deleted
-=======
->>>>>>> 50ee040905d85d5b044dce97c16c405c19483efe
+          example: internal server error

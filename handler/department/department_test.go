@@ -1,7 +1,7 @@
-package Department
+package department
 
 import (
-	"EmployeeDepartment/Handler/Entities"
+	"EmployeeDepartment/entities"
 	"bytes"
 	"errors"
 	"fmt"
@@ -37,13 +37,13 @@ func TestEmployeePost(t *testing.T) {
 	}
 }
 
-func (m mockService) Create(department Entities.Department) (Entities.Department, error) {
+func (m mockService) Create(department entities.Department) (entities.Department, error) {
 
 	if department.Id == 0 {
-		return Entities.Department{}, errors.New("error")
+		return entities.Department{}, errors.New("error")
 	}
 
-	return Entities.Department{1, "HR", 1}, nil
+	return entities.Department{1, "HR", 1}, nil
 }
 
 func TestPutHandler(t *testing.T) {
@@ -73,11 +73,11 @@ func TestPutHandler(t *testing.T) {
 	}
 }
 
-func (m mockService) Update(id int, department Entities.Department) (Entities.Department, error) {
+func (m mockService) Update(id int, department entities.Department) (entities.Department, error) {
 	if id == 1 {
-		return Entities.Department{1, "tech", 2}, nil
+		return entities.Department{1, "tech", 2}, nil
 	}
-	return Entities.Department{}, errors.New("error")
+	return entities.Department{}, errors.New("error")
 }
 
 func TestDeleteHandler(t *testing.T) {

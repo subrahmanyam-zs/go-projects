@@ -1,8 +1,8 @@
-package Employee
+package employee
 
 import (
-	"EmployeeDepartment/Handler/Entities"
-	"EmployeeDepartment/Service"
+	"EmployeeDepartment/entities"
+	"EmployeeDepartment/service"
 	"encoding/json"
 	"github.com/google/uuid"
 	"io"
@@ -11,15 +11,15 @@ import (
 )
 
 type EmployeeHandler struct {
-	validate Service.Employee
+	validate service.Employee
 }
 
-func New(emp Service.Employee) EmployeeHandler {
+func New(emp service.Employee) EmployeeHandler {
 	return EmployeeHandler{validate: emp}
 }
 
 func (e EmployeeHandler) PostHandler(res http.ResponseWriter, req *http.Request) {
-	var employee Entities.Employee
+	var employee entities.Employee
 	body, _ := io.ReadAll(req.Body)
 
 	err := json.Unmarshal(body, &employee)
@@ -62,7 +62,7 @@ func (e EmployeeHandler) GetHandler(res http.ResponseWriter, req *http.Request) 
 }
 
 func (e EmployeeHandler) PutHandler(res http.ResponseWriter, req *http.Request) {
-	var employee Entities.Employee
+	var employee entities.Employee
 	id := req.URL.Path[10:]
 	reader, _ := io.ReadAll(req.Body)
 	err := json.Unmarshal(reader, &employee)

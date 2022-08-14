@@ -1,8 +1,8 @@
-package Department
+package department
 
 import (
-	"EmployeeDepartment/Handler/Entities"
-	"EmployeeDepartment/Service"
+	"EmployeeDepartment/entities"
+	"EmployeeDepartment/service"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -11,15 +11,15 @@ import (
 )
 
 type DepartmentHandler struct {
-	datastore Service.Department
+	datastore service.Department
 }
 
-func New(department Service.Department) DepartmentHandler {
+func New(department service.Department) DepartmentHandler {
 	return DepartmentHandler{datastore: department}
 }
 
 func (e DepartmentHandler) PostHandler(w http.ResponseWriter, req *http.Request) {
-	var department Entities.Department
+	var department entities.Department
 
 	reader, _ := io.ReadAll(req.Body)
 
@@ -44,7 +44,7 @@ func (e DepartmentHandler) PostHandler(w http.ResponseWriter, req *http.Request)
 }
 
 func (e DepartmentHandler) PutHandler(res http.ResponseWriter, req *http.Request) {
-	var department Entities.Department
+	var department entities.Department
 	sid := req.URL.Path[12:]
 	reqBody, _ := io.ReadAll(req.Body)
 	err := json.Unmarshal(reqBody, &department)

@@ -1,7 +1,7 @@
-package Department
+package department
 
 import (
-	"EmployeeDepartment/Handler/Entities"
+	"EmployeeDepartment/entities"
 	"errors"
 	"net/http"
 	"testing"
@@ -10,13 +10,13 @@ import (
 func TestValidatePost(t *testing.T) {
 	testCases := []struct {
 		desc           string
-		input          Entities.Department
-		expectedOutput Entities.Department
+		input          entities.Department
+		expectedOutput entities.Department
 	}{
-		{"Valid input", Entities.Department{1, "HR", 1}, Entities.Department{1, "HR", 1}},
-		{"Invalid name", Entities.Department{2, "", 2}, Entities.Department{}},
-		{"Invalid floorNo", Entities.Department{2, "TECH", 0}, Entities.Department{}},
-		{"Invalid id", Entities.Department{0, "TECH", 2}, Entities.Department{}},
+		{"Valid input", entities.Department{1, "HR", 1}, entities.Department{1, "HR", 1}},
+		{"Invalid name", entities.Department{2, "", 2}, entities.Department{}},
+		{"Invalid floorNo", entities.Department{2, "TECH", 0}, entities.Department{}},
+		{"Invalid id", entities.Department{0, "TECH", 2}, entities.Department{}},
 	}
 
 	for i, tc := range testCases {
@@ -29,24 +29,24 @@ func TestValidatePost(t *testing.T) {
 
 }
 
-func (m mockDataStore) Create(department Entities.Department) (Entities.Department, error) {
+func (m mockDataStore) Create(department entities.Department) (entities.Department, error) {
 	if (department.Id >= 1) && (department.Id <= 3) {
-		return Entities.Department{1, "HR", 1}, nil
+		return entities.Department{1, "HR", 1}, nil
 	}
-	return Entities.Department{}, errors.New("error")
+	return entities.Department{}, errors.New("error")
 }
 
 func TestValidatePut(t *testing.T) {
 	testcases := []struct {
 		desc           string
 		id             int
-		dataToUpdate   Entities.Department
-		expectedOutput Entities.Department
+		dataToUpdate   entities.Department
+		expectedOutput entities.Department
 	}{
-		{"valid input", 1, Entities.Department{1, "HR", 1}, Entities.Department{1, "HR", 1}},
-		{"invalid id", 0, Entities.Department{1, "HR", 1}, Entities.Department{}},
-		{"Invalid name", 2, Entities.Department{2, "", 2}, Entities.Department{}},
-		{"Invalid floorNo", 2, Entities.Department{2, "TECH", 0}, Entities.Department{}},
+		{"valid input", 1, entities.Department{1, "HR", 1}, entities.Department{1, "HR", 1}},
+		{"invalid id", 0, entities.Department{1, "HR", 1}, entities.Department{}},
+		{"Invalid name", 2, entities.Department{2, "", 2}, entities.Department{}},
+		{"Invalid floorNo", 2, entities.Department{2, "TECH", 0}, entities.Department{}},
 	}
 	for i, tc := range testcases {
 		a := New(mockDataStore{})
@@ -57,11 +57,11 @@ func TestValidatePut(t *testing.T) {
 	}
 }
 
-func (m mockDataStore) Update(id int, department Entities.Department) (Entities.Department, error) {
+func (m mockDataStore) Update(id int, department entities.Department) (entities.Department, error) {
 	if (id >= 1) && (id <= 3) {
 		return department, nil
 	}
-	return Entities.Department{}, errors.New("error")
+	return entities.Department{}, errors.New("error")
 }
 
 func TestValidateDelete(t *testing.T) {

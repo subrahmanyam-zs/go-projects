@@ -1,4 +1,4 @@
-package Entities
+package entities
 
 type Department struct {
 	Id      int

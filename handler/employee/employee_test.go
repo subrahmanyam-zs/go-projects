@@ -1,7 +1,7 @@
-package Employee
+package employee
 
 import (
-	"EmployeeDepartment/Handler/Entities"
+	entities2 "EmployeeDepartment/entities"
 	"bytes"
 	"errors"
 	"fmt"
@@ -42,12 +42,12 @@ func TestPostHandler(t *testing.T) {
 	}
 }
 
-func (m mockService) Create(employee Entities.Employee) (Entities.Employee, error) {
+func (m mockService) Create(employee entities2.Employee) (entities2.Employee, error) {
 	name := employee.Name
 	if name == "" {
-		return Entities.Employee{}, errors.New("error")
+		return entities2.Employee{}, errors.New("error")
 	}
-	return Entities.Employee{uid, "jason", "12-06-2002", "Bangalore", "CSE", 1}, nil
+	return entities2.Employee{uid, "jason", "12-06-2002", "Bangalore", "CSE", 1}, nil
 }
 
 func TestGetHandler(t *testing.T) {
@@ -76,11 +76,11 @@ func TestGetHandler(t *testing.T) {
 	}
 }
 
-func (m mockService) Read(id uuid.UUID) (Entities.Employee, error) {
+func (m mockService) Read(id uuid.UUID) (entities2.Employee, error) {
 	if uid == id {
-		return Entities.Employee{uid, "jason", "12-06-2002", "Bangalore", "CSE", 1}, nil
+		return entities2.Employee{uid, "jason", "12-06-2002", "Bangalore", "CSE", 1}, nil
 	}
-	return Entities.Employee{}, errors.New("error")
+	return entities2.Employee{}, errors.New("error")
 }
 
 func TestPutHandler(t *testing.T) {
@@ -111,11 +111,11 @@ func TestPutHandler(t *testing.T) {
 	}
 }
 
-func (m mockService) Update(id uuid.UUID, employee Entities.Employee) (Entities.Employee, error) {
+func (m mockService) Update(id uuid.UUID, employee entities2.Employee) (entities2.Employee, error) {
 	if uid == id {
-		return Entities.Employee{uid, "jason", "12-06-2002", "Bangalore", "CSE", 1}, nil
+		return entities2.Employee{uid, "jason", "12-06-2002", "Bangalore", "CSE", 1}, nil
 	}
-	return Entities.Employee{}, errors.New("error")
+	return entities2.Employee{}, errors.New("error")
 }
 
 func TestDeleteHandler(t *testing.T) {
@@ -179,13 +179,13 @@ func TestGetAll(t *testing.T) {
 	}
 }
 
-func (m mockService) ReadAll(name string, includeDepartment bool) (Entities.EmployeeAndDepartment, error) {
+func (m mockService) ReadAll(name string, includeDepartment bool) (entities2.EmployeeAndDepartment, error) {
 	if (name != "") && (includeDepartment == true) {
-		return Entities.EmployeeAndDepartment{uid.String(), "jason", "12-06-1998", "Bangalore", "CSE", Entities.Department{1, "HR", 1}}, nil
+		return entities2.EmployeeAndDepartment{uid.String(), "jason", "12-06-1998", "Bangalore", "CSE", entities2.Department{1, "HR", 1}}, nil
 	} else if (name != "") && (includeDepartment == false) {
-		return Entities.EmployeeAndDepartment{uid.String(), "jason", "12-06-1998", "Bangalore", "CSE", Entities.Department{}}, nil
+		return entities2.EmployeeAndDepartment{uid.String(), "jason", "12-06-1998", "Bangalore", "CSE", entities2.Department{}}, nil
 	}
-	return Entities.EmployeeAndDepartment{}, errors.New("error")
+	return entities2.EmployeeAndDepartment{}, errors.New("error")
 }
 
 type mockService struct{}
