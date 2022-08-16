@@ -27,7 +27,6 @@ func TestPostHandler(t *testing.T) {
 	}
 
 	for i, tc := range testcases {
-
 		reader := bytes.NewReader(tc.input)
 		req := httptest.NewRequest(http.MethodPost, "/post", reader)
 		res := httptest.NewRecorder()
@@ -76,11 +75,11 @@ func TestGetHandler(t *testing.T) {
 	}
 }
 
-func (m mockService) Read(id uuid.UUID) (entities2.Employee, error) {
+func (m mockService) Read(id uuid.UUID) (entities2.EmployeeAndDepartment, error) {
 	if uid == id {
-		return entities2.Employee{uid, "jason", "12-06-2002", "Bangalore", "CSE", 1}, nil
+		return entities2.EmployeeAndDepartment{uid.String(), "jason", "12-06-2002", "Bangalore", "CSE", entities2.Department{2, "CSE", 2}}, nil
 	}
-	return entities2.Employee{}, errors.New("error")
+	return entities2.EmployeeAndDepartment{}, errors.New("error")
 }
 
 func TestPutHandler(t *testing.T) {
@@ -179,13 +178,13 @@ func TestGetAll(t *testing.T) {
 	}
 }
 
-func (m mockService) ReadAll(name string, includeDepartment bool) (entities2.EmployeeAndDepartment, error) {
+func (m mockService) ReadAll(name string, includeDepartment bool) ([]entities2.EmployeeAndDepartment, error) {
 	if (name != "") && (includeDepartment == true) {
-		return entities2.EmployeeAndDepartment{uid.String(), "jason", "12-06-1998", "Bangalore", "CSE", entities2.Department{1, "HR", 1}}, nil
+		return []entities2.EmployeeAndDepartment{{uid.String(), "jason", "12-06-1998", "Bangalore", "CSE", entities2.Department{2, "TECH", 2}}}, nil
 	} else if (name != "") && (includeDepartment == false) {
-		return entities2.EmployeeAndDepartment{uid.String(), "jason", "12-06-1998", "Bangalore", "CSE", entities2.Department{}}, nil
+		return []entities2.EmployeeAndDepartment{{uid.String(), "jason", "12-06-1998", "Bangalore", "CSE", entities2.Department{}}}, nil
 	}
-	return entities2.EmployeeAndDepartment{}, errors.New("error")
+	return []entities2.EmployeeAndDepartment{}, errors.New("error")
 }
 
 type mockService struct{}

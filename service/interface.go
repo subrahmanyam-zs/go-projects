@@ -9,8 +9,8 @@ type Employee interface {
 	Create(employee entities2.Employee) (entities2.Employee, error)
 	Update(id uuid.UUID, employee entities2.Employee) (entities2.Employee, error)
 	Delete(id uuid.UUID) (int, error)
-	Read(id uuid.UUID) (entities2.Employee, error)
-	ReadAll(name string, includeDepartment bool) (entities2.EmployeeAndDepartment, error)
+	Read(id uuid.UUID) (entities2.EmployeeAndDepartment, error)
+	ReadAll(name string, includeDepartment bool) ([]entities2.EmployeeAndDepartment, error)
 }
 type Department interface {
 	Create(department entities2.Department) (entities2.Department, error)

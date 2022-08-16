@@ -21,12 +21,11 @@ func TestValidatePost(t *testing.T) {
 
 	for i, tc := range testCases {
 		a := New(mockDataStore{})
-		actualOutput := a.validatePost(tc.input)
+		actualOutput, _ := a.Create(tc.input)
 		if actualOutput != tc.expectedOutput {
 			t.Errorf("testcase %d failed got %v \n expected %v", i+1, actualOutput, tc.expectedOutput)
 		}
 	}
-
 }
 
 func (m mockDataStore) Create(department entities.Department) (entities.Department, error) {
@@ -50,7 +49,7 @@ func TestValidatePut(t *testing.T) {
 	}
 	for i, tc := range testcases {
 		a := New(mockDataStore{})
-		actualOutput := a.validatePut(tc.id, tc.dataToUpdate)
+		actualOutput, _ := a.Update(tc.id, tc.dataToUpdate)
 		if actualOutput != tc.expectedOutput {
 			t.Errorf("testcase %d failed got %v \n expected %v", i+1, actualOutput, tc.expectedOutput)
 		}
@@ -76,7 +75,7 @@ func TestValidateDelete(t *testing.T) {
 	for i, tc := range testcases {
 		a := New(mockDataStore{})
 
-		actualOutput := a.validateDelete(tc.id)
+		actualOutput, _ := a.Delete(tc.id)
 
 		if actualOutput != tc.expectedOutput {
 			t.Errorf("testcase %d failed got %v \n expected %v", i+1, actualOutput, tc.expectedOutput)

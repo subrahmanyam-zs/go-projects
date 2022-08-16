@@ -3,8 +3,9 @@ package employee
 import (
 	entities2 "EmployeeDepartment/entities"
 	"database/sql"
-	"fmt"
+	"errors"
 	"github.com/google/uuid"
+	"net/http"
 )
 
 type Store struct {
@@ -15,105 +16,105 @@ func New(db *sql.DB) Store {
 	return Store{Db: db}
 }
 
-func (s Store) createEmployee(emp entities2.Employee) bool {
-
-	res, err := s.Db.Exec("Insert into employee values(?,?,?,?,?,?)", emp.Id, emp.Name, emp.Dob, emp.City, emp.Majors, emp.DId)
+func (s Store) Create(employee entities2.Employee) (entities2.Employee, error) {
+	employee.Id = uuid.New()
+	res, err := s.Db.Exec("Insert into employee values(?,?,?,?,?,?)", employee.Id, employee.Name, employee.Dob, employee.City, employee.Majors, employee.DId)
 	if err != nil {
-		fmt.Println(err)
-		return false
+		return entities2.Employee{}, err
 	}
 	rowsAffected, err := res.RowsAffected()
 	if rowsAffected == 1 {
-		return true
+		return employee, nil
 	}
-
-	return false
+	return entities2.Employee{}, err
 }
-func (s Store) updateEmployee(id uuid.UUID, emp entities2.Employee) bool {
-	res, err := s.Db.Exec("Update employee set Id=id,Name=name,Dob=dob,City=city,Majors=majors,Did=did where Id=id", emp.Id, emp.Name, emp.Dob, emp.City, emp.Majors, emp.DId, id)
+
+func (s Store) Update(id uuid.UUID, emp entities2.Employee) (entities2.Employee, error) {
+	res, err := s.Db.Exec("Update employee set Id=?,Name=?,Dob=?,City=?,Majors=?,Did=? where Id=?", emp.Id, emp.Name, emp.Dob, emp.City, emp.Majors, emp.DId, id)
 	if err != nil {
-		return false
+		return entities2.Employee{}, err
 	}
 	rowsAffected, err := res.RowsAffected()
 	if rowsAffected == 1 {
-		return true
+		emp.Id = id
+		return emp, nil
 	}
-	return false
+	return entities2.Employee{}, errors.New("error")
 }
 
-func (s Store) deleteEmployee(id uuid.UUID) bool {
+func (s Store) Delete(id uuid.UUID) (int, error) {
 	res, err := s.Db.Exec("Delete from employee where id=?", id)
 	if err != nil {
-		return false
+		return http.StatusBadRequest, err
 	}
 	rowsAffected, err := res.RowsAffected()
 	if rowsAffected == 1 {
-		return true
+		return http.StatusNoContent, nil
 	}
-	return false
+	return http.StatusBadRequest, errors.New("error")
 }
 
-func (s Store) getById(id uuid.UUID) (e entities2.EmployeeAndDepartment) {
-	rows, err := s.Db.Query("select * from employee as e INNER JOIN department as d on e.Id=d.id where id=?", id.String())
-	rows.Next()
-	rows.Scan(&e.Id, &e.Name, &e.Dob, &e.City, &e.Majors, &e.Dept.Id, &e.Dept.Name, &e.Dept.FloorNo)
-	rows.Close()
+func (s Store) Read(id uuid.UUID) (entities2.EmployeeAndDepartment, error) {
+	var out entities2.EmployeeAndDepartment
+	rows := s.Db.QueryRow("select e.id,e.name,e.dob,e.city,e.majors,e.DId,d.name,d.floor from employee as e INNER JOIN department as d on e.DId=d.id where e.id=?", id)
+	err := rows.Scan(&out.Id, &out.Name, &out.Dob, &out.City, &out.Majors, &out.Dept.Id, &out.Dept.Name, &out.Dept.FloorNo)
 	if err != nil {
-		return e
+		return entities2.EmployeeAndDepartment{}, err
 	}
-	return
+	return out, nil
 }
 
-func (s Store) getAll(name string, includeDepartment bool) []entities2.EmployeeAndDepartment {
-	index := 0
+func (s Store) ReadAll(name string, includeDepartment bool) ([]entities2.EmployeeAndDepartment, error) {
 	if name != "" && includeDepartment {
-		rows, err := s.Db.Query("select * from employee as e INNER JOIN department as d on e.Id=d.Id where name=name;", name)
+		rows, err := s.Db.Query("select e.id,e.name,e.dob,e.city,e.majors,d.id,d.name,d.floor from employee as e  INNER JOIN department as d on e.DId=d.Id where e.name=?;", name)
 		if err != nil {
-			return []entities2.EmployeeAndDepartment{}
+			return []entities2.EmployeeAndDepartment{}, err
 		}
-		out := make([]entities2.EmployeeAndDepartment, 1, 1)
+		data := make([]entities2.EmployeeAndDepartment, 0, 0)
 		for rows.Next() {
-			rows.Scan(&out[index].Id, &out[index].Name, &out[index].Dob, &out[index].City, &out[index].Majors, &out[index].Dept.Id, &out[index].Dept.Name, &out[index].Dept.FloorNo)
-			index++
+			var temp entities2.EmployeeAndDepartment
+			rows.Scan(&temp.Id, &temp.Name, &temp.Dob, &temp.City, &temp.Majors, &temp.Dept.Id, &temp.Dept.Name, &temp.Dept.FloorNo)
+			data = append(data, temp)
 		}
-		return out
+		return data, nil
 	} else if name != "" && !includeDepartment {
-		rows, err := s.Db.Query("select * from employee as e INNER JOIN department as d on e.Id=d.Id where name=name;", name)
+		rows, err := s.Db.Query("select e.id,e.name,e.dob,e.city,e.majors,d.id,d.name,d.floor from employee as e INNER JOIN department as d on e.DId=d.Id where e.name=?;", name)
 		if err != nil {
-			return []entities2.EmployeeAndDepartment{}
+			return []entities2.EmployeeAndDepartment{}, err
 		}
-		out := make([]entities2.EmployeeAndDepartment, 1, 1)
+		data := make([]entities2.EmployeeAndDepartment, 0, 0)
 		for rows.Next() {
-			rows.Scan(&out[index].Id, &out[index].Name, &out[index].Dob, &out[index].City, &out[index].Majors, &out[index].Dept.Id, &out[index].Dept.Name, &out[index].Dept.FloorNo)
-			index++
+			var temp entities2.EmployeeAndDepartment
+			rows.Scan(&temp.Id, &temp.Name, &temp.Dob, &temp.City, &temp.Majors, &temp.Dept.Id, &temp.Dept.Name, &temp.Dept.FloorNo)
+			temp.Dept.FloorNo = 0
+			temp.Dept.Name = ""
+			data = append(data, temp)
 		}
-		out[0].Dept.Name = ""
-		out[0].Dept.FloorNo = 0
-		return out
+		return data, nil
 	} else {
-		rows, err := s.Db.Query("select e.id,e.name,e.dob,e.city,e.major,d.id,d.floor from employee as e  INNER JOIN department as d on e.dept_id=d.id;")
+		rows, err := s.Db.Query("select e.id,e.name,e.dob,e.city,e.majors,d.id,d.name,d.floor from employee as e  INNER JOIN department as d on e.DId=d.id;")
 		if err != nil {
-			return []entities2.EmployeeAndDepartment{}
+			return []entities2.EmployeeAndDepartment{}, err
 		}
-		data := make([]entities2.EmployeeAndDepartment, 2, 2)
+		data := make([]entities2.EmployeeAndDepartment, 0, 0)
 		for rows.Next() {
-
-			rows.Scan(&data[index].Id, &data[index].Name, &data[index].Dob, &data[index].City, &data[index].Majors, &data[index].Dept.Id, &data[index].Dept.Name, &data[index].Dept.FloorNo)
-			index++
+			var temp entities2.EmployeeAndDepartment
+			rows.Scan(&temp.Id, &temp.Name, &temp.Dob, &temp.City, &temp.Majors, &temp.Dept.Id, &temp.Dept.Name, &temp.Dept.FloorNo)
+			data = append(data, temp)
 		}
-
-		return data
+		return data, nil
 	}
 }
 
-func (s Store) getDepartment(id int) entities2.Department {
+func (s Store) ReadDepartment(id int) (entities2.Department, error) {
 	var out entities2.Department
-	rows, err := s.Db.Query("select * from department where id=Id", id)
+	rows, err := s.Db.Query("select * from department where id=?", id)
 	if err != nil {
-		return entities2.Department{}
+		return entities2.Department{}, err
 	}
 	rows.Next()
 	rows.Scan(&out.Id, &out.Name, &out.FloorNo)
 	rows.Close()
-	return out
+
+	return out, nil
 }

@@ -10,6 +10,7 @@ import (
 )
 
 var uid = uuid.New()
+var invalidUid = uuid.New()
 
 func TestValidatePost(t *testing.T) {
 	testcases := []struct {
@@ -25,7 +26,7 @@ func TestValidatePost(t *testing.T) {
 
 	for i, tc := range testcases {
 		a := New(mockDatastore{})
-		actualOutput := a.validatePost(tc.input)
+		actualOutput, _ := a.Create(tc.input)
 		if actualOutput != tc.expectedOutput {
 			t.Errorf("testcase %d failed got %v \n expected %v", i+1, actualOutput, tc.expectedOutput)
 
@@ -42,21 +43,21 @@ func (m mockDatastore) Create(e entities2.Employee) (entities2.Employee, error) 
 func TestValidatePut(t *testing.T) {
 	testcases := []struct {
 		desc           string
-		id             string
+		id             uuid.UUID
 		input          entities2.Employee
 		expectedOutput entities2.Employee
 	}{
-		{"Invalid age", uid.String(), entities2.Employee{uid, "jason", "12-06-1999", "Bangalore", "CSE", 1}, entities2.Employee{}},
-		{"Valid input", uid.String(), entities2.Employee{uid, "jason", "12-06-1998", "Bangalore", "CSE", 1},
+		{"Invalid age", uid, entities2.Employee{uid, "jason", "12-06-1999", "Bangalore", "CSE", 1}, entities2.Employee{}},
+		{"Valid input", uid, entities2.Employee{uid, "jason", "12-06-1998", "Bangalore", "CSE", 1},
 			entities2.Employee{uid, "jason", "12-06-1998", "Bangalore", "CSE", 1}},
-		{"Invalid age", "123e4567-e89b-12d3-a456-426614174000", entities2.Employee{uid, "jason", "12-06-1999", "Bangalore", "CSE", 1},
+		{"Invalid age", invalidUid, entities2.Employee{uid, "jason", "12-06-1999", "Bangalore", "CSE", 1},
 			entities2.Employee{}},
 	}
 
 	for i, tc := range testcases {
 		a := New(mockDatastore{})
 
-		actualOutput := a.validatePut(tc.id, tc.input)
+		actualOutput, _ := a.Update(tc.id, tc.input)
 
 		if actualOutput != tc.expectedOutput {
 			t.Errorf("testcase %d failed got %v \n expected %v", i+1, actualOutput, tc.expectedOutput)
@@ -64,8 +65,8 @@ func TestValidatePut(t *testing.T) {
 	}
 }
 
-func (m mockDatastore) Update(id string, e entities2.Employee) (entities2.Employee, error) {
-	if uid.String() == id {
+func (m mockDatastore) Update(id uuid.UUID, e entities2.Employee) (entities2.Employee, error) {
+	if uid == id {
 		return entities2.Employee{uid, "jason", "12-06-1998", "Bangalore", "CSE", 1}, nil
 	}
 	return entities2.Employee{}, errors.New("error")
@@ -74,16 +75,16 @@ func (m mockDatastore) Update(id string, e entities2.Employee) (entities2.Employ
 func TestValidateDelete(t *testing.T) {
 	testcases := []struct {
 		desc           string
-		input          string
+		input          uuid.UUID
 		expectedOutput int
 	}{
-		{"Valid Id", uid.String(), 204},
-		{"Id not found", "123e4567-e89b-12d3-a456-426614174000", 404},
+		{"Valid Id", uid, 204},
+		{"Id not found", invalidUid, 404},
 	}
 	for i, tc := range testcases {
 		a := New(mockDatastore{})
 
-		actualOutput := a.validateDelete(tc.input)
+		actualOutput, _ := a.Delete(tc.input)
 		if actualOutput != tc.expectedOutput {
 			t.Errorf("testcase %d failed got %v \n expected %v", i+1, actualOutput, tc.expectedOutput)
 		}
@@ -101,30 +102,29 @@ func TestGetById(t *testing.T) {
 	testcases := []struct {
 		desc           string
 		id             uuid.UUID
-		expectedOutput []entities2.EmployeeAndDepartment
+		expectedOutput entities2.EmployeeAndDepartment
 	}{
 		{"valid name ", uid,
-			[]entities2.EmployeeAndDepartment{{uid.String(), "jason", "12-06-1998", "Bangalore", "CSE", entities2.Department{1, "HR", 1}}}},
+			entities2.EmployeeAndDepartment{uid.String(), "jason", "12-06-1998", "Bangalore", "CSE", entities2.Department{1, "HR", 1}}},
 		//{"invalid name and includeDepartment is true", "", []entities.EmployeeAndDepartment{{}}},
 	}
 
 	for i, tc := range testcases {
 		a := New(mockDatastore{})
 
-		actualOutput := a.validateGetById(tc.id)
+		actualOutput, _ := a.Read(tc.id)
 		if !reflect.DeepEqual(actualOutput, tc.expectedOutput) {
 			t.Errorf("testcase %d failed got %v \n expected %v", i+1, actualOutput, tc.expectedOutput)
 
 		}
 	}
 }
-func (m mockDatastore) Read(id uuid.UUID) ([]entities2.EmployeeAndDepartment, error) {
+func (m mockDatastore) Read(id uuid.UUID) (entities2.EmployeeAndDepartment, error) {
 	if id == uid {
-		out := make([]entities2.EmployeeAndDepartment, 1, 1)
-		out[0] = entities2.EmployeeAndDepartment{uid.String(), "jason", "12-06-1998", "Bangalore", "CSE", entities2.Department{1, "HR", 1}}
-		return out, nil
+		//out := make([]entities2.EmployeeAndDepartment, 1, 1)
+		return entities2.EmployeeAndDepartment{id.String(), "jason", "12-06-1997", "Bangalore", "CSE", entities2.Department{2, "TECH", 2}}, nil
 	}
-	return []entities2.EmployeeAndDepartment{{}}, errors.New("error")
+	return entities2.EmployeeAndDepartment{}, errors.New("error")
 }
 
 func TestGetAll(t *testing.T) {
@@ -145,7 +145,7 @@ func TestGetAll(t *testing.T) {
 	for i, tc := range testcases {
 		a := New(mockDatastore{})
 
-		actualOutput := a.validateGetAll(tc.name, tc.includeDepartment)
+		actualOutput, _ := a.ReadAll(tc.name, tc.includeDepartment)
 		if !reflect.DeepEqual(actualOutput, tc.expectedOutput) {
 			t.Errorf("testcase %d failed got %v \n expected %v", i+1, actualOutput, tc.expectedOutput)
 

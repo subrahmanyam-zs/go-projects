@@ -7,8 +7,8 @@ import (
 
 type Employee interface {
 	Create(employee entities2.Employee) (entities2.Employee, error)
-	Read(uid uuid.UUID) ([]entities2.EmployeeAndDepartment, error)
-	Update(uid string, employee entities2.Employee) (entities2.Employee, error)
+	Read(uid uuid.UUID) (entities2.EmployeeAndDepartment, error)
+	Update(uid uuid.UUID, employee entities2.Employee) (entities2.Employee, error)
 	Delete(uid uuid.UUID) (int, error)
 	ReadAll(name string, includeDepartment bool) ([]entities2.EmployeeAndDepartment, error)
 	ReadDepartment(id int) (entities2.Department, error)

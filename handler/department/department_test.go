@@ -42,7 +42,6 @@ func (m mockService) Create(department entities.Department) (entities.Department
 	if department.Id == 0 {
 		return entities.Department{}, errors.New("error")
 	}
-
 	return entities.Department{1, "HR", 1}, nil
 }
 

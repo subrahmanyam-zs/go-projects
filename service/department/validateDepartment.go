@@ -3,6 +3,7 @@ package department
 import (
 	"EmployeeDepartment/entities"
 	"EmployeeDepartment/store"
+	"errors"
 	"golang.org/x/exp/slices"
 	"strings"
 )
@@ -31,32 +32,32 @@ func validateFloorNo(floorNo int) bool {
 	return false
 }
 
-func (d DepartmentHandelr) validatePost(department entities.Department) entities.Department {
+func (d DepartmentHandelr) Create(department entities.Department) (entities.Department, error) {
 	if validateName(department.Name) && validateFloorNo(department.FloorNo) {
 		res, err := d.dataStore.Create(department)
 		if err != nil {
-			return res
+			return entities.Department{}, err
 		}
-		return res
+		return res, nil
 	}
-	return entities.Department{}
+	return entities.Department{}, errors.New("error")
 }
 
-func (d DepartmentHandelr) validatePut(id int, department entities.Department) entities.Department {
+func (d DepartmentHandelr) Update(id int, department entities.Department) (entities.Department, error) {
 	if validateName(department.Name) && validateFloorNo(department.FloorNo) {
 		res, err := d.dataStore.Update(id, department)
 		if err != nil {
-			return res
+			return res, err
 		}
-		return res
+		return res, nil
 	}
-	return entities.Department{}
+	return entities.Department{}, errors.New("error")
 }
 
-func (d DepartmentHandelr) validateDelete(id int) int {
+func (d DepartmentHandelr) Delete(id int) (int, error) {
 	res, err := d.dataStore.Delete(id)
 	if err != nil {
-		return res
+		return res, err
 	}
-	return res
+	return res, nil
 }

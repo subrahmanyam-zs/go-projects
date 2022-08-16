@@ -4,7 +4,9 @@ import (
 	"EmployeeDepartment/entities"
 	"EmployeeDepartment/service"
 	"encoding/json"
+	"fmt"
 	"github.com/google/uuid"
+	"github.com/gorilla/mux"
 	"io"
 	"net/http"
 	"strconv"
@@ -21,25 +23,20 @@ func New(emp service.Employee) EmployeeHandler {
 func (e EmployeeHandler) PostHandler(res http.ResponseWriter, req *http.Request) {
 	var employee entities.Employee
 	body, _ := io.ReadAll(req.Body)
-
 	err := json.Unmarshal(body, &employee)
-
 	if err != nil {
 		_, _ = res.Write([]byte("Unmarshal Error"))
 		res.WriteHeader(http.StatusBadRequest)
 		return
 	}
-
-	resp, err := e.validate.Create(employee)
-	if err != nil {
+	resp, err1 := e.validate.Create(employee)
+	if err1 != nil {
 		_, _ = res.Write([]byte("Invalid Body"))
 		res.WriteHeader(http.StatusInternalServerError)
-
 		return
 	}
-
 	body, _ = json.Marshal(resp)
-	_, _ = res.Write(body)
+	res.Write(body)
 }
 
 func (e EmployeeHandler) GetHandler(res http.ResponseWriter, req *http.Request) {
@@ -50,20 +47,20 @@ func (e EmployeeHandler) GetHandler(res http.ResponseWriter, req *http.Request) 
 		return
 	}
 	uid := uuid.MustParse(id)
-
 	resp, err := e.validate.Read(uid)
 	body, _ := json.Marshal(resp)
 	if err != nil {
 		_, _ = res.Write([]byte("Id not found"))
 		return
 	}
-	_, _ = res.Write(body)
+	res.Write(body)
 
 }
 
 func (e EmployeeHandler) PutHandler(res http.ResponseWriter, req *http.Request) {
+	parameter := mux.Vars(req)
+	id := parameter["id"]
 	var employee entities.Employee
-	id := req.URL.Path[10:]
 	reader, _ := io.ReadAll(req.Body)
 	err := json.Unmarshal(reader, &employee)
 	if err != nil {
@@ -94,9 +91,8 @@ func (e EmployeeHandler) DeleteHandler(res http.ResponseWriter, req *http.Reques
 func (e EmployeeHandler) GetAll(res http.ResponseWriter, req *http.Request) {
 	name := req.URL.Query().Get("name")
 	includeDepartment := req.URL.Query().Get("includeDepartment")
-
+	fmt.Println(name, includeDepartment)
 	b, err := strconv.ParseBool(includeDepartment)
-	//log.Print(err)
 	resp, err := e.validate.ReadAll(name, b)
 	if err != nil {
 		res.Write([]byte("Unmarshal Error"))
