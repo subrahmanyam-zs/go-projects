@@ -26,10 +26,6 @@ jobs:
         run: |
           git config --global url."https://${{ secrets.PAT}}:x-oauth-basic@github.int.mcafee.com/".insteadOf "https://github.int.mcafee.com/"
           go get -v -t -d ./...
-      - name: Set Configs
-        run: |
-          cd examples/sample-api/configs
-          echo "APP_VERSION=${GITHUB_SHA::7}" >> .env
 
       - name: Test
         run: |
@@ -78,6 +74,10 @@ jobs:
         with:
           name: app-binary
           path: examples/sample-api/build
+
+      - name: Set APP_VERSION
+        run: |
+          printf "\nAPP_VERSION=${GITHUB_SHA::7}" >> examples/sample-api/configs/.env    
 
       - name: Build and Push docker image to AWS ECR
         uses: docker://ghcr.io/kciter/aws-ecr-action:latest
