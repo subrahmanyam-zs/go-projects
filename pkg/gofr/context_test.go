@@ -10,6 +10,7 @@ import (
 	"testing"
 
 	"github.com/golang-jwt/jwt/v4"
+	"github.com/stretchr/testify/assert"
 
 	"golang.org/x/net/context"
 
@@ -195,7 +196,7 @@ func Test_Log(t *testing.T) {
 	for i, tc := range tests {
 		if tc.appData != nil {
 			// simulating the case where the `contextInjector` middleware sets the `appLogData` to empty map
-			*r = *r.WithContext(ctx.WithValue(c, appData, &sync.Map{}))
+			*r = *r.Clone(ctx.WithValue(c, appData, &sync.Map{}))
 		}
 
 		c.Log(tc.key, tc.value)
@@ -217,7 +218,7 @@ func TestLog_CorrelationModify(t *testing.T) {
 		value = "7"
 	)
 
-	*r = *r.WithContext(ctx.WithValue(c, appData, map[string]interface{}{key: value}))
+	*r = *r.Clone(ctx.WithValue(c, appData, map[string]interface{}{key: value}))
 
 	// Trying to change the correlationID
 	c.Log(key, "incorrect")
@@ -237,9 +238,9 @@ func TestContext_ValidateClaimSubPFCX(t *testing.T) {
 	r := httptest.NewRequest("GET", "http://dummy", nil)
 
 	claims := jwt.MapClaims{}
-	claims["sub"] = "trial-sub"
+	claims["sub"] = "trial-sub" //nolint
 	claims["pfcx"] = "trial-pfcx"
-	r = r.WithContext(ctx.WithValue(r.Context(), oauth.JWTContextKey("claims"), claims))
+	r = r.Clone(ctx.WithValue(r.Context(), oauth.JWTContextKey("claims"), claims))
 	req := request.NewHTTPRequest(r)
 	c := NewContext(nil, req, nil)
 	c.Context = req.Request().Context()
@@ -270,7 +271,7 @@ func TestContext_ValidateClaimSubScope(t *testing.T) {
 
 	claims := jwt.MapClaims{}
 	claims["scope"] = "trial-scope1 trial-scope2"
-	r = r.WithContext(ctx.WithValue(r.Context(), oauth.JWTContextKey("claims"), claims))
+	r = r.Clone(ctx.WithValue(r.Context(), oauth.JWTContextKey("claims"), claims))
 	req := request.NewHTTPRequest(r)
 	c := NewContext(nil, req, nil)
 	c.Context = req.Request().Context()
@@ -306,5 +307,48 @@ func TestContext_BindStrict(t *testing.T) {
 	c := NewContext(nil, req, nil)
 	if err := c.BindStrict(&com); err != nil {
 		t.Errorf("FAILED, expected: %v, got: %v", nil, err)
+	}
+}
+
+func Test_GetClaim(t *testing.T) {
+	r := httptest.NewRequest("GET", "http://dummy", nil)
+
+	r = r.Clone(ctx.WithValue(r.Context(), oauth.JWTContextKey("claims"), jwt.MapClaims(map[string]interface{}{"sub": "trial-sub"})))
+	c := NewContext(nil, request.NewHTTPRequest(r), nil)
+
+	testcases := []struct {
+		claimKey  string
+		expOutput interface{}
+	}{
+		{"sub", "trial-sub"},
+		{"abc", nil},
+	}
+	for i, tc := range testcases {
+		out := c.GetClaim(tc.claimKey)
+		assert.Equal(t, tc.expOutput, out, "Test case failed", i)
+	}
+}
+
+func Test_GetClaims(t *testing.T) {
+	expOut := map[string]interface{}{
+		"sub": "trial-sub",
+		"aud": "test",
+	}
+
+	testcases := []struct {
+		ctxKey    interface{}
+		ctxValue  interface{}
+		expOutput interface{}
+	}{
+		{oauth.JWTContextKey("claims"), jwt.MapClaims(map[string]interface{}{"sub": "trial-sub", "aud": "test"}), expOut},
+		{"api-key", "123", map[string]interface{}(nil)},
+	}
+	for i, tc := range testcases {
+		req := httptest.NewRequest("GET", "http://dummy", nil)
+		req = req.Clone(ctx.WithValue(req.Context(), tc.ctxKey, tc.ctxValue))
+		gofrCtx := NewContext(nil, request.NewHTTPRequest(req), nil)
+
+		out := gofrCtx.GetClaims()
+		assert.Equal(t, tc.expOutput, out, "Test case failed", i)
 	}
 }

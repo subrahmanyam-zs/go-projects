@@ -7,6 +7,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"developer.zopsmart.com/go/gofr/examples/using-awssns/entity"
 	"developer.zopsmart.com/go/gofr/pkg/errors"
 	"developer.zopsmart.com/go/gofr/pkg/gofr"
 	"developer.zopsmart.com/go/gofr/pkg/gofr/request"
@@ -42,7 +43,17 @@ func TestPublisherHandler(t *testing.T) {
 
 	for _, tc := range tests {
 		mockService, ctx := initializeTests(t, http.MethodPost, bytes.NewBuffer(tc.body))
-		mockService.EXPECT().Publish(gomock.Any(), gomock.Any()).Return(tc.wantErr)
+		attr := map[string]interface{}{
+			"email":   "test@abc.com",
+			"version": 1.1,
+			"key":     []interface{}{1, 1.999, "value"},
+		}
+
+		var message *entity.Message
+
+		_ = ctx.Bind(&message)
+
+		mockService.EXPECT().Publish(message, attr).Return(tc.wantErr)
 
 		_, err := Publisher(ctx)
 
@@ -62,7 +73,9 @@ func TestSubscriberHandler(t *testing.T) {
 	}
 
 	for _, tc := range tests {
-		mockService.EXPECT().SubscribeWithResponse(gomock.Any()).Return(&notifier.Message{}, tc.wantErr)
+		data := map[string]interface{}{}
+
+		mockService.EXPECT().SubscribeWithResponse(&data).Return(&notifier.Message{}, tc.wantErr)
 
 		_, err := Subscriber(ctx)
 

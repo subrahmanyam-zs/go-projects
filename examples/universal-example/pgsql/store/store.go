@@ -29,15 +29,22 @@ func (e employee) Get(c *gofr.Context) ([]entity.Employee, error) {
 		return nil, errors.DB{Err: err}
 	}
 
-	defer func() {
-		_ = rows.Err()
-		_ = rows.Close()
-	}()
+	defer rows.Close()
 
 	for rows.Next() {
 		var employee entity.Employee
-		_ = rows.Scan(&employee.ID, &employee.Name, &employee.Phone, &employee.Email, &employee.City)
+
+		err = rows.Scan(&employee.ID, &employee.Name, &employee.Phone, &employee.Email, &employee.City)
+		if err != nil {
+			return nil, errors.DB{Err: err}
+		}
+
 		employees = append(employees, employee)
+	}
+
+	err = rows.Err()
+	if err != nil {
+		return nil, errors.DB{Err: err}
 	}
 
 	return employees, nil

@@ -2,6 +2,7 @@ package request
 
 import (
 	"bytes"
+
 	"encoding/json"
 	"encoding/xml"
 	"fmt"
@@ -9,7 +10,10 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/golang-jwt/jwt/v4"
 	"github.com/gorilla/mux"
+
+	"developer.zopsmart.com/go/gofr/pkg/middleware/oauth"
 )
 
 type HTTP struct {
@@ -138,4 +142,26 @@ func (h *HTTP) BindStrict(i interface{}) error {
 
 		return dec.Decode(&i)
 	}
+}
+
+// GetClaims function returns the map of claims
+func (h *HTTP) GetClaims() map[string]interface{} {
+	claims, ok := h.req.Context().Value(oauth.JWTContextKey("claims")).(jwt.MapClaims)
+	if !ok {
+		return nil
+	}
+
+	return claims
+}
+
+// GetClaim function returns the value of claim key provided as the parameter
+func (h *HTTP) GetClaim(claimKey string) interface{} {
+	claims := h.GetClaims()
+
+	val, ok := claims[claimKey]
+	if !ok {
+		return nil
+	}
+
+	return val
 }

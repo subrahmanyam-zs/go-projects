@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"reflect"
+	"strconv"
 	"strings"
 	"testing"
 
@@ -51,7 +52,12 @@ func TestCassandraEmployee_Get(t *testing.T) {
 		req := request.NewHTTPRequest(r)
 		context := gofr.NewContext(nil, req, app)
 
-		employeeStore.EXPECT().Get(gomock.Any(), gomock.Any()).Return(tc.expectedResp)
+		params := context.Params()
+
+		emp := entity.Employee{Name: params["name"], Phone: params["phone"], Email: params["email"], City: params["city"]}
+
+		emp.ID, _ = strconv.Atoi(params["id"])
+		employeeStore.EXPECT().Get(context, emp).Return(tc.expectedResp)
 
 		resp, err := employee.Get(context)
 		assert.Equal(t, tc.mockErr, err, i)
@@ -79,8 +85,12 @@ func TestCassandraEmployee_Create(t *testing.T) {
 		req := request.NewHTTPRequest(r)
 		context := gofr.NewContext(nil, req, app)
 
-		employeeStore.EXPECT().Get(gomock.Any(), gomock.Any()).Return(nil)
-		employeeStore.EXPECT().Create(gomock.Any(), gomock.Any()).Return(tc.expectedResp, tc.mockErr)
+		var emp entity.Employee
+
+		_ = context.Bind(&emp)
+
+		employeeStore.EXPECT().Get(context, entity.Employee{ID: emp.ID}).Return(nil)
+		employeeStore.EXPECT().Create(context, emp).Return(tc.expectedResp, tc.mockErr)
 
 		resp, err := employee.Create(context)
 		assert.Equal(t, tc.mockErr, err, i)
@@ -90,18 +100,17 @@ func TestCassandraEmployee_Create(t *testing.T) {
 
 func TestCassandraEmployee_Create_InvalidInput_JsonError(t *testing.T) {
 	tests := []struct {
-		callGet       bool
 		query         string
 		expectedResp  interface{}
 		mockGetOutput []entity.Employee
 		mockErr       error
 	}{
 		// Invalid Input
-		{true, `{"id": 2, "name": "Aman", "phone": "22234", "email": "aman@zopsmart.com", "city": "Florida"}`,
+		{`{"id": 2, "name": "Aman", "phone": "22234", "email": "aman@zopsmart.com", "city": "Florida"}`,
 			nil, []entity.Employee{{ID: 2, Name: "Aman", Phone: "22234", Email: "aman@zopsmart.com", City: "Florida"}},
 			errors.EntityAlreadyExists{}},
 		// JSON Error
-		{false, `{"id":    "2", "name":   "Aman", "phone": "22234", "email": "aman@zopsmart.com", "city": "Florida"}`, nil, nil,
+		{`{"id":    "2", "name":   "Aman", "phone": "22234", "email": "aman@zopsmart.com", "city": "Florida"}`, nil, nil,
 			&json.UnmarshalTypeError{Value: "string", Type: reflect.TypeOf(2), Offset: 13, Struct: "Employee", Field: "id"}},
 	}
 
@@ -113,9 +122,11 @@ func TestCassandraEmployee_Create_InvalidInput_JsonError(t *testing.T) {
 		req := request.NewHTTPRequest(r)
 		context := gofr.NewContext(nil, req, app)
 
-		if tc.callGet {
-			employeeStore.EXPECT().Get(gomock.Any(), gomock.Any()).Return(tc.mockGetOutput).AnyTimes()
-		}
+		var emp entity.Employee
+
+		_ = context.Bind(&emp)
+
+		employeeStore.EXPECT().Get(context, entity.Employee{ID: emp.ID}).Return(tc.mockGetOutput)
 
 		resp, err := employee.Create(context)
 		assert.Equal(t, tc.mockErr, err, i)

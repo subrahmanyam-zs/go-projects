@@ -19,9 +19,12 @@ import (
 
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 
+	"developer.zopsmart.com/go/gofr/pkg/errors"
 	"developer.zopsmart.com/go/gofr/pkg/log"
 	"developer.zopsmart.com/go/gofr/pkg/middleware"
 )
+
+const dummyURL = "http://dummy"
 
 func TestService_Request(t *testing.T) {
 	ts := testServer()
@@ -178,6 +181,35 @@ func TestService_GetRetry(t *testing.T) {
 	}
 }
 
+// The TestService_CustomPostRetryBodyError function is testing the http service retry mechanism for repeated requests having a body
+func TestService_CustomRetryRequestBodyError(t *testing.T) {
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		_, _ = w.Write([]byte(`"data":"hello"`))
+	}))
+
+	// creating a new service call with test-server url , mock logger and number of retries
+	h := NewHTTPServiceWithOptions(ts.URL, log.NewMockLogger(io.Discard), &Options{NumOfRetries: 3})
+	h.CustomRetry = func(logger log.Logger, err error, statusCode, attemptCount int) bool {
+		if statusCode == http.StatusCreated {
+			return false
+		}
+
+		if err != nil && attemptCount < 2 {
+			logger.Errorf("Retrying because of err: ", err)
+			return true
+		}
+
+		return true
+	}
+
+	_, err := h.Post(context.Background(), "/dummy", nil, []byte(`{"name":"gofr"}`))
+
+	ts.Close()
+
+	// error should occur if io.NopCloser is not used for req.Body inside custom-Retry func. Error: "http: ContentLength=15 with Body length 0"
+	assert.NoError(t, err)
+}
+
 func TestServiceLog_String(t *testing.T) {
 	l := &callLog{
 		Method:  http.MethodGet,
@@ -209,6 +241,58 @@ func Test_Client_ctx_cancel(t *testing.T) {
 	_, err := ps.Get(ctx, "dummy", nil)
 	if err == nil {
 		t.Errorf("Get() = Request canceled error expected")
+	}
+}
+
+func initializeOauthTestServer(addSleep bool) *httptest.Server {
+	return httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if addSleep {
+			// used for token blocking
+			time.Sleep(time.Millisecond * 40)
+		}
+		sampleTokenResponse := map[string]interface{}{
+			"expires_in":   10,
+			"access_token": "sample_token",
+			"token_type":   "bearer",
+		}
+
+		_ = json.NewEncoder(w).Encode(sampleTokenResponse)
+	}))
+}
+
+func Test_OAuth_ctx_cancel_RequestTimeout(t *testing.T) {
+	testServer := initializeOauthTestServer(false)
+	defer testServer.Close()
+
+	logger := log.NewMockLogger(io.Discard)
+	testcases := []struct {
+		ctxTimeout time.Duration
+		reqTimeout time.Duration
+		err        error
+	}{
+		{time.Nanosecond * 5, time.Second * 10, RequestCanceled{}},
+		{time.Second * 10, time.Nanosecond * 5, errors.Timeout{URL: testServer.URL}},
+	}
+
+	for i := range testcases {
+		oauth := OAuthOption{
+			ClientID:        "client_id",
+			ClientSecret:    "clientSecret",
+			KeyProviderURL:  testServer.URL,
+			Scope:           "test:data",
+			WaitForTokenGen: true,
+		}
+
+		svc := NewHTTPServiceWithOptions(testServer.URL, logger, &Options{Auth: &Auth{OAuthOption: &oauth}})
+		svc.Timeout = testcases[i].reqTimeout
+
+		// nolint:govet // ignoring the cancel function
+		ctx, _ := context.WithTimeout(context.TODO(), testcases[i].ctxTimeout)
+
+		_, err := svc.Get(ctx, "dummy", nil)
+		if !reflect.DeepEqual(err, testcases[i].err) {
+			t.Errorf("[TESTCASE%d]Failed.\nExpected %v\nGot %v\n", i+1, testcases[i].err, err)
+		}
 	}
 }
 
@@ -297,6 +381,8 @@ func Test_SetSurgeProtectorOptions(t *testing.T) {
 	customHeartbeatURL := "/.fake-heartbeat"
 	retryFrequencySeconds := 1
 
+	h.sp.logger = log.NewLogger()
+
 	h.SetSurgeProtectorOptions(isEnabled, customHeartbeatURL, retryFrequencySeconds)
 
 	if h.sp.isEnabled != isEnabled || h.sp.customHeartbeatURL != customHeartbeatURL ||
@@ -310,6 +396,7 @@ func TestCorrelationIDPropagation(t *testing.T) {
 	correlationIDs := []string{"1YUHS767SHD", "", "OUDIDd78f78d"}
 	for i := range correlationIDs {
 		h := httpService{}
+
 		ctx := context.WithValue(context.Background(), middleware.CorrelationIDKey, correlationIDs[i])
 		req, _ := h.createReq(ctx, http.MethodGet, "/", nil, nil, nil)
 
@@ -326,9 +413,9 @@ func TestService_CorrelationIDLog(t *testing.T) {
 
 	correlationID := "81ADIDDNODID"
 	buf := new(bytes.Buffer)
+
 	ps := NewHTTPServiceWithOptions(ts.URL, log.NewMockLogger(buf), nil)
 	ctx := context.WithValue(context.Background(), middleware.CorrelationIDKey, correlationID)
-
 	_, _ = ps.Get(ctx, "", nil)
 
 	if !strings.Contains(buf.String(), correlationID) {
@@ -337,7 +424,7 @@ func TestService_CorrelationIDLog(t *testing.T) {
 }
 
 func TestHttpService_SetHeaders(t *testing.T) {
-	httpSvc := NewHTTPServiceWithOptions("http://dummy", log.NewLogger(), nil)
+	httpSvc := NewHTTPServiceWithOptions(dummyURL, log.NewLogger(), nil)
 
 	ctx := context.WithValue(context.TODO(), middleware.ClientIPKey, "123.234.545.894")
 	ctx = context.WithValue(ctx, middleware.ZopsmartChannelKey, "WEB")
@@ -354,7 +441,7 @@ func TestHttpService_SetHeaders(t *testing.T) {
 }
 
 func TestHttpService_SetAuthClientIP(t *testing.T) {
-	s := NewHTTPServiceWithOptions("http://dummy", log.NewLogger(),
+	s := NewHTTPServiceWithOptions(dummyURL, log.NewLogger(),
 		&Options{Headers: map[string]string{"Authorization": "se31-2fhhvhjf-9049"}})
 	ctx := context.WithValue(context.TODO(), middleware.ClientIPKey, "123.234.545.894")
 	req, _ := s.createReq(ctx, http.MethodGet, "", nil, nil, nil)
@@ -367,7 +454,7 @@ func TestHttpService_SetAuthClientIP(t *testing.T) {
 func TestHttpService_PropagateHeaders(t *testing.T) {
 	httpSvc := httpService{
 		Client: &http.Client{},
-		url:    "http://dummy",
+		url:    dummyURL,
 	}
 
 	httpSvc.PropagateHeaders("X-Custom-Header")
@@ -503,7 +590,7 @@ func TestHeaderPriority(t *testing.T) {
 func TestNewHTTPAuthService(t *testing.T) {
 	user := "Alice"
 	pass := "12345"
-	url := "http://dummy"
+	url := dummyURL
 	svc := NewHTTPServiceWithOptions(url, log.NewLogger(), &Options{Auth: &Auth{UserName: user, Password: pass}})
 	authStr := "Basic " + base64.StdEncoding.EncodeToString([]byte(user+":"+pass))
 
@@ -519,7 +606,7 @@ func TestNewHTTPAuthService(t *testing.T) {
 // TestHTTPCookieLogging checks, Cookie is getting logged or not for http client.
 func TestHTTPCookieLogging(t *testing.T) {
 	b := new(bytes.Buffer)
-	url := "http://dummmyapi"
+	url := dummyURL
 	h := NewHTTPServiceWithOptions(url, log.NewMockLogger(b), nil)
 	_, _ = h.call(context.TODO(), http.MethodGet, "", nil, nil, map[string]string{"Cookie": "Some-Random-Value"})
 
@@ -532,7 +619,7 @@ func TestHTTPCookieLogging(t *testing.T) {
 func Test_AuthCall(t *testing.T) {
 	b := new(bytes.Buffer)
 	logger := log.NewMockLogger(b)
-	url := "http://mockapi"
+	url := dummyURL
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		sampleTokenResponse := map[string]interface{}{
@@ -550,12 +637,12 @@ func Test_AuthCall(t *testing.T) {
 	}{
 		{nil, "", nil},
 		{&Options{Auth: &Auth{UserName: "user", Password: "secret"}}, "Basic dXNlcjpzZWNyZXQ=", nil},
-		{&Options{Auth: &Auth{OAuthOption: &OAuthOption{"Alice", "alice_secret", server.URL,
-			"some_scope", 0, "some_audience"}}}, "Bearer sample_token", nil},
+		{&Options{Auth: &Auth{OAuthOption: &OAuthOption{ClientID: "Alice", ClientSecret: "alice_secret", KeyProviderURL: server.URL,
+			Scope: "some_scope"}}}, "Bearer sample_token", nil},
 		{&Options{Auth: &Auth{UserName: "user", Password: "abc", OAuthOption: &OAuthOption{}}}, "", ErrToken},
 		{&Options{Auth: &Auth{OAuthOption: &OAuthOption{}}}, "", ErrToken},
-		{&Options{Auth: &Auth{OAuthOption: &OAuthOption{"Bob", "bob_secret", url,
-			"some_scope", 0, "some_audience"}}}, "", ErrToken},
+		{&Options{Auth: &Auth{OAuthOption: &OAuthOption{ClientID: "Bob", ClientSecret: "bob_secret", KeyProviderURL: url,
+			Scope: "some_scope"}}}, "", ErrToken},
 	}
 
 	for i, tc := range tests {
@@ -646,13 +733,13 @@ func Test_createReq(t *testing.T) {
 		target      string
 		expectedURL string
 	}{
-		{"multiple backslashes in POST", "POST", "/////////post", ts.URL + "/post"},
-		{"single backslashes in GET", "GET", "/get", ts.URL + "/get"},
-		{"multiple backslashes in PUT", "PUT", "///put", ts.URL + "/put"},
-		{"single backslashes in PATCH", "PATCH", "/patch", ts.URL + "/patch"},
+		{"multiple backslashes in POST", http.MethodPost, "////////post", ts.URL + "/////////post"},
+		{"single backslashes in GET", http.MethodGet, "get", ts.URL + "/get"},
+		{"multiple backslashes in PUT", http.MethodPut, "//put", ts.URL + "///put"},
+		{"single backslashes in PATCH", http.MethodPatch, "patch", ts.URL + "/patch"},
 	}
 
-	h := NewHTTPServiceWithOptions(ts.URL, nil, nil)
+	h := NewHTTPServiceWithOptions(ts.URL, log.NewLogger(), nil)
 	for _, tc := range testcase {
 		req, err := h.createReq(context.Background(), tc.method, tc.target, nil, nil, nil)
 		if err != nil {

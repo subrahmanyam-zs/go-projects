@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"reflect"
+	"strconv"
 	"strings"
 	"testing"
 
@@ -49,8 +50,15 @@ func TestPerson_Get(t *testing.T) {
 		req := httptest.NewRequest(http.MethodGet, "/persons?"+tc.queryParams, nil)
 		r := request.NewHTTPRequest(req)
 		ctx := gofr.NewContext(nil, r, app)
+		filter := models.Person{}
+		val := ctx.Params()
 
-		store.EXPECT().Get(gomock.Any(), gomock.Any()).Return(tc.resp)
+		filter.ID, _ = strconv.Atoi(val["id"])
+		filter.Name = val["name"]
+		filter.Age, _ = strconv.Atoi(val["age"])
+		filter.State = val["state"]
+
+		store.EXPECT().Get(ctx, filter).Return(tc.resp)
 
 		resp, err := h.Get(ctx)
 
@@ -90,7 +98,7 @@ func TestPerson_Create_InvalidInsertionIDAndJSONError(t *testing.T) {
 		ctx := gofr.NewContext(nil, r, app)
 
 		if tc.callGet == true {
-			store.EXPECT().Get(gomock.Any(), gomock.Any()).Return(tc.mockGetOutput).AnyTimes()
+			store.EXPECT().Get(ctx, models.Person{ID: 3}).Return(tc.mockGetOutput).AnyTimes()
 		}
 
 		resp, err := h.Create(ctx)
@@ -108,7 +116,7 @@ func TestPerson_Create(t *testing.T) {
 		resp  interface{}
 		err   error
 	}{
-		{"create success", `{"id":4, "name":"Kali", "age":40, "State":"karnataka"}`,
+		{"create success", `{"id":4, "name":"Kali", "age":40, "State":"Karnataka"}`,
 			[]models.Person{{ID: 4, Name: "Kali", Age: 40, State: "karnataka"}}, nil},
 	}
 
@@ -120,8 +128,8 @@ func TestPerson_Create(t *testing.T) {
 		r := request.NewHTTPRequest(req)
 		ctx := gofr.NewContext(nil, r, app)
 
-		store.EXPECT().Get(gomock.Any(), gomock.Any()).Return(nil)
-		store.EXPECT().Create(gomock.Any(), gomock.Any()).Return(tc.resp, tc.err)
+		store.EXPECT().Get(ctx, models.Person{ID: 4}).Return(nil)
+		store.EXPECT().Create(ctx, models.Person{ID: 4, Name: "Kali", Age: 40, State: "Karnataka"}).Return(tc.resp, tc.err)
 
 		resp, err := h.Create(ctx)
 
@@ -159,7 +167,9 @@ func TestPerson_InvalidUpdateIDAndJSONError(t *testing.T) {
 		})
 
 		if tc.callGet == true {
-			store.EXPECT().Get(gomock.Any(), gomock.Any()).Return(nil)
+			id, _ := strconv.Atoi(tc.id)
+
+			store.EXPECT().Get(ctx, models.Person{ID: id}).Return(nil)
 		}
 
 		_, err := h.Update(ctx)
@@ -196,13 +206,18 @@ func TestPerson_Update(t *testing.T) {
 		req := httptest.NewRequest(http.MethodPut, "/persons/"+tc.id, in)
 		r := request.NewHTTPRequest(req)
 		ctx := gofr.NewContext(nil, r, app)
+		filter := models.Person{}
 
 		ctx.SetPathParams(map[string]string{
 			"id": tc.id,
 		})
 
-		store.EXPECT().Get(gomock.Any(), gomock.Any()).Return(tc.mockGetOutput)
-		store.EXPECT().Update(gomock.Any(), gomock.Any()).Return(tc.resp, tc.err)
+		_ = ctx.Bind(&filter)
+		id, _ := strconv.Atoi(tc.id)
+		filter.ID = id
+
+		store.EXPECT().Get(ctx, models.Person{ID: id}).Return(tc.mockGetOutput)
+		store.EXPECT().Update(ctx, filter).Return(tc.resp, tc.err)
 
 		resp, err := h.Update(ctx)
 
@@ -236,10 +251,12 @@ func TestPerson_Delete(t *testing.T) {
 			"id": tc.id,
 		})
 
-		store.EXPECT().Get(gomock.Any(), gomock.Any()).Return(tc.mockGetOutput)
+		id, _ := strconv.Atoi(tc.id)
+
+		store.EXPECT().Get(ctx, models.Person{ID: id}).Return(tc.mockGetOutput)
 
 		if tc.callDel == true {
-			store.EXPECT().Delete(gomock.Any(), gomock.Any()).Return(tc.err)
+			store.EXPECT().Delete(ctx, ctx.PathParam("id")).Return(tc.err)
 		}
 
 		resp, err := h.Delete(ctx)

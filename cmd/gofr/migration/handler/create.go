@@ -96,17 +96,19 @@ func create(f FSCreate, name string) error {
 	return nil
 }
 
+// getPrefixes extracts the timestamp/prefix from every migration files and returns the timestamp/prefix
 func getPrefixes(f FSCreate) ([]string, error) {
 	var prefixes []string
 
 	files, err := f.ReadDir("./")
+
 	if err != nil {
 		return nil, err
 	}
 
 	for _, file := range files {
 		fileParts := strings.Split(file.Name(), "_")
-		if len(fileParts) < 2 || file.Name() == "000_all.go" {
+		if len(fileParts) < 2 || file.Name() == "000_all.go" || fileParts[len(fileParts)-1] == "test.go" {
 			continue
 		} else {
 			prefixes = append(prefixes, fileParts[0])

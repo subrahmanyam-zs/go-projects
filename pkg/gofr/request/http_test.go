@@ -2,6 +2,7 @@ package request
 
 import (
 	"bytes"
+	ctx "context"
 	"fmt"
 	"io"
 	"net/http"
@@ -10,7 +11,11 @@ import (
 	"sort"
 	"testing"
 
+	"github.com/golang-jwt/jwt/v4"
 	"github.com/gorilla/mux"
+	"github.com/stretchr/testify/assert"
+
+	"developer.zopsmart.com/go/gofr/pkg/middleware/oauth"
 )
 
 func TestNewHTTPRequest(t *testing.T) {
@@ -366,5 +371,47 @@ func TestHTTP_Request(t *testing.T) {
 	h.req = expected
 	if h.Request() != expected {
 		t.Errorf("FAILED, Expected: %v, Got: %v", expected, h.Request())
+	}
+}
+
+func TestHTTP_GetClaims(t *testing.T) {
+	expOut := map[string]interface{}{
+		"sub": "trial-sub",
+	}
+	testcases := []struct {
+		ctxKey    interface{}
+		ctxVal    interface{}
+		expOutput map[string]interface{}
+	}{
+		{oauth.JWTContextKey("claims"), jwt.MapClaims(map[string]interface{}{"sub": "trial-sub"}), expOut},
+		{"x-api-key", "123", map[string]interface{}(nil)},
+	}
+
+	for i, tc := range testcases {
+		r := httptest.NewRequest("GET", "http://dummy", nil)
+		r = r.Clone(ctx.WithValue(r.Context(), tc.ctxKey, tc.ctxVal))
+		req := NewHTTPRequest(r)
+
+		out := req.GetClaims()
+		assert.Equal(t, tc.expOutput, out, "Test case Failed", i)
+	}
+}
+
+func TestHTTP_GetClaim(t *testing.T) {
+	r := httptest.NewRequest("GET", "http://dummy", nil)
+	r = r.Clone(ctx.WithValue(r.Context(), oauth.JWTContextKey("claims"),
+		jwt.MapClaims(map[string]interface{}{"sub": "trial-sub"})))
+	req := NewHTTPRequest(r)
+
+	testcases := []struct {
+		key       string
+		expOutput interface{}
+	}{
+		{"sub", "trial-sub"},
+		{"abc", nil},
+	}
+	for i, tc := range testcases {
+		out := req.GetClaim(tc.key)
+		assert.Equal(t, tc.expOutput, out, "Test case Failed", i)
 	}
 }

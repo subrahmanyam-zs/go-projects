@@ -72,7 +72,8 @@ func ValidateHeaders(envHeaders string, logger logger) func(inner http.Handler) 
 func ExemptPath(r *http.Request) bool {
 	return strings.HasSuffix(r.URL.Path, "/metrics") ||
 		strings.HasSuffix(r.URL.Path, "/.well-known/health-check") || strings.HasSuffix(r.URL.Path, "/.well-known/heartbeat") ||
-		strings.HasSuffix(r.URL.Path, "/.well-known/openapi.json") || strings.Contains(r.URL.Path, "/swagger")
+		strings.HasSuffix(r.URL.Path, "/.well-known/openapi.json") || strings.Contains(r.URL.Path, "/swagger") ||
+		strings.Contains(r.URL.Path, "/.well-known/swagger")
 }
 
 func createError(header, value string) *errors.Response {

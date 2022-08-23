@@ -56,7 +56,9 @@ func (t *Template) Render() ([]byte, error) {
 		return tpl.Bytes(), nil
 	}
 
-	b, err := os.ReadFile(defaultLocation + "/" + t.File)
+	path := defaultLocation + "/" + t.File
+
+	b, err := os.ReadFile(filepath.Clean(path))
 	if err != nil {
 		return nil, err
 	}

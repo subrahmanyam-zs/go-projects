@@ -6,6 +6,7 @@ import (
 
 	"developer.zopsmart.com/go/gofr/pkg/datastore"
 	"developer.zopsmart.com/go/gofr/pkg/datastore/pubsub/avro"
+	"developer.zopsmart.com/go/gofr/pkg/datastore/pubsub/eventbridge"
 	"developer.zopsmart.com/go/gofr/pkg/datastore/pubsub/eventhub"
 	"developer.zopsmart.com/go/gofr/pkg/datastore/pubsub/kafka"
 	awssns "developer.zopsmart.com/go/gofr/pkg/notifier/aws-sns"
@@ -45,6 +46,22 @@ func kafkaRetry(c *kafka.Config, avroConfig *avro.Config, k *Gofr) {
 			k.Logger.Info("Kafka initialized successfully")
 
 			initializeAvro(avroConfig, k)
+
+			break
+		}
+	}
+}
+func eventbridgeRetry(c *eventbridge.Config, k *Gofr) {
+	for {
+		time.Sleep(time.Duration(c.ConnRetryDuration) * time.Second)
+
+		k.Logger.Debug("Retrying AWS EventBridge connection")
+
+		var err error
+
+		k.PubSub, err = eventbridge.New(c)
+		if err == nil {
+			k.Logger.Info("AWS EventBridge initialized successfully")
 
 			break
 		}

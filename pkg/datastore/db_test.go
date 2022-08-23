@@ -6,6 +6,8 @@ import (
 	"net"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
+
 	"developer.zopsmart.com/go/gofr/pkg"
 	"developer.zopsmart.com/go/gofr/pkg/gofr/config"
 	"developer.zopsmart.com/go/gofr/pkg/log"
@@ -79,54 +81,30 @@ func TestInvalidDialect_Error(t *testing.T) {
 }
 
 func Test_formConnectionStr(t *testing.T) {
-	const testDB = "test"
-
-	db := new(DBConfig)
-	db.Port = "1234"
-	db.HostName = "host"
-	db.Password = "pass"
-	db.Database = testDB
-	db.Username = "user"
-
-	type args struct {
-		config *DBConfig
+	cfg := DBConfig{
+		HostName: "host",
+		Username: "user",
+		Password: "pass",
+		Database: "test",
+		Port:     "1234",
 	}
 
 	tests := []struct {
 		name    string
 		dialect string
-		args    args
 		want    string
 	}{
-		{
-			name:    "postgres",
-			dialect: "postgres",
-			args:    args{config: db},
-			want:    "host=host port=1234 user=user dbname=test password=pass sslmode=disable sslkey= sslcert=",
-		},
-		{
-			name:    "mssql",
-			dialect: "mssql",
-			args:    args{config: db},
-			want:    "sqlserver://user:pass@host:1234?database=test",
-		},
-		{
-			name:    "mysql",
-			dialect: "mysql",
-			args:    args{config: db},
-			want:    "user:pass@tcp(host:1234)/test?charset=utf8&parseTime=True&loc=Local",
-		},
+		{"postgres", "postgres", "postgres://user@host:1234/test?password=pass&sslmode=disable&sslcert=&sslkey="},
+		{"mssql", "mssql", "sqlserver://user:pass@host:1234?database=test"},
+		{"mysql", "mysql", "user:pass@tcp(host:1234)/test?charset=utf8&parseTime=True&loc=Local"},
 	}
 
-	for _, tt := range tests {
-		tt := tt
-		t.Run(tt.name, func(t *testing.T) {
-			tt.args.config.Dialect = tt.dialect
+	for i, tc := range tests {
+		cfg.Dialect = tc.dialect
 
-			if got := formConnectionStr(tt.args.config); got != tt.want {
-				t.Errorf("formConnectionStr() = %v, want %v", got, tt.want)
-			}
-		})
+		got := formConnectionStr(&cfg)
+
+		assert.Equal(t, tc.want, got, "TEST[%v] failed\n%s", i, tc.name)
 	}
 }
 

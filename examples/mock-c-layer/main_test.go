@@ -34,7 +34,7 @@ func TestIntegration(t *testing.T) {
 	}
 
 	for i, tc := range tests {
-		req, _ := request.NewMock(tc.method, "http://localhost:9090/"+tc.endpoint, bytes.NewBuffer(tc.body))
+		req, _ := request.NewMock(tc.method, "http://localhost:4090/"+tc.endpoint, bytes.NewBuffer(tc.body))
 		c := http.Client{}
 
 		resp, err := c.Do(req)

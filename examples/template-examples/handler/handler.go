@@ -31,7 +31,12 @@ func Template(ctx *gofr.Context) (interface{}, error) {
 func Image(ctx *gofr.Context) (interface{}, error) {
 	f, _ := os.Open(ctx.TemplateDir + "/gopher.png")
 
-	defer f.Close()
+	defer func() {
+		if err := f.Close(); err != nil {
+			ctx.Logger.Errorf("error in closing file : %v", err)
+			return
+		}
+	}()
 
 	i, _, _ := image.Decode(f)
 

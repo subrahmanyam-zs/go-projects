@@ -1,9 +1,11 @@
 package gofr
 
 import (
+	"bytes"
 	"io"
 	"strconv"
 	"testing"
+	"time"
 
 	"github.com/go-redis/redis/v8"
 	"github.com/stretchr/testify/assert"
@@ -18,8 +20,8 @@ func Test_kafkaRetry(t *testing.T) {
 
 	logger := log.NewMockLogger(io.Discard)
 	c := config.NewGoDotEnvProvider(logger, "../../configs")
-	kafkaConfig := kafkaConfigFromEnv(c)
-	avroConfig := avroConfigFromEnv(c)
+	kafkaConfig := kafkaConfigFromEnv(c, "")
+	avroConfig := avroConfigFromEnv(c, "")
 
 	kafkaConfig.ConnRetryDuration = 1
 	k.Logger = logger
@@ -48,7 +50,7 @@ func Test_eventhubRetry(t *testing.T) {
 		"AZURE_TENANT_ID":     conf.Get("AZURE_TENANT_ID"),
 		"PUBSUB_BACKEND":      "EVENTHUB",
 	}}
-	eventhubConfig := eventhubConfigFromEnv(c)
+	eventhubConfig := eventhubConfigFromEnv(c, "")
 
 	eventhubConfig.ConnRetryDuration = 1
 	k.Logger = logger
@@ -92,7 +94,7 @@ func Test_cassandraRetry(t *testing.T) {
 
 	logger := log.NewMockLogger(io.Discard)
 	c := config.NewGoDotEnvProvider(logger, "../../configs")
-	cassandraCfg := cassandraConfigFromEnv(c)
+	cassandraCfg := cassandraConfigFromEnv(c, "")
 
 	cassandraCfg.ConnRetryDuration = 1
 	k.Logger = logger
@@ -109,7 +111,7 @@ func Test_ycqlRetry(t *testing.T) {
 
 	logger := log.NewMockLogger(io.Discard)
 	c := config.NewGoDotEnvProvider(logger, "../../configs")
-	cassandraCfg := getYcqlConfigs(c)
+	cassandraCfg := getYcqlConfigs(c, "")
 
 	cassandraCfg.Port, _ = strconv.Atoi(c.Get("YCQL_DB_PORT"))
 	cassandraCfg.Password = c.Get("YCQL_DB_PASS")
@@ -225,7 +227,7 @@ func Test_AWSSNSRetry(t *testing.T) {
 
 	logger := log.NewMockLogger(io.Discard)
 	c := config.NewGoDotEnvProvider(logger, "../../configs")
-	awsSNSConfig := awsSNSConfigFromEnv(c)
+	awsSNSConfig := awsSNSConfigFromEnv(c, "")
 
 	awsSNSConfig.ConnRetryDuration = 1
 	k.Logger = logger
@@ -255,4 +257,27 @@ func Test_dynamoRetry(t *testing.T) {
 	if k.DynamoDB.DynamoDB == nil {
 		t.Errorf("FAILED, expected: DynamoDB initialized successfully, got: DynamoDB initialization failed")
 	}
+}
+
+func Test_AWSEventBridgeRetry(t *testing.T) {
+	var k Gofr
+
+	b := new(bytes.Buffer)
+	logger := log.NewMockLogger(b)
+	k.Logger = logger
+	c := config.NewGoDotEnvProvider(logger, "../../configs")
+	cfg := eventbridgeConfigFromEnv(c, logger, "")
+	cfg.ConnRetryDuration = 1
+
+	go eventbridgeRetry(cfg, &k)
+
+	for i := 0; i < 5; i++ {
+		time.Sleep(1 * time.Second)
+
+		if k.PubSub != nil {
+			break
+		}
+	}
+
+	assert.Contains(t, b.String(), "AWS EventBridge initialized successfully")
 }

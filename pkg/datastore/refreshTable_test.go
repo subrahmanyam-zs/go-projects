@@ -120,9 +120,10 @@ func createTableMSSQL(d *DataStore) {
 
 func Test_RefreshTablesAndVersionCheck(t *testing.T) {
 	c := config.NewGoDotEnvProvider(log.NewMockLogger(io.Discard), "../../configs")
-	msSQLConf := DBConfig{c.Get("MSSQL_HOST"), c.Get("MSSQL_USER"),
-		c.Get("MSSQL_PASSWORD"), c.Get("MSSQL_DB_NAME"),
-		c.Get("MSSQL_PORT"), "mssql", "disable", "", "", "", 30}
+	msSQLConf := DBConfig{HostName: c.Get("MSSQL_HOST"), Username: c.Get("MSSQL_USER"),
+		Password: c.Get("MSSQL_PASSWORD"), Database: c.Get("MSSQL_DB_NAME"),
+		Port: c.Get("MSSQL_PORT"), Dialect: "mssql", SSL: "disable", ORM: "", CertificateFile: "", KeyFile: "",
+		ConnRetryDuration: 30}
 
 	testcases := []struct {
 		tableName string
@@ -131,17 +132,17 @@ func Test_RefreshTablesAndVersionCheck(t *testing.T) {
 		rows      int
 	}{
 		{"store", "wrong",
-			DBConfig{c.Get("DB_HOST"), c.Get("DB_USER"),
-				c.Get("DB_PASSWORD"), c.Get("DB_NAME"), c.Get("DB_PORT"),
-				"mysql", "", "", "", "", 30}, 5,
+			DBConfig{HostName: c.Get("DB_HOST"), Username: c.Get("DB_USER"),
+				Password: c.Get("DB_PASSWORD"), Database: c.Get("DB_NAME"), Port: c.Get("DB_PORT"),
+				Dialect: "mysql", SSL: "", ORM: "", CertificateFile: "", KeyFile: "", ConnRetryDuration: 30}, 5,
 		},
 		{"store", "incorrect", msSQLConf, 5},
 		{"student", "incorrect", msSQLConf, 2},
 		{"employee", "incorrect", msSQLConf, 3},
 		{"store", "incorrect",
-			DBConfig{c.Get("PGSQL_HOST"), c.Get("PGSQL_USER"),
-				c.Get("PGSQL_PASSWORD"), c.Get("PGSQL_DB_NAME"), c.Get("PGSQL_PORT"),
-				"postgres", "", "", "", "", 30}, 5,
+			DBConfig{HostName: c.Get("PGSQL_HOST"), Username: c.Get("PGSQL_USER"),
+				Password: c.Get("PGSQL_PASSWORD"), Database: c.Get("PGSQL_DB_NAME"), Port: c.Get("PGSQL_PORT"),
+				Dialect: "postgres", SSL: "", ORM: "", CertificateFile: "", KeyFile: "", ConnRetryDuration: 30}, 5,
 		},
 	}
 	for _, testcase := range testcases {
@@ -296,9 +297,9 @@ func TestFailedQuery(t *testing.T) {
 // This checks if test data seeding can support tables with foreign keys
 func TestForeignKey(t *testing.T) {
 	c := config.NewGoDotEnvProvider(log.NewLogger(), "../../configs")
-	msSQLConf := DBConfig{c.Get("MSSQL_HOST"), c.Get("MSSQL_USER"),
-		c.Get("MSSQL_PASSWORD"), c.Get("MSSQL_DB_NAME"),
-		c.Get("MSSQL_PORT"), "mssql", "", "", "", "", 30}
+	msSQLConf := DBConfig{HostName: c.Get("MSSQL_HOST"), Username: c.Get("MSSQL_USER"),
+		Password: c.Get("MSSQL_PASSWORD"), Database: c.Get("MSSQL_DB_NAME"),
+		Port: c.Get("MSSQL_PORT"), Dialect: "mssql", SSL: "", ORM: "", CertificateFile: "", KeyFile: "", ConnRetryDuration: 30}
 
 	db, err := NewORM(&msSQLConf)
 	assert.NoError(t, err)
@@ -331,6 +332,8 @@ func TestForeignKey(t *testing.T) {
 		_ = db.Exec("DROP TABLE IF EXISTS employee")
 		_ = db.Exec("DROP TABLE IF EXISTS store_employee")
 	}()
+
+	d = DataStore{ORM: db}
 
 	path, _ := os.Getwd()
 	s := NewSeeder(&d, path)
@@ -643,12 +646,12 @@ func TestSeeder_resetIdentitySequence(t *testing.T) {
 			Port:     c.Get("MSSQL_PORT"),
 			Dialect:  "mssql",
 		}, `IF NOT EXISTS
-	(  SELECT [name]
-		FROM sys.tables
-      WHERE [name] = 'dummy'
-   ) CREATE TABLE dummy (id int primary key identity(1,1),
-	   name varchar (50))
-	`, true},
+		(  SELECT [name]
+			FROM sys.tables
+		 WHERE [name] = 'dummy'
+		) CREATE TABLE dummy (id int primary key identity(1,1),
+		 name varchar (50))
+		`, true},
 		{
 			DBConfig{
 				HostName: c.Get("DB_HOST"),
@@ -658,11 +661,11 @@ func TestSeeder_resetIdentitySequence(t *testing.T) {
 				Port:     c.Get("DB_PORT"),
 				Dialect:  mySQL,
 			}, `
- 	   CREATE TABLE IF NOT EXISTS dummy (
-	   id int auto_increment,
-	   name varchar (50),
-	   PRIMARY KEY (id))
-	`, true},
+		 CREATE TABLE IF NOT EXISTS dummy (
+		 id int auto_increment,
+		 name varchar (50),
+		 PRIMARY KEY (id))
+		`, true},
 	}
 
 	for _, tc := range testcases {

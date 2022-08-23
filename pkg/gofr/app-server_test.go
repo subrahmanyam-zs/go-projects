@@ -81,6 +81,8 @@ func Test_AllRouteLog(t *testing.T) {
 	assert.Contains(t, b.String(), "GET /.well-known/health-check HEAD /.well-known/health-check ")
 	assert.Contains(t, b.String(), "GET /.well-known/heartbeat HEAD /.well-known/heartbeat ")
 	assert.Contains(t, b.String(), "GET /.well-known/openapi.json HEAD /.well-known/openapi.json ")
+	assert.Contains(t, b.String(), "GET /.well-known/swagger HEAD /.well-known/swagger ")
+	assert.Contains(t, b.String(), "GET /.well-known/swagger/{name} HEAD /.well-known/swagger/{name}")
 	assert.NotContains(t, b.String(), "\"NotFoundHandler\":null,\"MethodNotAllowedHandler\":null,\"KeepContext\":false")
 }
 

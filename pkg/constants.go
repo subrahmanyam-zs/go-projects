@@ -11,6 +11,7 @@ const (
 	SQL               = "sql"
 	Mongo             = "mongo"
 	Kafka             = "kafka"
+	EventBridge       = "eventbridge"
 	ElasticSearch     = "elasticsearch"
 	YCQL              = "ycql"
 	EventHub          = "eventhub"
@@ -19,4 +20,5 @@ const (
 	DynamoDB          = "dynamoDB"
 	Framework         = "gofr-" + log.GofrVersion
 	AWSSNS            = "aws-sns"
+	Avro              = "avro"
 )

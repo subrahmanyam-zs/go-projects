@@ -87,6 +87,10 @@ func (a *azure) push(fd *os.File) error {
 	return err
 }
 
+func (a *azure) list(directory string) ([]string, error) {
+	return nil, ErrListingNotSupported
+}
+
 func randomString() string {
 	r := rand.New(rand.NewSource(time.Now().UnixNano())) // nolint:gosec //  Use of weak random number generator
 	return strconv.Itoa(r.Int())

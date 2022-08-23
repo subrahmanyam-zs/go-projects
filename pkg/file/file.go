@@ -20,16 +20,17 @@ func newLocalFile(filename string, mode Mode) *fileAbstractor {
 	}
 }
 
+// nolint
 func (l *fileAbstractor) Open() error {
-	file, err := os.OpenFile(l.fileName, l.fileMode, os.ModePerm)
-	if err != nil {
-		return err
-	}
-
-	l.FD = file
-
 	if l.remoteFileAbstracter == nil {
-		return err
+		file, err := os.OpenFile(l.fileName, l.fileMode, os.ModePerm)
+		if err != nil {
+			return err
+		}
+
+		l.FD = file
+
+		return nil
 	}
 
 	fileMode := l.fileMode
@@ -44,9 +45,12 @@ func (l *fileAbstractor) Open() error {
 	l.fileName = "/tmp/" + tmpFileName
 	l.fileMode = tmpFileMode
 
-	if _, err = os.OpenFile(l.fileName, l.fileMode, os.ModePerm); err != nil {
+	fd, err := os.OpenFile(l.fileName, l.fileMode, os.ModePerm)
+	if err != nil {
 		return err
 	}
+
+	l.FD = fd
 
 	err = l.remoteFileAbstracter.fetch(l.FD)
 	if err != nil && fileMode == fetchLocalFileMode(READ) {
@@ -114,4 +118,35 @@ func (l *fileAbstractor) Close() error {
 	}
 
 	return os.Remove(l.fileName)
+}
+
+func (l *fileAbstractor) List(directory string) ([]string, error) {
+	files := make([]string, 0)
+
+	if l.remoteFileAbstracter != nil {
+		return l.remoteFileAbstracter.list(directory)
+	}
+
+	fInfo, err := os.ReadDir(directory)
+	if err != nil {
+		return nil, err
+	}
+
+	for i := range fInfo {
+		files = append(files, fInfo[i].Name())
+	}
+
+	return files, nil
+}
+
+func (l *fileAbstractor) Move(dest, src string) error {
+	return nil
+}
+
+func (l *fileAbstractor) Copy(dest, src string) (int, error) {
+	return 0, nil
+}
+
+func (l *fileAbstractor) Delete(fileName string) error {
+	return nil
 }

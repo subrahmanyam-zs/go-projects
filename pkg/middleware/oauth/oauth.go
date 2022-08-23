@@ -43,11 +43,11 @@ func Auth(logger log.Logger, options Options) func(inner http.Handler) http.Hand
 			if err == nil {
 				// if user is verified ,setting it in the context pool
 				ctx := context.WithValue(req.Context(), jwtClaimsKey, token.Claims)
-				req = req.WithContext(ctx)
+				*req = *req.Clone(ctx)
 				inner.ServeHTTP(w, req)
 				return
 			}
-			logger.Errorf("Client authentication failed for token : ", token, " with Error : ", err)
+			logger.Errorf("Client authentication failed for given token with Error : %v", err)
 
 			description, code := middleware.GetDescription(err)
 			e := middleware.FetchErrResponseWithCode(code, description, err.Error())
@@ -57,7 +57,7 @@ func Auth(logger log.Logger, options Options) func(inner http.Handler) http.Hand
 	}
 }
 
-// validate checks if the token present in header is in jwt format or not.
+// Validate checks if the token present in header is in jwt format or not.
 // if the format is correct: public key is got from endpoint and RSA to verify if the token is valid.
 func (o *OAuth) Validate(logger log.Logger, r *http.Request) (*jwt.Token, error) {
 	token := &jwt.Token{Valid: false}
@@ -74,6 +74,7 @@ func (o *OAuth) Validate(logger log.Logger, r *http.Request) (*jwt.Token, error)
 	// to validate if incoming token is not tampered
 	pKey, err := publicKey.getRSAPublicKey()
 	if err != nil {
+		logger.Errorf("Error while getting public key: %v", err)
 		return token, middleware.ErrInvalidToken
 	}
 
@@ -89,7 +90,13 @@ func (o *OAuth) Validate(logger log.Logger, r *http.Request) (*jwt.Token, error)
 		return &pKey, nil
 	})
 
-	if err != nil || !token.Valid {
+	if err != nil {
+		logger.Errorf("Failed to parse token: %v", err)
+		return token, middleware.ErrInvalidToken
+	}
+
+	if !token.Valid {
+		logger.Error("Invalid token")
 		return token, middleware.ErrInvalidToken
 	}
 

@@ -109,28 +109,37 @@ func TestHealthCheck(t *testing.T) {
 
 func TestDynamoDB_PutItem(t *testing.T) {
 	db := newDynamoDB(t)
-
 	input := &dynamodb.PutItemInput{
 		Item: map[string]*dynamodb.AttributeValue{
 			"id":   {S: aws.String("1")},
 			"name": {S: aws.String("test1")},
 		},
-		TableName: aws.String("test"),
 	}
 
-	_, err := db.PutItem(input)
-	if err != nil {
-		t.Errorf("PutItem got unexpected error, %v", err)
+	tests := []struct {
+		desc  string
+		table string
+		err   error
+	}{
+		{"success case", "test", nil},
+		{"error case: non-existent table", "fake_table", &dynamodb.ResourceNotFoundException{}},
 	}
 
-	req, _ := db.PutItemRequest(input)
-	if err = req.Send(); err != nil {
-		t.Errorf("PutItemRequest got unexpected error, %v", err)
-	}
+	for i, test := range tests {
+		input.TableName = aws.String(test.table)
 
-	_, err = db.PutItemWithContext(context.Background(), input)
-	if err != nil {
-		t.Errorf("PutItemWithContext got unexpected error, %v", err)
+		_, err := db.PutItem(input)
+
+		assert.IsType(t, test.err, err, "TEST[%v] failed\n%v", i, err)
+
+		req, _ := db.PutItemRequest(input)
+		err = req.Send()
+
+		assert.IsType(t, test.err, err, "TEST[%v] failed\n%v", i, err)
+
+		_, err = db.PutItemWithContext(context.Background(), input)
+
+		assert.IsType(t, test.err, err, "TEST[%v] failed\n%v", i, err)
 	}
 }
 
@@ -142,22 +151,34 @@ func TestDynamoDB_GetItem(t *testing.T) {
 		Key: map[string]*dynamodb.AttributeValue{
 			"id": {S: aws.String("1")},
 		},
-		TableName: aws.String("test"),
 	}
 
-	_, err := db.GetItem(input)
-	if err != nil {
-		t.Errorf("GetItem got unexpected error, %v", err)
+	tests := []struct {
+		desc  string
+		table string
+		err   error
+	}{
+		{"success case", "test", nil},
+		{"error case: non-existent table", "fake_table", &dynamodb.ResourceNotFoundException{}},
 	}
 
-	req, _ := db.GetItemRequest(input)
-	if err = req.Send(); err != nil {
-		t.Errorf("GetItemRequest got unexpected error, %v", err)
-	}
+	for i, test := range tests {
+		input.TableName = aws.String(test.table)
 
-	_, err = db.GetItemWithContext(context.Background(), input)
-	if err != nil {
-		t.Errorf("GetItemWithContext got unexpected error, %v", err)
+		// as we are testing wrapper function, we are not validating response of Get
+
+		_, err := db.GetItem(input)
+
+		assert.IsType(t, test.err, err, "TEST[%v] failed\n%v", i, err)
+
+		req, _ := db.GetItemRequest(input)
+		err = req.Send()
+
+		assert.IsType(t, test.err, err, "TEST[%v] failed\n%v", i, err)
+
+		_, err = db.GetItemWithContext(context.Background(), input)
+
+		assert.IsType(t, test.err, err, "TEST[%v] failed\n%v", i, err)
 	}
 }
 
@@ -169,22 +190,32 @@ func TestDynamoDB_DeleteItem(t *testing.T) {
 		Key: map[string]*dynamodb.AttributeValue{
 			"id": {S: aws.String("1")},
 		},
-		TableName: aws.String("test"),
 	}
 
-	_, err := db.DeleteItem(input)
-	if err != nil {
-		t.Errorf("DeleteItem got unexpected error, %v", err)
+	tests := []struct {
+		desc  string
+		table string
+		err   error
+	}{
+		{"success case", "test", nil},
+		{"error case: non-existent table", "fake_table", &dynamodb.ResourceNotFoundException{}},
 	}
 
-	req, _ := db.DeleteItemRequest(input)
-	if err = req.Send(); err != nil {
-		t.Errorf("DeleteItemRequest got unexpected error, %v", err)
-	}
+	for i, test := range tests {
+		input.TableName = aws.String(test.table)
 
-	_, err = db.DeleteItemWithContext(context.Background(), input)
-	if err != nil {
-		t.Errorf("DeleteItemWithContext got unexpected error, %v", err)
+		_, err := db.DeleteItem(input)
+
+		assert.IsType(t, test.err, err, "TEST[%v] failed\n%v", i, err)
+
+		req, _ := db.DeleteItemRequest(input)
+		err = req.Send()
+
+		assert.IsType(t, test.err, err, "TEST[%v] failed\n%v", i, err)
+
+		_, err = db.DeleteItemWithContext(context.Background(), input)
+
+		assert.IsType(t, test.err, err, "TEST[%v] failed\n%v", i, err)
 	}
 }
 
@@ -198,22 +229,33 @@ func TestDynamoDB_UpdateItem(t *testing.T) {
 		Key: map[string]*dynamodb.AttributeValue{
 			"id": {S: aws.String("1")},
 		},
-		TableName: aws.String("test"),
 	}
 
-	_, err := db.UpdateItem(input)
-	if err != nil {
-		t.Errorf("UpdateItem got unexpected error, %v", err)
+	tests := []struct {
+		desc  string
+		table string
+		err   error
+	}{
+		{"success case", "test", nil},
+		{"error case: non-existent table", "fake_table", &dynamodb.ResourceNotFoundException{}},
 	}
 
-	req, _ := db.UpdateItemRequest(input)
-	if err = req.Send(); err != nil {
-		t.Errorf("UpdateItemRequest got unexpected error, %v", err)
-	}
+	for i, test := range tests {
+		input.TableName = aws.String(test.table)
 
-	_, err = db.UpdateItemWithContext(context.Background(), input)
-	if err != nil {
-		t.Errorf("UpdateItemWithContext got unexpected error, %v", err)
+		// as we are testing wrapper function, we are not validating response of Update
+		_, err := db.UpdateItem(input)
+
+		assert.IsType(t, test.err, err, "TEST[%v] failed\n%v", i, err)
+
+		req, _ := db.UpdateItemRequest(input)
+		err = req.Send()
+
+		assert.IsType(t, test.err, err, "TEST[%v] failed\n%v", i, err)
+
+		_, err = db.UpdateItemWithContext(context.Background(), input)
+
+		assert.IsType(t, test.err, err, "TEST[%v] failed\n%v", i, err)
 	}
 }
 
@@ -241,14 +283,8 @@ func Test_genGetItemQuery(t *testing.T) {
 		in       []*string
 		expQuery []string
 	}{
-		{
-			nil,
-			[]string{"GetItem", "Key {id}", "test"},
-		},
-		{
-			[]*string{aws.String("id"), aws.String("name")},
-			[]string{"GetItem", "AttributesToGet {id, name}", "Key {id}", "test"},
-		},
+		{nil, []string{"GetItem", "Key {id}", "test"}},
+		{[]*string{aws.String("id"), aws.String("name")}, []string{"GetItem", "AttributesToGet {id, name}", "Key {id}", "test"}},
 	}
 
 	for i, tc := range tcs {
@@ -286,47 +322,27 @@ func Test_genDeleteItemQuery(t *testing.T) {
 }
 
 func Test_genUpdateItemQuery(t *testing.T) {
+	attributesToUpdate := map[string]*dynamodb.AttributeValueUpdate{
+		"name": {Value: &dynamodb.AttributeValue{S: aws.String("test name")}, Action: aws.String("PUT")},
+	}
+
 	tcs := []struct {
-		attributesToUpdate  map[string]*dynamodb.AttributeValueUpdate
 		conditionExpression *string
 		attributeValues     map[string]*dynamodb.AttributeValue
 		updateExpression    *string
 		expQuery            []string
 	}{
-		{
-			map[string]*dynamodb.AttributeValueUpdate{
-				"name": {Value: &dynamodb.AttributeValue{S: aws.String("test name")}, Action: aws.String("PUT")},
-			},
-			nil,
-			nil,
-			nil,
-			[]string{"UpdateItem", "AttributesToUpdate {name}", "Key {id}", "test"},
-		},
-		{
-			map[string]*dynamodb.AttributeValueUpdate{
-				"name": {Value: &dynamodb.AttributeValue{S: aws.String("test name")}, Action: aws.String("PUT")},
-			},
-			aws.String("id != :id"),
-			map[string]*dynamodb.AttributeValue{":id": {S: aws.String("1")}},
-			nil,
-			[]string{"UpdateItem", "AttributesToUpdate {name}", "ConditionExpression id != :id", "Key {id}", "test"},
-		},
-		{
-			map[string]*dynamodb.AttributeValueUpdate{
-				"name": {Value: &dynamodb.AttributeValue{S: aws.String("test name")}, Action: aws.String("PUT")},
-			},
-			nil,
-			map[string]*dynamodb.AttributeValue{
-				":e_email": {S: aws.String("test@gmail.com")},
-			},
+		{nil, nil, nil, []string{"UpdateItem", "AttributesToUpdate {name}", "Key {id}", "test"}},
+		{aws.String("id != :id"), map[string]*dynamodb.AttributeValue{":id": {S: aws.String("1")}},
+			nil, []string{"UpdateItem", "AttributesToUpdate {name}", "ConditionExpression id != :id", "Key {id}", "test"}},
+		{nil, map[string]*dynamodb.AttributeValue{":e_email": {S: aws.String("test@gmail.com")}},
 			aws.String("SET email = :e_email"),
-			[]string{"UpdateItem", "AttributesToUpdate {name}", "UpdateExpression SET email = :e_email", "Key {id}", "test"},
-		},
+			[]string{"UpdateItem", "AttributesToUpdate {name}", "UpdateExpression SET email = :e_email", "Key {id}", "test"}},
 	}
 
 	for i, tc := range tcs {
 		input := &dynamodb.UpdateItemInput{
-			AttributeUpdates:          tc.attributesToUpdate,
+			AttributeUpdates:          attributesToUpdate,
 			ConditionExpression:       tc.conditionExpression,
 			UpdateExpression:          tc.updateExpression,
 			ExpressionAttributeValues: tc.attributeValues,
@@ -344,8 +360,8 @@ func Test_genUpdateItemQuery(t *testing.T) {
 
 func Test_monitorQuery(t *testing.T) {
 	db := newDynamoDB(t)
-
 	b := new(bytes.Buffer)
+
 	db.logger = log.NewMockLogger(b)
 
 	input := &dynamodb.GetItemInput{
@@ -359,6 +375,14 @@ func Test_monitorQuery(t *testing.T) {
 	expLog := "GetItem - with AttributesToGet {id, name, email}, Key {id}, on table test"
 
 	_, _ = db.GetItem(input)
+
+	assert.Contains(t, b.String(), expLog, "TEST Failed")
+
+	// resetting the buffer
+	b.Reset()
+
+	req, _ := db.GetItemRequest(input)
+	_ = req.Send()
 
 	assert.Contains(t, b.String(), expLog, "TEST Failed")
 }

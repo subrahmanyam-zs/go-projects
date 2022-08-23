@@ -10,9 +10,7 @@ import (
 	"developer.zopsmart.com/go/gofr/pkg/gofr/request"
 	"developer.zopsmart.com/go/gofr/pkg/gofr/responder"
 	"developer.zopsmart.com/go/gofr/pkg/log"
-	"developer.zopsmart.com/go/gofr/pkg/middleware/oauth"
 
-	"github.com/golang-jwt/jwt/v4"
 	"github.com/gorilla/mux"
 	"github.com/gorilla/websocket"
 
@@ -106,7 +104,7 @@ func (c *Context) Log(key string, value interface{}) {
 	}
 
 	appLogData.Store(key, value)
-	*r = *r.WithContext(ctx.WithValue(r.Context(), appData, appLogData))
+	*r = *r.Clone(ctx.WithValue(r.Context(), appData, appLogData))
 
 	// This section takes care of all the individual context loggers
 	c.Logger.AddData(key, value)
@@ -122,13 +120,18 @@ func (c *Context) SetPathParams(pathParams map[string]string) {
 	c.req = request.NewHTTPRequest(r)
 }
 
-func (c *Context) getMapClaims() jwt.MapClaims {
-	claims, _ := c.Context.Value(oauth.JWTContextKey("claims")).(jwt.MapClaims)
-	return claims
+// GetClaims method returns the map of claims
+func (c *Context) GetClaims() map[string]interface{} {
+	return c.req.GetClaims()
+}
+
+// GetClaim method returns the value of claim key provided as the parameter
+func (c *Context) GetClaim(claimKey string) interface{} {
+	return c.req.GetClaim(claimKey)
 }
 
 func (c *Context) ValidateClaimSub(subject string) bool {
-	claims := c.getMapClaims()
+	claims := c.GetClaims()
 
 	sub, ok := claims["sub"]
 	if ok && sub == subject {
@@ -139,7 +142,7 @@ func (c *Context) ValidateClaimSub(subject string) bool {
 }
 
 func (c *Context) ValidateClaimsPFCX(pfcx string) bool {
-	claims := c.getMapClaims()
+	claims := c.GetClaims()
 
 	pfcxValue, ok := claims["pfcx"]
 	if ok && pfcxValue == pfcx {
@@ -150,7 +153,7 @@ func (c *Context) ValidateClaimsPFCX(pfcx string) bool {
 }
 
 func (c *Context) ValidateClaimsScope(scope string) bool {
-	claims := c.getMapClaims()
+	claims := c.GetClaims()
 
 	scopes, ok := claims["scope"]
 

@@ -74,7 +74,7 @@ func Logging(logger logger, omitHeaders string) func(inner http.Handler) http.Ha
 
 			correlationID := getCorrelationID(r)
 			ctx := context.WithValue(r.Context(), CorrelationIDKey, correlationID)
-			*r = *r.WithContext(ctx)
+			*r = *r.Clone(ctx)
 
 			srw := &StatusResponseWriter{ResponseWriter: w}
 			defer func(res *StatusResponseWriter, req *http.Request) {

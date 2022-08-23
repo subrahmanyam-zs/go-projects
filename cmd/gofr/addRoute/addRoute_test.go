@@ -14,15 +14,16 @@ import (
 )
 
 func Test_addRoute(t *testing.T) {
-	currDir, _ := os.Getwd()
+	projectPath, err := os.MkdirTemp("", "testEntity")
+	if err != nil {
+		t.Errorf("Received unexpected error:\n%+v", err)
 
-	defer func() {
-		_ = os.Chdir(currDir)
-	}()
+		return
+	}
 
-	dir := t.TempDir()
-	_ = os.Mkdir(dir+"/testEntity", os.ModePerm)
-	_ = os.Chdir(dir + "/testEntity")
+	defer os.RemoveAll(projectPath)
+
+	_ = os.Chdir(projectPath)
 	_, _ = os.Create("main.go")
 
 	var h Handler
@@ -43,7 +44,7 @@ func Test_addRoute(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		_ = os.Chdir(dir + "/testEntity")
+		_ = os.Chdir(projectPath)
 
 		err := addRoute(h, tt.args.methods, tt.args.path)
 		if err != nil && (err.Error() != tt.wantErr.Error()) {
@@ -53,13 +54,8 @@ func Test_addRoute(t *testing.T) {
 }
 
 func TestErrors(t *testing.T) {
-	currDir, _ := os.Getwd()
-
-	defer func() {
-		_ = os.Chdir(currDir)
-	}()
-
 	dir := t.TempDir()
+
 	_ = os.Chdir(dir)
 	_, _ = os.Create("main.go")
 
@@ -90,15 +86,12 @@ func TestErrors(t *testing.T) {
 }
 
 func TestErrors_FileSystem(t *testing.T) {
-	currDir, _ := os.Getwd()
 	dir := t.TempDir()
 
 	ctrl := gomock.NewController(t)
 
 	defer func() {
 		ctrl.Finish()
-
-		_ = os.Chdir(currDir)
 	}()
 
 	c := NewMockfileSystem(ctrl)
@@ -139,15 +132,12 @@ func TestErrors_FileSystem(t *testing.T) {
 }
 
 func Test_populateMain(t *testing.T) {
-	currDir, _ := os.Getwd()
 	dir := t.TempDir()
 
 	ctrl := gomock.NewController(t)
 
 	defer func() {
 		ctrl.Finish()
-
-		_ = os.Chdir(currDir)
 	}()
 
 	c := NewMockfileSystem(ctrl)
@@ -193,19 +183,17 @@ func Test_populateMain(t *testing.T) {
 }
 
 func Test_populateHandler(t *testing.T) {
-	currDir, _ := os.Getwd()
 	dir := t.TempDir()
-
 	ctrl := gomock.NewController(t)
 
 	defer func() {
 		ctrl.Finish()
-
-		_ = os.Chdir(currDir)
 	}()
 
 	c := NewMockfileSystem(ctrl)
+
 	_ = os.Chdir(dir)
+
 	testFile, _ := os.OpenFile("testing.go", os.O_CREATE|os.O_RDONLY, migration.RWMode)
 
 	type args struct {

@@ -25,27 +25,29 @@ type Store interface {
 }
 
 func (c customer) Get(ctx *gofr.Context) ([]model.Customer, error) {
-	rows, err := ctx.DB().QueryContext(ctx, "SELECT * FROM customers")
+	rows, err := ctx.DB().QueryContext(ctx, "SELECT name FROM customers")
 	if err != nil {
 		return nil, errors.DB{Err: err}
 	}
 
-	defer func() {
-		_ = rows.Close()
-		_ = rows.Err() // or modify return value
-	}()
+	defer rows.Close()
 
 	customers := make([]model.Customer, 0)
 
 	for rows.Next() {
 		var c model.Customer
 
-		err := rows.Scan(&c.ID, &c.Name)
+		err = rows.Scan(&c.Name)
 		if err != nil {
-			return nil, err
+			return nil, errors.DB{Err: err}
 		}
 
 		customers = append(customers, c)
+	}
+
+	err = rows.Err()
+	if err != nil {
+		return nil, err
 	}
 
 	return customers, nil
@@ -74,7 +76,7 @@ func (c customer) Update(ctx *gofr.Context, cust model.Customer) (model.Customer
 func (c customer) Create(ctx *gofr.Context, cust model.Customer) (model.Customer, error) {
 	var resp model.Customer
 
-	err := ctx.DB().QueryRowContext(ctx, "INSERT INTO customers(name) VALUES($1) RETURNING id, name", cust.Name).Scan(
+	err := ctx.DB().QueryRowContext(ctx, "INSERT INTO customers(id,name) VALUES($1,$2) RETURNING id, name", cust.ID, cust.Name).Scan(
 		&resp.ID, &resp.Name,
 	)
 	if err != nil {
