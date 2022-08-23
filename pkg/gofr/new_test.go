@@ -522,42 +522,6 @@ func Test_initializeEventBridge(t *testing.T) {
 	assert.Contains(t, b.String(), "AWS EventBridge initialized successfully")
 }
 
-func Test_initializeKvData(t *testing.T) {
-	testCases := []struct {
-		config      config.MockConfig
-		expectedStr string
-	}{
-		{
-			config.MockConfig{Data: map[string]string{
-				"KV_URL":                "localhost",
-				"KV_CSP_APP_KEY_FWK":    "test",
-				"KV_CSP_SHARED_KEY_FWK": "test",
-			}},
-			"KVData initialized",
-		},
-		{
-			config.MockConfig{Data: map[string]string{
-				"KV_URL":                "",
-				"KV_CSP_APP_KEY_FWK":    "",
-				"KV_CSP_SHARED_KEY_FWK": "",
-			}},
-			"",
-		},
-	}
-
-	for _, tc := range testCases {
-		b := new(bytes.Buffer)
-		logger := log.NewMockLogger(b)
-		k := &Gofr{Logger: logger}
-
-		initializeKvData(&tc.config, k)
-
-		if !strings.Contains(b.String(), tc.expectedStr) {
-			t.Errorf("FAILED, expected: `%v` in the logs, got: %v", tc.expectedStr, b.String())
-		}
-	}
-}
-
 func Test_initializeAvroFromConfigs(t *testing.T) {
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		res := map[string]interface{}{

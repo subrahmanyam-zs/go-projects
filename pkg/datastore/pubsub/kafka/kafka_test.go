@@ -80,29 +80,23 @@ func TestNewKafka(t *testing.T) {
 	}
 }
 
+func TestNewKafkaProducerError(t *testing.T) {
+	_, err := NewKafkaProducer(&Config{Brokers: "somehost"})
+
+	if !strings.Contains(err.Error(), sarama.ErrOutOfBrokers.Error()) {
+		t.Errorf("FAILED, expected: %v, got: %v", sarama.ErrOutOfBrokers.Error(), err.Error())
+	}
+}
+
 func TestNewKafkaProducer(t *testing.T) {
-	tests := []struct {
-		config *Config
-		err    error
-	}{
-		{
-			config: &Config{Brokers: "somehost"},
-			err:    sarama.ErrOutOfBrokers,
-		},
-		{
-			config: &Config{
-				Topics:  []string{"some-topic"},
-				Brokers: "localhost:2009",
-			},
-			err: nil,
-		},
+	cnfg := &Config{
+		Topics:  []string{"some-topic"},
+		Brokers: "localhost:2009",
 	}
 
-	for _, test := range tests {
-		_, err := NewKafkaProducer(test.config)
-		if !reflect.DeepEqual(err, test.err) {
-			t.Errorf("FAILED, expected: %v, got: %v", test.err, err)
-		}
+	_, err := NewKafkaProducer(cnfg)
+	if !assert.Nil(t, err) {
+		t.Errorf("FAILED, expected nil got: %v", err)
 	}
 }
 
