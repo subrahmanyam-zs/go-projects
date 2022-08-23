@@ -102,7 +102,7 @@ func NewHTTPServiceWithOptions(resourceAddr string, logger log.Logger, options *
 		httpSvc.customHeaders = options.Headers
 	}
 
-	httpSvc.initializeClientWithAuth(logger, *options)
+	httpSvc.initializeClientWithAuth(*options)
 
 	enableSP := true
 
@@ -134,7 +134,7 @@ func NewHTTPServiceWithOptions(resourceAddr string, logger log.Logger, options *
 	return httpSvc
 }
 
-func (h *httpService) initializeClientWithAuth(logger log.Logger, options Options) {
+func (h *httpService) initializeClientWithAuth(options Options) {
 	if options.Auth == nil {
 		return
 	}

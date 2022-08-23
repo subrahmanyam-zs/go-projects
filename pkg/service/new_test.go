@@ -331,7 +331,7 @@ func TestNewHTTPServiceWithOptions_OAuthError(t *testing.T) {
 }
 
 func TestHttpService_HealthCheck(t *testing.T) {
-	h := NewHTTPServiceWithOptions("test", nil, nil)
+	h := NewHTTPServiceWithOptions("test", log.NewLogger(), nil)
 
 	healthCheck := h.HealthCheck()
 	if healthCheck.Status != pkg.StatusUp {
