@@ -11,7 +11,6 @@ import (
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 
 	"developer.zopsmart.com/go/gofr/pkg"
-	"developer.zopsmart.com/go/gofr/pkg/gofr/cache"
 	"developer.zopsmart.com/go/gofr/pkg/gofr/types"
 	"developer.zopsmart.com/go/gofr/pkg/log"
 )
@@ -37,7 +36,7 @@ type Auth struct {
 
 // Cache provides the options needed for caching of HTTPService responses
 type Cache struct {
-	cache.Cacher
+	Cacher
 	TTL          time.Duration
 	KeyGenerator KeyGenerator
 }
@@ -101,18 +100,6 @@ func NewHTTPServiceWithOptions(resourceAddr string, logger log.Logger, options *
 	// enable service level headers
 	if options.Headers != nil {
 		httpSvc.customHeaders = options.Headers
-	}
-
-	// enable auth
-	if options.Auth != nil && options.UserName != "" && options.OAuthOption == nil { // OAuth and basic auth cannot co-exist
-		httpSvc.isAuthSet = true
-		httpSvc.auth = "Basic " + base64.StdEncoding.EncodeToString([]byte(options.UserName+":"+options.Password))
-	}
-
-	// enable oauth
-	if options.Auth != nil && options.OAuthOption != nil && httpSvc.auth == "" { // if auth is already set to basic auth, dont set oauth
-		httpSvc.isAuthSet = true
-		go httpSvc.setClientOauthHeader(options.OAuthOption)
 	}
 
 	httpSvc.initializeClientWithAuth(logger, *options)
