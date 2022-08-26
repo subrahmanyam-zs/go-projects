@@ -1,26 +1,30 @@
 package department
 
 import (
-	"EmployeeDepartment/entities"
 	"bytes"
+	"context"
 	"errors"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"reflect"
 	"testing"
+
+	"EmployeeDepartment/entities"
+	"EmployeeDepartment/errorsHandler"
 )
 
-func TestEmployeePost(t *testing.T) {
+type mockService struct{}
 
+func TestEmployeePost(t *testing.T) {
 	testCases := []struct {
 		desc           string
 		input          []byte
 		expectedOutput []byte
 	}{
-		{"Valid input", []byte(`{"id":1, "name":"HR","floorNo": 1}`), []byte(`{"Id":1,"Name":"HR","FloorNo":1}`)},
+		{"Valid input", []byte(`{"id":1, "name":"HR","floorNo": 1}`), []byte(`{"ID":1,"Name":"HR","FloorNo":1}`)},
 		{"Invalid input", []byte(`{"id":0,"name":"Tech","floorNo":2}`), []byte("Invalid id")},
-		{"for Unmarshal error", []byte(`{"id":"2","name":"hr","floorNo":2}`), []byte("Unmarshal Error")},
+		{"for Unmarshal error", []byte(`{"id":"2","name":"hr","floorNo":2}`), []byte("Invalid body")},
 	}
 
 	for i, tc := range testCases {
@@ -37,24 +41,18 @@ func TestEmployeePost(t *testing.T) {
 	}
 }
 
-func (m mockService) Create(department entities.Department) (entities.Department, error) {
-
-	if department.Id == 0 {
-		return entities.Department{}, errors.New("error")
-	}
-	return entities.Department{1, "HR", 1}, nil
-}
-
 func TestPutHandler(t *testing.T) {
 	testcases := []struct {
 		desc           string
-		input          int
+		input          string
 		dataToUpdate   []byte
 		expectedOutput []byte
 	}{
-		{"valid case", 1, []byte(`{"id":1, "name":"tech","floorNo": 2}`), []byte(`{"Id":1,"Name":"tech","FloorNo":2}`)},
-		{"Testcase for Unmarshal Error", 2, []byte(nil), []byte("Unmarshal Error")},
-		{"Invalid Id", 4, []byte(`{"Id":2,"Name":"tech","FloorNo":2}`), []byte("Id not found")},
+		{"valid case", "1", []byte(`{"id":1, "name":"tech","floorNo": 2}`), []byte(`{"ID":1,"Name":"tech","FloorNo":2}`)},
+		{"Testcase for Unmarshal Error", "2", []byte(nil), []byte("Invalid body")},
+		{"Invalid ID", "4", []byte(`{"ID":2,"Name":"tech","FloorNo":2}`), []byte("id not found")},
+		{"unconvertable string to int", "one", []byte(`{"ID":2,"Name":"tech","FloorNo":2}`), []byte("Invalid id")},
+		{"invalid case", "2", []byte(`{"id":1, "name":"tech","floorNo": 2}`), []byte(`ID not found`)},
 	}
 
 	for i, tc := range testcases {
@@ -72,21 +70,15 @@ func TestPutHandler(t *testing.T) {
 	}
 }
 
-func (m mockService) Update(id int, department entities.Department) (entities.Department, error) {
-	if id == 1 {
-		return entities.Department{1, "tech", 2}, nil
-	}
-	return entities.Department{}, errors.New("error")
-}
-
 func TestDeleteHandler(t *testing.T) {
 	testcases := []struct {
 		desc           string
-		input          int
+		input          string
 		expectedOutput int
 	}{
-		{"Valid Id", 1, 204},
-		{"Id not found", 4, 404},
+		{"Valid ID", "1", 204},
+		{"ID not found", "4", 404},
+		{"unconvertable string to type int", "one", 400},
 	}
 	for i, tc := range testcases {
 		path := fmt.Sprintf("/department/%v", tc.input)
@@ -102,14 +94,33 @@ func TestDeleteHandler(t *testing.T) {
 	}
 }
 
-func (m mockService) Delete(id int) (int, error) {
+func (m mockService) Create(ctx context.Context, department entities.Department) (entities.Department, error) {
+	if department.ID == 0 {
+		return entities.Department{}, errors.New("Invalid id")
+	}
+
+	return entities.Department{ID: 1, Name: "HR", FloorNo: 1}, nil
+}
+
+func (m mockService) Update(ctx context.Context, id int, department entities.Department) (entities.Department, error) {
+	if id == 1 {
+		return entities.Department{ID: 1, Name: "tech", FloorNo: 2}, nil
+	}
+
+	return entities.Department{}, errors.New("ID not found")
+}
+
+func (m mockService) Delete(ctx context.Context, id int) (int, error) {
 	if id == 1 {
 		return http.StatusNoContent, nil
 	}
-	return http.StatusNotFound, errors.New("error")
 
+	return http.StatusNotFound, &errorsHandler.IDNotFound{Msg: "ID not found"}
 }
 
-type mockService struct {
-	id int
+func (m mockService) GetDepartment(ctx context.Context, id int) (entities.Department, error) {
+	if id == 1 || id == 2 || id == 3 {
+		return entities.Department{}, nil
+	}
+	return entities.Department{}, &errorsHandler.IDNotFound{Msg: "id not found"}
 }

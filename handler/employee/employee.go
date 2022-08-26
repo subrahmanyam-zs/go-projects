@@ -1,103 +1,145 @@
 package employee
 
 import (
-	"EmployeeDepartment/entities"
-	"EmployeeDepartment/service"
+	"context"
 	"encoding/json"
-	"fmt"
-	"github.com/google/uuid"
-	"github.com/gorilla/mux"
 	"io"
+	"log"
 	"net/http"
 	"strconv"
+
+	"github.com/google/uuid"
+
+	"EmployeeDepartment/entities"
+	"EmployeeDepartment/errorsHandler"
+	"EmployeeDepartment/handler"
+	"EmployeeDepartment/service"
+	"EmployeeDepartment/store"
 )
 
-type EmployeeHandler struct {
-	validate service.Employee
+type Handler struct {
+	service service.Employee
 }
 
-func New(emp service.Employee) EmployeeHandler {
-	return EmployeeHandler{validate: emp}
+func New(emp service.Employee) Handler {
+	return Handler{service: emp}
 }
 
-func (e EmployeeHandler) PostHandler(res http.ResponseWriter, req *http.Request) {
+func (h Handler) PostHandler(res http.ResponseWriter, req *http.Request) {
 	var employee entities.Employee
-	body, _ := io.ReadAll(req.Body)
-	err := json.Unmarshal(body, &employee)
+
+	body, err := io.ReadAll(req.Body)
 	if err != nil {
-		_, _ = res.Write([]byte("Unmarshal Error"))
-		res.WriteHeader(http.StatusBadRequest)
+		log.Println(err)
+	}
+
+	err = json.Unmarshal(body, &employee)
+	if err != nil {
+		handler.SetStatusCode(res, req.Method, nil, &errorsHandler.InvalidDetails{Msg: "body"})
 		return
 	}
-	resp, err1 := e.validate.Create(employee)
-	if err1 != nil {
-		_, _ = res.Write([]byte("Invalid Body"))
-		res.WriteHeader(http.StatusInternalServerError)
+
+	resp, err := h.service.Create(req.Context(), &employee)
+	if err != nil {
+		handler.SetStatusCode(res, req.Method, resp, err)
 		return
 	}
-	body, _ = json.Marshal(resp)
-	res.Write(body)
+
+	handler.SetStatusCode(res, req.Method, resp, err)
 }
 
-func (e EmployeeHandler) GetHandler(res http.ResponseWriter, req *http.Request) {
+func (h Handler) GetHandler(res http.ResponseWriter, req *http.Request) {
 	id := req.URL.Path[10:]
 
-	if len(id) != 36 {
-		_, _ = res.Write([]byte("Invalid Id"))
+	thirtySix := 36
+	if len(id) != thirtySix {
+		handler.WriteToBody(res, &errorsHandler.InvalidDetails{Msg: "ID"})
 		return
 	}
-	uid := uuid.MustParse(id)
-	resp, err := e.validate.Read(uid)
-	body, _ := json.Marshal(resp)
-	if err != nil {
-		_, _ = res.Write([]byte("Id not found"))
-		return
-	}
-	res.Write(body)
 
+	uid, err := uuid.Parse(id)
+	if err != nil {
+		handler.SetStatusCode(res, req.Method, nil, &errorsHandler.InvalidDetails{Msg: "id"})
+		return
+	}
+
+	resp, err := h.service.Read(req.Context(), uid)
+	if err != nil {
+		handler.SetStatusCode(res, req.Method, nil, err)
+		return
+	}
+
+	handler.SetStatusCode(res, req.Method, resp, err)
 }
 
-func (e EmployeeHandler) PutHandler(res http.ResponseWriter, req *http.Request) {
-	parameter := mux.Vars(req)
-	id := parameter["id"]
+func (h Handler) PutHandler(res http.ResponseWriter, req *http.Request) {
 	var employee entities.Employee
-	reader, _ := io.ReadAll(req.Body)
-	err := json.Unmarshal(reader, &employee)
+
+	id := req.URL.Path[10:]
+
+	uid, err := uuid.Parse(id)
 	if err != nil {
-		res.Write([]byte("Unmarshall error"))
+		handler.SetStatusCode(res, req.Method, nil, &errorsHandler.InvalidDetails{Msg: "id"})
 		return
 	}
-	uid := uuid.MustParse(id)
-	resp, err := e.validate.Update(uid, employee)
+
+	empDept, err := h.service.Read(req.Context(), uid)
 	if err != nil {
-		_, _ = res.Write([]byte("Id not found"))
+		handler.SetStatusCode(res, req.Method, empDept, &errorsHandler.IDNotFound{Msg: "Id not found"})
 		return
 	}
-	body, _ := json.Marshal(resp)
-	res.Write(body)
+
+	reader, err := io.ReadAll(req.Body)
+	if err != nil {
+		log.Println(err)
+	}
+
+	err = json.Unmarshal(reader, &employee)
+	if err != nil {
+		handler.SetStatusCode(res, req.Method, employee, &errorsHandler.InvalidDetails{Msg: "body"})
+		return
+	}
+
+	resp, err := h.service.Update(req.Context(), uid, &employee)
+	if err != nil {
+		handler.SetStatusCode(res, req.Method, nil, err)
+		return
+	}
+
+	handler.SetStatusCode(res, req.Method, resp, err)
 }
 
-func (e EmployeeHandler) DeleteHandler(res http.ResponseWriter, req *http.Request) {
-	id := uuid.MustParse(req.URL.Path[10:])
-	resp, err := e.validate.Delete(id)
+func (h Handler) DeleteHandler(res http.ResponseWriter, req *http.Request) {
+	id, err := uuid.Parse(req.URL.Path[10:])
 	if err != nil {
-		res.WriteHeader(http.StatusNotFound)
+		handler.SetStatusCode(res, req.Method, nil, &errorsHandler.InvalidDetails{Msg: "id"})
 		return
 	}
-	res.WriteHeader(resp)
 
+	resp, err := h.service.Delete(req.Context(), id)
+	if err != nil {
+		handler.SetStatusCode(res, req.Method, nil, err)
+		return
+	}
+
+	handler.SetStatusCode(res, req.Method, resp, err)
 }
 
-func (e EmployeeHandler) GetAll(res http.ResponseWriter, req *http.Request) {
+func (h Handler) GetAll(res http.ResponseWriter, req *http.Request) {
 	name := req.URL.Query().Get("name")
 	includeDepartment := req.URL.Query().Get("includeDepartment")
-	fmt.Println(name, includeDepartment)
+
 	b, err := strconv.ParseBool(includeDepartment)
-	resp, err := e.validate.ReadAll(name, b)
 	if err != nil {
-		res.Write([]byte("Unmarshal Error"))
+		handler.SetStatusCode(res, req.Method, nil, &errorsHandler.InvalidDetails{Msg: "value for includeDept"})
 		return
 	}
-	data, err := json.Marshal(resp)
-	res.Write(data)
+
+	resp, err := h.service.ReadAll(store.Parameters{Ctx: context.TODO(), Name: name, IncludeDepartment: b})
+	if err != nil {
+		handler.SetStatusCode(res, req.Method, nil, err)
+		return
+	}
+
+	handler.SetStatusCode(res, req.Method, resp, err)
 }

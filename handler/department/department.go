@@ -1,70 +1,98 @@
 package department
 
 import (
-	"EmployeeDepartment/entities"
-	"EmployeeDepartment/service"
 	"encoding/json"
-	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"strconv"
+
+	"EmployeeDepartment/entities"
+	"EmployeeDepartment/errorsHandler"
+	"EmployeeDepartment/handler"
+	"EmployeeDepartment/service"
 )
 
-type DepartmentHandler struct {
-	datastore service.Department
+type Handler struct {
+	service service.Department
 }
 
-func New(department service.Department) DepartmentHandler {
-	return DepartmentHandler{datastore: department}
+func New(department service.Department) Handler {
+	return Handler{service: department}
 }
 
-func (e DepartmentHandler) PostHandler(w http.ResponseWriter, req *http.Request) {
+func (h Handler) PostHandler(w http.ResponseWriter, req *http.Request) {
 	var department entities.Department
-	reader, _ := io.ReadAll(req.Body)
-	err := json.Unmarshal(reader, &department)
-	fmt.Println(department)
-	if err != nil {
 
-		_, _ = w.Write([]byte("Unmarshal Error"))
-		w.WriteHeader(http.StatusBadRequest)
+	reader, err := io.ReadAll(req.Body)
+	if err != nil {
+		log.Println(err)
+	}
+
+	err = json.Unmarshal(reader, &department)
+	if err != nil {
+		handler.SetStatusCode(w, req.Method, nil, &errorsHandler.InvalidDetails{Msg: "body"})
 		return
 	}
-	resp, err := e.datastore.Create(department)
+
+	resp, err := h.service.Create(req.Context(), department)
 	if err != nil {
-		_, _ = w.Write([]byte("Invalid id"))
-		w.WriteHeader(http.StatusInternalServerError)
+		handler.SetStatusCode(w, req.Method, nil, err)
 		return
 	}
-	body, _ := json.Marshal(resp)
-	_, _ = w.Write(body)
+
+	handler.SetStatusCode(w, req.Method, resp, nil)
 }
 
-func (e DepartmentHandler) PutHandler(res http.ResponseWriter, req *http.Request) {
+func (h Handler) PutHandler(res http.ResponseWriter, req *http.Request) {
 	var department entities.Department
+
 	sid := req.URL.Path[12:]
-	reqBody, _ := io.ReadAll(req.Body)
-	err := json.Unmarshal(reqBody, &department)
+
+	id, err := strconv.Atoi(sid)
 	if err != nil {
-		res.Write([]byte("Unmarshal Error"))
+		handler.SetStatusCode(res, req.Method, nil, &errorsHandler.InvalidDetails{Msg: "id"})
 		return
 	}
-	id, _ := strconv.Atoi(sid)
-	resp, err := e.datastore.Update(id, department)
+
+	dept, err := h.service.GetDepartment(req.Context(), id)
 	if err != nil {
-		res.Write([]byte("Id not found"))
+		handler.SetStatusCode(res, req.Method, dept, err)
 		return
 	}
-	body, _ := json.Marshal(resp)
-	res.Write(body)
+
+	reqBody, err := io.ReadAll(req.Body)
+	if err != nil {
+		log.Println(err)
+	}
+
+	err = json.Unmarshal(reqBody, &department)
+	if err != nil {
+		handler.SetStatusCode(res, req.Method, nil, &errorsHandler.InvalidDetails{Msg: "body"})
+		return
+	}
+
+	resp, err := h.service.Update(req.Context(), id, department)
+	if err != nil {
+		handler.SetStatusCode(res, req.Method, nil, err)
+		return
+	}
+
+	handler.SetStatusCode(res, req.Method, resp, nil)
 }
 
-func (d DepartmentHandler) DeleteHandler(res http.ResponseWriter, req *http.Request) {
-	id, _ := strconv.Atoi(req.URL.Path[12:])
-	resp, err := d.datastore.Delete(id)
+func (h Handler) DeleteHandler(res http.ResponseWriter, req *http.Request) {
+	id, err := strconv.Atoi(req.URL.Path[12:])
 	if err != nil {
-		res.WriteHeader(http.StatusNotFound)
+		handler.SetStatusCode(res, req.Method, nil, &errorsHandler.InvalidDetails{Msg: "id"})
 		return
 	}
-	res.WriteHeader(resp)
 
+	resp, err := h.service.Delete(req.Context(), id)
+	if err != nil {
+		handler.SetStatusCode(res, req.Method, nil, err)
+		return
+	}
+
+	handler.SetStatusCode(res, req.Method, resp, nil)
 }

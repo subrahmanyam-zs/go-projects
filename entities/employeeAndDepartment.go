@@ -1,7 +1,9 @@
 package entities
 
+import "github.com/google/uuid"
+
 type EmployeeAndDepartment struct {
-	Id     string
+	ID     uuid.UUID
 	Name   string
 	Dob    string
 	City   string

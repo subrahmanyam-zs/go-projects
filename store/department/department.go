@@ -1,10 +1,12 @@
 package department
 
 import (
-	"EmployeeDepartment/entities"
+	"context"
 	"database/sql"
-	"errors"
-	"fmt"
+	"net/http"
+
+	"EmployeeDepartment/entities"
+	"EmployeeDepartment/errorsHandler"
 )
 
 type Store struct {
@@ -15,40 +17,57 @@ func New(db *sql.DB) Store {
 	return Store{Db: db}
 }
 
-func (s Store) Create(department entities.Department) (entities.Department, error) {
-	res, err := s.Db.Exec("Insert into department values(?,?,?)", department.Id, department.Name, department.FloorNo)
+func (s Store) Create(ctx context.Context, department entities.Department) (entities.Department, error) {
+	res, err := s.Db.Exec("Insert into department values(?,?,?)", department.ID, department.Name, department.FloorNo)
 	if err != nil {
 		return entities.Department{}, err
 	}
-	rowsAffected, err := res.RowsAffected()
-	fmt.Println(rowsAffected)
+
+	rowsAffected, _ := res.RowsAffected()
 	if rowsAffected == 1 {
 		return department, nil
 	}
-	return entities.Department{}, err
+
+	return entities.Department{}, errorsHandler.AlreadyExists{Msg: "Already Exists"}
 }
 
-func (s Store) Update(id int, department entities.Department) (entities.Department, error) {
-	res, err := s.Db.Exec("Update department set name=? ,floor=? where id=?", department.Name, department.FloorNo, id)
+func (s Store) Update(ctx context.Context, id int, department entities.Department) (entities.Department, error) {
+	res, err := s.Db.Exec("Update department set id=? ,name=? ,floor=? where id=?", department.ID, department.Name, department.FloorNo, id)
 	if err != nil {
 		return entities.Department{}, err
 	}
-	rowsAffected, err := res.RowsAffected()
+
+	rowsAffected, _ := res.RowsAffected()
 	if rowsAffected == 1 {
-		department.Id = id
 		return department, nil
 	}
-	return entities.Department{}, errors.New("error")
+
+	return entities.Department{}, &errorsHandler.AlreadyExists{Msg: "Already Exists"}
 }
 
-func (s Store) Delete(id int) (int, error) {
+func (s Store) Delete(ctx context.Context, id int) (int, error) {
 	res, err := s.Db.Exec("Delete from department where id=?", id)
 	if err != nil {
-		return 400, err
+		return http.StatusBadRequest, err
 	}
-	rowsAffected, err := res.RowsAffected()
+
+	rowsAffected, _ := res.RowsAffected()
 	if rowsAffected == 1 {
-		return 204, nil
+		return http.StatusNoContent, nil
 	}
-	return 400, err
+
+	return http.StatusBadRequest, &errorsHandler.IDNotFound{Msg: "ID not found"}
+}
+
+func (s Store) GetDepartment(ctx context.Context, id int) (entities.Department, error) {
+	var dept entities.Department
+	res, err := s.Db.QueryContext(ctx, "select *  from department where id=?", id)
+	if err != nil {
+		return entities.Department{}, err
+	}
+
+	res.Next()
+	res.Scan(&dept.ID, &dept.Name, &dept.FloorNo)
+	return dept, nil
+
 }

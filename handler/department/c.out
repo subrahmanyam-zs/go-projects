@@ -1,0 +1,25 @@
+mode: set
+EmployeeDepartment/handler/department/department.go:20.49,22.2 1 1
+EmployeeDepartment/handler/department/department.go:24.72,28.16 3 1
+EmployeeDepartment/handler/department/department.go:32.2,33.16 2 1
+EmployeeDepartment/handler/department/department.go:38.2,39.16 2 1
+EmployeeDepartment/handler/department/department.go:44.2,44.49 1 1
+EmployeeDepartment/handler/department/department.go:28.16,30.3 1 0
+EmployeeDepartment/handler/department/department.go:33.16,36.3 2 1
+EmployeeDepartment/handler/department/department.go:39.16,42.3 2 1
+EmployeeDepartment/handler/department/department.go:47.73,53.16 4 1
+EmployeeDepartment/handler/department/department.go:58.2,59.16 2 1
+EmployeeDepartment/handler/department/department.go:64.2,65.16 2 1
+EmployeeDepartment/handler/department/department.go:69.2,70.16 2 1
+EmployeeDepartment/handler/department/department.go:75.2,76.16 2 1
+EmployeeDepartment/handler/department/department.go:81.2,81.51 1 1
+EmployeeDepartment/handler/department/department.go:53.16,56.3 2 1
+EmployeeDepartment/handler/department/department.go:59.16,62.3 2 1
+EmployeeDepartment/handler/department/department.go:65.16,67.3 1 0
+EmployeeDepartment/handler/department/department.go:70.16,73.3 2 1
+EmployeeDepartment/handler/department/department.go:76.16,79.3 2 1
+EmployeeDepartment/handler/department/department.go:84.76,86.16 2 1
+EmployeeDepartment/handler/department/department.go:91.2,92.16 2 1
+EmployeeDepartment/handler/department/department.go:97.2,97.51 1 1
+EmployeeDepartment/handler/department/department.go:86.16,89.3 2 1
+EmployeeDepartment/handler/department/department.go:92.16,95.3 2 1

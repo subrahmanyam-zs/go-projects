@@ -3,7 +3,7 @@ package entities
 import "github.com/google/uuid"
 
 type Employee struct {
-	Id     uuid.UUID
+	ID     uuid.UUID
 	Name   string
 	Dob    string
 	City   string
