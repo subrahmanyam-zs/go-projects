@@ -58,6 +58,42 @@ func TestCreateEmployee(t *testing.T) {
 	}
 }
 
+func TestCreateWithRowsAffec(t *testing.T) {
+	testcases := []struct {
+		desc           string
+		input          *entities.Employee
+		expectedOutput *entities.Employee
+		err            error
+	}{
+		{desc: "valid input", input: &entities.Employee{Name: "jason", Dob: "12-06-1998", City: "Bangalore",
+			Majors: "MBA", DId: 1},
+			expectedOutput: &entities.Employee{}},
+	}
+
+	var s Store
+
+	db, mock, err := sqlmock.New()
+	if err != nil {
+		fmt.Println(err)
+	}
+	defer db.Close()
+
+	s = New(db)
+
+	for i, tc := range testcases {
+		mock.ExpectExec("Insert into employee values").
+			WithArgs(sqlmock.AnyArg(), tc.input.Name, tc.input.Dob, tc.input.City, tc.input.Majors, tc.input.DId).
+			WillReturnResult(sqlmock.NewErrorResult(fmt.Errorf("error in rowsAffected"))).WillReturnError(err)
+
+		actualOutput, _ := s.Create(context.TODO(), tc.input)
+
+		tc.expectedOutput.ID = actualOutput.ID
+		if !reflect.DeepEqual(actualOutput, tc.expectedOutput) {
+			t.Errorf("test case %v %s : Expected %v \nGot %v testcase", i+1, tc.desc, tc.expectedOutput, actualOutput)
+		}
+	}
+}
+
 func TestUpdateEmployee(t *testing.T) {
 	testcases := []struct {
 		desc           string
@@ -103,6 +139,43 @@ func TestUpdateEmployee(t *testing.T) {
 	}
 }
 
+func TestUpdateWithRowsAffec(t *testing.T) {
+	testcases := []struct {
+		desc           string
+		id             uuid.UUID
+		input          *entities.Employee
+		expectedOutput *entities.Employee
+	}{
+		{desc: "valid input", id: uuid.MustParse("123e4567-e89b-12d3-a456-426614174000"),
+			input: &entities.Employee{ID: uuid.MustParse("123e4567-e89b-12d3-a456-426614174000"), Name: "jason",
+				Dob: "12-06-1998", City: "Bangalore", Majors: "MBA", DId: 1},
+			expectedOutput: &entities.Employee{}},
+	}
+
+	var s Store
+
+	db, mock, err := sqlmock.New()
+	if err != nil {
+		fmt.Println(err)
+	}
+	defer db.Close()
+
+	s = New(db)
+
+	for i, tc := range testcases {
+		mock.ExpectExec("update employee set ").
+			WithArgs(tc.input.ID, tc.input.Name, tc.input.Dob, tc.input.City, tc.input.Majors, tc.input.DId, tc.id).
+			WillReturnResult(sqlmock.NewErrorResult(fmt.Errorf("error in rowsAffected"))).WillReturnError(err)
+
+		actualOutput, _ := s.Update(context.TODO(), uuid.MustParse("123e4567-e89b-12d3-a456-426614174000"), tc.input)
+
+		tc.expectedOutput.ID = actualOutput.ID
+		if !reflect.DeepEqual(actualOutput, tc.expectedOutput) {
+			t.Errorf("test case %v %s : Expected %v \nGot %v testcase", i+1, tc.desc, tc.expectedOutput, actualOutput)
+		}
+	}
+}
+
 func TestDeleteEmployee(t *testing.T) {
 	testcases := []struct {
 		desc           string
@@ -128,6 +201,36 @@ func TestDeleteEmployee(t *testing.T) {
 	for i, tc := range testcases {
 		mock.ExpectExec("Delete from employee where id=?").
 			WithArgs(tc.id).WillReturnResult(sqlmock.NewResult(1, tc.rowsAffec)).WillReturnError(tc.err)
+
+		actualOutput, _ := s.Delete(context.TODO(), uuid.MustParse("123e4567-e89b-12d3-a456-426614174000"))
+		if actualOutput != tc.expectedOutput {
+			t.Errorf("test case %v %s : Expected %v \nGot %v ", i+1, tc.desc, tc.expectedOutput, actualOutput)
+		}
+	}
+}
+
+func TestDeleteWithRowsAffec(t *testing.T) {
+	testcases := []struct {
+		desc           string
+		id             uuid.UUID
+		expectedOutput int
+		err            error
+	}{
+		{"Passing error", uuid.MustParse("123e4567-e89b-12d3-a456-426614174000"), 400, errors.New("error")},
+	}
+
+	var s Store
+
+	db, mock, err := sqlmock.New()
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	s = New(db)
+
+	for i, tc := range testcases {
+		mock.ExpectExec("Delete from employee where id=?").
+			WithArgs(tc.id).WillReturnResult(sqlmock.NewErrorResult(fmt.Errorf("error in rowsAffected"))).WillReturnError(err)
 
 		actualOutput, _ := s.Delete(context.TODO(), uuid.MustParse("123e4567-e89b-12d3-a456-426614174000"))
 		if actualOutput != tc.expectedOutput {

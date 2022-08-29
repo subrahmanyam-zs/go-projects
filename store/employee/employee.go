@@ -28,8 +28,10 @@ func (s Store) Create(ctx context.Context, emp *entities.Employee) (*entities.Em
 		return &entities.Employee{}, err
 	}
 
-	rowsAffected, _ := res.RowsAffected()
-	if rowsAffected == 1 {
+	rowsAffected, err := res.RowsAffected()
+	if err != nil {
+		return &entities.Employee{}, err
+	} else if rowsAffected == 1 {
 		emp.ID = uid
 		return emp, nil
 	}
@@ -44,8 +46,10 @@ func (s Store) Update(ctx context.Context, id uuid.UUID, emp *entities.Employee)
 		return &entities.Employee{}, err
 	}
 
-	rowsAffected, _ := res.RowsAffected()
-	if rowsAffected == 1 {
+	rowsAffected, err := res.RowsAffected()
+	if err != nil {
+		return &entities.Employee{}, err
+	} else if rowsAffected == 1 {
 		emp.ID = id
 		return emp, nil
 	}
@@ -59,7 +63,10 @@ func (s Store) Delete(ctx context.Context, id uuid.UUID) (int, error) {
 		return http.StatusBadRequest, err
 	}
 
-	rowsAffected, _ := res.RowsAffected()
+	rowsAffected, err := res.RowsAffected()
+	if err != nil {
+		return http.StatusBadRequest, err
+	}
 	if rowsAffected == 1 {
 		return http.StatusNoContent, nil
 	}
@@ -132,20 +139,11 @@ func (s Store) GetRows(para store.Parameters) (*sql.Rows, error) {
 func (s Store) ReadDepartment(ctx context.Context, id int) (entities.Department, error) {
 	var out entities.Department
 
-	rows, err := s.Db.Query("select * from department where id=?", id)
-
+	rows := s.Db.QueryRowContext(ctx, "select * from department where id=?", id)
+	err := rows.Scan(&out.ID, &out.Name, &out.FloorNo)
 	if err != nil {
 		return entities.Department{}, err
 	}
-
-	rows.Next()
-
-	err = rows.Scan(&out.ID, &out.Name, &out.FloorNo)
-	if err != nil {
-		return entities.Department{}, err
-	}
-
-	rows.Close()
 
 	return out, nil
 }

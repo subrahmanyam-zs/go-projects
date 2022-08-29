@@ -38,6 +38,8 @@ EmployeeDepartment/store/employee/employee.go:117.20,119.3 1 1
 EmployeeDepartment/store/employee/employee.go:124.66,125.21 1 1
 EmployeeDepartment/store/employee/employee.go:133.2,136.18 2 1
 EmployeeDepartment/store/employee/employee.go:125.21,131.3 2 1
-EmployeeDepartment/store/employee/employee.go:139.89,144.16 4 1
-EmployeeDepartment/store/employee/employee.go:148.2,148.17 1 1
+EmployeeDepartment/store/employee/employee.go:139.89,144.16 3 1
+EmployeeDepartment/store/employee/employee.go:148.2,151.16 3 1
+EmployeeDepartment/store/employee/employee.go:155.2,157.17 2 1
 EmployeeDepartment/store/employee/employee.go:144.16,146.3 1 1
+EmployeeDepartment/store/employee/employee.go:151.16,153.3 1 0
