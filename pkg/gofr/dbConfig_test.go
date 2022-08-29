@@ -7,7 +7,6 @@ import (
 	"testing"
 
 	"developer.zopsmart.com/go/gofr/pkg/datastore"
-	"developer.zopsmart.com/go/gofr/pkg/datastore/kvdata"
 	"developer.zopsmart.com/go/gofr/pkg/datastore/pubsub/eventbridge"
 	"developer.zopsmart.com/go/gofr/pkg/datastore/pubsub/kafka"
 	"developer.zopsmart.com/go/gofr/pkg/gofr/config"
@@ -433,58 +432,4 @@ func Test_eventBridgeConfigFromEnv(t *testing.T) {
 	}
 
 	assert.Equal(t, expCfg, cfg)
-}
-
-func Test_kvDataConfigFromEnv(t *testing.T) {
-	mockCfg1 := &config.MockConfig{
-		Data: map[string]string{
-			"KV_URL":                "http://localhost:2021",
-			"KV_CSP_APP_KEY_FWK":    "test key",
-			"KV_CSP_SHARED_KEY_FWK": "test key",
-			"KV_CLIENT_ID":          "testID",
-			"KV_CLIENT_SECRET":      "testSecret",
-			"KV_KEY_PROVIDER_URL":   "testURL",
-			"KV_AUDIENCE":           "testAud",
-		},
-	}
-	expJwt := kvdata.JWTConfigs{ClientID: "testID",
-		ClientSecret:   "testSecret",
-		KeyProviderURL: "testURL",
-		Audience:       "testAud",
-	}
-	expCsp := kvdata.CSPConfigs{AppKey: "test key",
-		SharedKey: "test key",
-	}
-	expConfig1 := kvdata.Config{
-		URL:        "http://localhost:2021",
-		JWTConfigs: expJwt,
-		CSPConfigs: expCsp,
-	}
-
-	mockCfg2 := &config.MockConfig{
-		Data: map[string]string{
-			"KV_URL":            "http://localhost:2021",
-			"KV_CSP_APP_KEY":    "test key",
-			"KV_CSP_SHARED_KEY": "test key",
-		},
-	}
-
-	expConfig2 := kvdata.Config{
-		URL:        "http://localhost:2021",
-		CSPConfigs: expCsp,
-	}
-
-	testcases := []struct {
-		input  *config.MockConfig
-		expOut kvdata.Config
-	}{
-		{mockCfg1, expConfig1},
-		{mockCfg2, expConfig2},
-	}
-	for i, tc := range testcases {
-		cfg := kvDataConfigFromEnv(tc.input)
-		if !reflect.DeepEqual(cfg, tc.expOut) {
-			t.Errorf("Test case failed [%v]. Got: %v,expected:%v", i, cfg, tc.expOut)
-		}
-	}
 }

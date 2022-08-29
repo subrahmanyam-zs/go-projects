@@ -75,17 +75,3 @@ type details struct {
 func Raw(ctx *gofr.Context) (interface{}, error) {
 	return types.Raw{Data: details{Name: "Mukund"}}, nil
 }
-
-func KVHandler(ctx *gofr.Context) (interface{}, error) {
-	err := ctx.KVData.Set(ctx, "name", "Mukund")
-	if err != nil {
-		return nil, err
-	}
-
-	res, err := ctx.KVData.Get(ctx, "name")
-	if err != nil {
-		return nil, err
-	}
-
-	return fmt.Sprintf("Hello %s", res), nil
-}

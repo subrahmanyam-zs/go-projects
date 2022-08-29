@@ -7,7 +7,6 @@ import (
 
 	"developer.zopsmart.com/go/gofr/pkg"
 	"developer.zopsmart.com/go/gofr/pkg/datastore"
-	"developer.zopsmart.com/go/gofr/pkg/datastore/kvdata"
 	"developer.zopsmart.com/go/gofr/pkg/datastore/pubsub/avro"
 	"developer.zopsmart.com/go/gofr/pkg/datastore/pubsub/eventbridge"
 	"developer.zopsmart.com/go/gofr/pkg/datastore/pubsub/eventhub"
@@ -306,33 +305,5 @@ func dynamoDBConfigFromEnv(c Config, prefix string) datastore.DynamoDBConfig {
 		AccessKeyID:       c.Get(prefix + "DYNAMODB_ACCESS_KEY_ID"),
 		SecretAccessKey:   c.Get(prefix + "DYNAMODB_SECRET_ACCESS_KEY"),
 		ConnRetryDuration: getRetryDuration(c.Get(prefix + "DYNAMODB_CONN_RETRY")),
-	}
-}
-
-func kvDataConfigFromEnv(c Config) kvdata.Config {
-	ak := c.Get("KV_CSP_APP_KEY")
-	sk := c.Get("KV_CSP_SHARED_KEY")
-
-	if ak == "" {
-		ak = c.Get("KV_CSP_APP_KEY_FWK")
-		sk = c.Get("KV_CSP_SHARED_KEY_FWK")
-	}
-
-	cspConfig := kvdata.CSPConfigs{
-		AppKey:    ak,
-		SharedKey: sk,
-	}
-
-	jwtConfig := kvdata.JWTConfigs{
-		ClientID:       c.Get("KV_CLIENT_ID"),
-		ClientSecret:   c.Get("KV_CLIENT_SECRET"),
-		KeyProviderURL: c.Get("KV_KEY_PROVIDER_URL"),
-		Audience:       c.Get("KV_AUDIENCE"),
-	}
-
-	return kvdata.Config{
-		URL:        c.Get("KV_URL"),
-		CSPConfigs: cspConfig,
-		JWTConfigs: jwtConfig,
 	}
 }
