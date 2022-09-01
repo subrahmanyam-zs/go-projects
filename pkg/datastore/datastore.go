@@ -28,7 +28,6 @@ type DataStore struct {
 	Solr          Client
 	Elasticsearch Elasticsearch
 	DynamoDB      DynamoDB
-	KVData        KVData
 }
 
 type QueryLogger struct {
