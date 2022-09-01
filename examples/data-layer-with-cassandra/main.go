@@ -10,6 +10,8 @@ func main() {
 	// create the application object
 	app := gofr.New()
 
+	app.Server.ValidateHeaders = false
+
 	s := stores.New()
 	h := handlers.New(s)
 	// add get handler

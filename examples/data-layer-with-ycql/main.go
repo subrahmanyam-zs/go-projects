@@ -9,6 +9,9 @@ import (
 func main() {
 	// Create the application object
 	app := gofr.New()
+
+	app.Server.ValidateHeaders = false
+
 	// initialize store dependency
 	s := store.New()
 	// initialize the handler
