@@ -7,6 +7,7 @@ import (
 
 	"developer.zopsmart.com/go/gofr/pkg/errors"
 	"developer.zopsmart.com/go/gofr/pkg/gofr"
+	"developer.zopsmart.com/go/gofr/pkg/gofr/types"
 )
 
 // HelloWorld is a handler function of type gofr.Handler, it responds with a message
@@ -65,4 +66,12 @@ func HelloLogHandler(ctx *gofr.Context) (interface{}, error) {
 	}{"Struct Test", 1}) // This is how you can give multiple messages
 
 	return "Logging OK", nil
+}
+
+type details struct {
+	Name string `json:"name"`
+}
+
+func Raw(ctx *gofr.Context) (interface{}, error) {
+	return types.Raw{Data: details{Name: "Mukund"}}, nil
 }

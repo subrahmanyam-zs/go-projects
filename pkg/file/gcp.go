@@ -61,3 +61,7 @@ func (g *gcp) push(fd *os.File) error {
 
 	return err
 }
+
+func (g *gcp) list(directory string) ([]string, error) {
+	return nil, ErrListingNotSupported
+}

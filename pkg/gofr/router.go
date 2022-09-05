@@ -6,8 +6,6 @@ import (
 	"strings"
 
 	"github.com/gorilla/mux"
-
-	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 )
 
 // Router
@@ -70,12 +68,10 @@ func (r *router) Route(method, path string, handler Handler) {
 		path = r.prefix + path
 	}
 
-	h := otelhttp.NewHandler(handler, "gofr-handler")
-
-	r.Router.NewRoute().Methods(method).Path(path).Handler(h)
+	r.Router.NewRoute().Methods(method).Path(path).Handler(handler)
 
 	if method == http.MethodGet {
-		r.Router.NewRoute().Methods(http.MethodHead).Path(path).Handler(h)
+		r.Router.NewRoute().Methods(http.MethodHead).Path(path).Handler(handler)
 	}
 }
 

@@ -11,7 +11,6 @@ import (
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 
 	"developer.zopsmart.com/go/gofr/pkg"
-	"developer.zopsmart.com/go/gofr/pkg/gofr/cache"
 	"developer.zopsmart.com/go/gofr/pkg/gofr/types"
 	"developer.zopsmart.com/go/gofr/pkg/log"
 )
@@ -37,7 +36,7 @@ type Auth struct {
 
 // Cache provides the options needed for caching of HTTPService responses
 type Cache struct {
-	cache.Cacher
+	Cacher
 	TTL          time.Duration
 	KeyGenerator KeyGenerator
 }
@@ -62,11 +61,15 @@ var (
 	}, []string{"host"})
 )
 
-// nolint:gocognit,gocyclo // don't want users to access methods of this type without initialization
-// hence we dont want to export the type
+// NewHTTPServiceWithOptions returns an exported type because users should not be allowed to access this without initialization
 func NewHTTPServiceWithOptions(resourceAddr string, logger log.Logger, options *Options) *httpService {
 	// Register the prometheus metric
-	resourceAddr = strings.TrimRight(resourceAddr, "/")
+	if resourceAddr == "" {
+		logger.Errorf("value for resourceAddress is empty")
+	} else {
+		resourceAddr = strings.TrimRight(resourceAddr, "/")
+	}
+
 	_ = prometheus.Register(httpServiceResponse)
 
 	// Transport for http Client
@@ -82,6 +85,7 @@ func NewHTTPServiceWithOptions(resourceAddr string, logger log.Logger, options *
 			isEnabled:             true,
 			customHeartbeatURL:    "/.well-known/heartbeat",
 			retryFrequencySeconds: RetryFrequency,
+			logger:                logger,
 		},
 	}
 
@@ -98,17 +102,7 @@ func NewHTTPServiceWithOptions(resourceAddr string, logger log.Logger, options *
 		httpSvc.customHeaders = options.Headers
 	}
 
-	// enable auth
-	if options.Auth != nil && options.UserName != "" && options.OAuthOption == nil { // OAuth and basic auth cannot co-exist
-		httpSvc.isAuthSet = true
-		httpSvc.auth = "Basic " + base64.StdEncoding.EncodeToString([]byte(options.UserName+":"+options.Password))
-	}
-
-	// enable oauth
-	if options.Auth != nil && options.OAuthOption != nil && httpSvc.auth == "" { // if auth is already set to basic auth, dont set oauth
-		httpSvc.isAuthSet = true
-		go httpSvc.setClientOauthHeader(options.OAuthOption)
-	}
+	httpSvc.initializeClientWithAuth(*options)
 
 	enableSP := true
 
@@ -138,6 +132,38 @@ func NewHTTPServiceWithOptions(resourceAddr string, logger log.Logger, options *
 	}
 
 	return httpSvc
+}
+
+func (h *httpService) initializeClientWithAuth(options Options) {
+	if options.Auth == nil {
+		return
+	}
+
+	// simple auth
+	if options.UserName != "" && options.OAuthOption == nil { // OAuth and basic auth cannot co-exist
+		h.isSet = true
+		h.auth = "Basic " + base64.StdEncoding.EncodeToString([]byte(options.UserName+":"+options.Password))
+	}
+
+	h.enableOAuth(options)
+}
+
+func (h *httpService) enableOAuth(options Options) {
+	if options.OAuthOption != nil && h.auth == "" { // if auth is already set to basic auth, dont set oauth
+		h.isSet = true
+
+		h.isTokenGenBlocking = options.WaitForTokenGen
+		h.isTokenPresent = make(chan bool)
+
+		// WaitForTokenGen is a flag indicating if the token generation is blocking or not.
+		// if the call is tokenGen blocking, we read from the channel(in pre call) to make sure token generation is complete
+		// we close the channel as soon as we get the first token,
+		// as we don't have to make it a blocking a call once the token is received
+		go func() {
+			h.setClientOauthHeader(options.OAuthOption)
+			close(h.isTokenPresent)
+		}()
+	}
 }
 
 func (h *httpService) HealthCheck() types.Health {

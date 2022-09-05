@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"time"
 )
 
 type HTTP interface {
@@ -38,4 +39,10 @@ type SOAP interface {
 	CallWithHeaders(ctx context.Context, action string, body []byte, headers map[string]string) (*Response, error)
 	Bind(resp []byte, i interface{}) error
 	BindStrict(resp []byte, i interface{}) error
+}
+
+type Cacher interface {
+	Get(key string) ([]byte, error)
+	Set(key string, content []byte, duration time.Duration) error
+	Delete(key string) error
 }

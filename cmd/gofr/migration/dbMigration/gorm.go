@@ -68,7 +68,7 @@ func (g *GORM) preRun(app, method, name string) error {
 	if !g.db.Migrator().HasTable(&gofrMigration{}) {
 		err := g.db.Migrator().CreateTable(&gofrMigration{})
 		if err != nil {
-			return &errors.Response{Reason: "unable to create gofr_migrations table", Detail: err}
+			return &errors.Response{Reason: "unable to create gofr_migrations table", Detail: err.Error()}
 		}
 	}
 
@@ -80,7 +80,7 @@ func (g *GORM) preRun(app, method, name string) error {
 
 	err := g.txn.Create(&gofrMigration{App: app, Version: int64(ver), StartTime: time.Now(), Method: method}).Error
 	if err != nil {
-		return &errors.Response{Reason: "unable to insert migration start time", Detail: err}
+		return &errors.Response{Reason: "unable to insert values into  gofr_migrations table.", Detail: err.Error()}
 	}
 
 	return nil

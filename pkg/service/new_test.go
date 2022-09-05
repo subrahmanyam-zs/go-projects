@@ -1,11 +1,13 @@
 package service
 
 import (
+	"bytes"
 	"encoding/json"
 	"io"
 	"net/http"
 	"net/http/httptest"
 	"reflect"
+	"strings"
 	"testing"
 	"time"
 
@@ -28,6 +30,19 @@ func TestNewHTTPServiceWithNilOptions(t *testing.T) {
 		if httpService.url != testCase[i].expectedURL {
 			t.Errorf("Testcase Number: %v Expected: %v\nGot: %v", i, testCase[i].expectedURL, httpService.url)
 		}
+	}
+}
+
+func TestHttpServiceWithOptions_EmptyResourceAddress(t *testing.T) {
+	b := new(bytes.Buffer)
+	logger := log.NewMockLogger(b)
+
+	expLog := "value for resourceAddress is empty"
+
+	_ = NewHTTPServiceWithOptions("", logger, nil)
+
+	if !strings.Contains(b.String(), expLog) {
+		t.Errorf("TEST FAILED, Expected logs contains %v,contains %v", expLog, b.String())
 	}
 }
 
@@ -109,13 +124,14 @@ func TestNewHTTPService_WithSurgeProtection(t *testing.T) {
 		options           Options
 		surgeProtectionOp surgeProtector
 	}{
-		{Options{}, surgeProtector{isEnabled: true, customHeartbeatURL: "/.well-known/heartbeat", retryFrequencySeconds: 5}},
+		{Options{}, surgeProtector{isEnabled: true, customHeartbeatURL: "/.well-known/heartbeat", retryFrequencySeconds: 5,
+			logger: log.NewLogger()}},
 		{Options{SurgeProtectorOption: &SurgeProtectorOption{}}, surgeProtector{isEnabled: true, customHeartbeatURL: "/.well-known/heartbeat",
-			retryFrequencySeconds: RetryFrequency}},
+			retryFrequencySeconds: RetryFrequency, logger: log.NewLogger()}},
 		{Options{SurgeProtectorOption: &SurgeProtectorOption{HeartbeatURL: "custom url"}}, surgeProtector{isEnabled: true,
-			customHeartbeatURL: "custom url", retryFrequencySeconds: RetryFrequency}},
+			customHeartbeatURL: "custom url", retryFrequencySeconds: RetryFrequency, logger: log.NewLogger()}},
 		{Options{SurgeProtectorOption: &SurgeProtectorOption{RetryFrequency: 10}}, surgeProtector{isEnabled: true,
-			customHeartbeatURL: "/.well-known/heartbeat", retryFrequencySeconds: 10}},
+			customHeartbeatURL: "/.well-known/heartbeat", retryFrequencySeconds: 10, logger: log.NewLogger()}},
 	}
 
 	for i := range testCases {
@@ -177,17 +193,17 @@ func TestNewHTTPServiceWithOptions_MultipleFeatures(t *testing.T) {
 		{Options{Auth: &Auth{UserName: "abc", Password: "pwd"}, Cache: &Cache{Cacher: mockCache{}, TTL: 10}},
 			httpService{auth: "Basic YWJjOnB3ZA==", cache: &cachedHTTPService{cacher: mockCache{}, ttl: 10},
 				sp: surgeProtector{isEnabled: true, customHeartbeatURL: "/.well-known/heartbeat",
-					retryFrequencySeconds: RetryFrequency}}},
+					retryFrequencySeconds: RetryFrequency, logger: log.NewLogger()}}},
 		{Options{Auth: &Auth{UserName: "abc", Password: "pwd"}, Cache: &Cache{Cacher: mockCache{}, TTL: 10},
 			Headers: map[string]string{"h": "hb"}}, httpService{auth: "Basic YWJjOnB3ZA==",
 			cache: &cachedHTTPService{cacher: mockCache{}, ttl: 10}, customHeaders: map[string]string{"h": "hb"},
 			sp: surgeProtector{isEnabled: true, customHeartbeatURL: "/.well-known/heartbeat",
-				retryFrequencySeconds: RetryFrequency}}},
+				retryFrequencySeconds: RetryFrequency, logger: log.NewLogger()}}},
 		{Options{Auth: &Auth{UserName: "abc", Password: "pwd"}, Cache: &Cache{Cacher: mockCache{}, TTL: 10},
 			SurgeProtectorOption: &SurgeProtectorOption{RetryFrequency: RetryFrequency}},
 			httpService{auth: "Basic YWJjOnB3ZA==", cache: &cachedHTTPService{cacher: mockCache{}, ttl: 10},
 				sp: surgeProtector{isEnabled: true, customHeartbeatURL: "/.well-known/heartbeat",
-					retryFrequencySeconds: RetryFrequency}}},
+					retryFrequencySeconds: RetryFrequency, logger: log.NewLogger()}}},
 	}
 
 	for i := range testCases {
@@ -244,10 +260,11 @@ func TestNewHTTPServiceWithOptions_Oauth(t *testing.T) {
 	}))
 
 	oauthOption := OAuthOption{
-		ClientID:       clientID,
-		ClientSecret:   clientSecret,
-		KeyProviderURL: server.URL,
-		Scope:          "some_scope",
+		ClientID:        clientID,
+		ClientSecret:    clientSecret,
+		KeyProviderURL:  server.URL,
+		Scope:           "some_scope",
+		WaitForTokenGen: false,
 	}
 
 	svc := NewHTTPServiceWithOptions(url, logger, &Options{Auth: &Auth{OAuthOption: &oauthOption}})
@@ -267,8 +284,54 @@ func TestNewHTTPServiceWithOptions_Oauth(t *testing.T) {
 	svc.mu.Unlock()
 }
 
+func TestNewHTTPServiceWithOptions_Oauth_TokenGenBlocking(t *testing.T) {
+	testServer := initializeOauthTestServer(false)
+	defer testServer.Close()
+
+	logger := log.NewMockLogger(io.Discard)
+
+	oauth := OAuthOption{
+		ClientID:        "clientID",
+		ClientSecret:    "clientSecret",
+		KeyProviderURL:  testServer.URL,
+		Scope:           "test:data",
+		WaitForTokenGen: true,
+	}
+
+	svc := NewHTTPServiceWithOptions("http://dummy", logger, &Options{Auth: &Auth{OAuthOption: &oauth}})
+
+	time.Sleep(1 * time.Second) // ensuring that the call to the test server is made
+
+	select {
+	case <-svc.isTokenPresent: // isTokenPresent is closed after successfully generating the token.
+	default:
+		t.Errorf("Test Failed, isTokenPresent is not closed after token generation")
+	}
+}
+
+func TestNewHTTPServiceWithOptions_OAuthError(t *testing.T) {
+	testServer := initializeOauthTestServer(true)
+	defer testServer.Close()
+
+	logger := log.NewMockLogger(io.Discard)
+
+	oauth := OAuthOption{
+		ClientID:        "clientID",
+		ClientSecret:    "clientSecret",
+		KeyProviderURL:  testServer.URL,
+		Scope:           "test:data",
+		WaitForTokenGen: true,
+	}
+
+	svc := NewHTTPServiceWithOptions("https://dummy", logger, &Options{Auth: &Auth{OAuthOption: &oauth}})
+
+	if svc.auth != "" { // auth Header will be empty because we have added a sleep in OAuth sever.
+		t.Errorf("Test Failed. Expected auth header to be empty. Got : %v", svc.auth)
+	}
+}
+
 func TestHttpService_HealthCheck(t *testing.T) {
-	h := NewHTTPServiceWithOptions("test", nil, nil)
+	h := NewHTTPServiceWithOptions("test", log.NewLogger(), nil)
 
 	healthCheck := h.HealthCheck()
 	if healthCheck.Status != pkg.StatusUp {

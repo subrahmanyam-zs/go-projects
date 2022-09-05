@@ -48,7 +48,7 @@ func TestNewContextualResponder(t *testing.T) {
 		muxRouter.NewRoute().Path(r.URL.Path).Methods("GET").Handler(handler)
 		muxRouter.ServeHTTP(w, r)
 
-		*r = *r.WithContext(context.WithValue(r.Context(), middleware.CorrelationIDKey, correlationID))
+		*r = *r.Clone(context.WithValue(r.Context(), middleware.CorrelationIDKey, correlationID))
 
 		r.Header.Set("Content-Type", tc.contentType)
 		r.Header.Set(tc.correlationIDHeader, correlationID)

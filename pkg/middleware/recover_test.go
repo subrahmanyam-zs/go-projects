@@ -92,7 +92,7 @@ func TestPanicRecovery(t *testing.T) {
 
 	for _, tc := range testcases {
 		req := httptest.NewRequest("GET", "/"+tc.endpoint, nil)
-		req = req.WithContext(context.WithValue(req.Context(), CorrelationIDKey, "gofrTest"))
+		req = req.Clone(context.WithValue(req.Context(), CorrelationIDKey, "gofrTest"))
 		muxRouter.ServeHTTP(w, req)
 
 		if len(b.Bytes()) == 0 {
@@ -161,7 +161,7 @@ func TestPanicAppDataLogging(t *testing.T) {
 	data.Store("key", "value")
 
 	req := httptest.NewRequest("GET", "/panic", nil)
-	req = req.WithContext(context.WithValue(req.Context(), appData, data))
+	req = req.Clone(context.WithValue(req.Context(), appData, data))
 
 	handler.ServeHTTP(MockWriteHandler{}, req)
 
@@ -235,7 +235,7 @@ func makeRequestPlanet(t *testing.T, handler http.Handler, wg *sync.WaitGroup, t
 			req.Header.Add("X-Correlation-ID", "gofrTest-planet")
 			ctx := context.WithValue(context.WithValue(context.Background(), CorrelationIDKey, "gofrTest-planet"),
 				LogDataKey("appLogData"), data)
-			req = req.WithContext(ctx)
+			req = req.Clone(ctx)
 			handler.ServeHTTP(&MockWriteHandler{}, req)
 		})
 	}
@@ -251,7 +251,7 @@ func makeRequestGalaxy(t *testing.T, handler http.Handler, wg *sync.WaitGroup, t
 			data := &sync.Map{}
 			data.Store("Galaxy", "MilkyWay")
 			req.Header.Add("X-Correlation-ID", "gofrTest-galaxy")
-			req = req.WithContext(context.WithValue(context.WithValue(context.Background(), CorrelationIDKey, "gofrTest-galaxy"),
+			req = req.Clone(context.WithValue(context.WithValue(context.Background(), CorrelationIDKey, "gofrTest-galaxy"),
 				LogDataKey("appLogData"), data))
 			handler.ServeHTTP(&MockWriteHandler{}, req)
 		})

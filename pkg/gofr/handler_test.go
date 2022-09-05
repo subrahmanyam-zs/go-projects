@@ -51,6 +51,7 @@ func TestHandler_ServeHTTP_StatusCode(t *testing.T) {
 			map[string]interface{}{"name": "Alice"}},
 		{gofrErrors.MissingParam{Param: []string{"organizationId"}}, http.StatusBadRequest, "Missing Parameter", types.Response{}},
 		{nil, http.StatusOK, "", &types.Response{Data: map[string]interface{}{"name": "Alice"}}},
+		{gofrErrors.DB{}, http.StatusInternalServerError, "DB Error", nil},
 	}
 
 	for i, tc := range testCases {
@@ -61,7 +62,7 @@ func TestHandler_ServeHTTP_StatusCode(t *testing.T) {
 		r = routeKeySetter(w, r)
 		req := request.NewHTTPRequest(r)
 		resp := responder.NewContextualResponder(w, r)
-		*r = *r.WithContext(ctx.WithValue(r.Context(), gofrContextkey, NewContext(resp, req, k)))
+		*r = *r.Clone(ctx.WithValue(r.Context(), gofrContextkey, NewContext(resp, req, k)))
 
 		Handler(func(c *Context) (interface{}, error) {
 			return tc.data, tc.error
@@ -85,7 +86,7 @@ func TestHandler_ServeHTTP_ErrorFormat(t *testing.T) {
 	r = routeKeySetter(w, r)
 	req := request.NewHTTPRequest(r)
 	resp := responder.NewContextualResponder(w, r)
-	*r = *r.WithContext(ctx.WithValue(r.Context(), gofrContextkey, NewContext(resp, req, k)))
+	*r = *r.Clone(ctx.WithValue(r.Context(), gofrContextkey, NewContext(resp, req, k)))
 
 	Handler(func(c *Context) (interface{}, error) {
 		return nil, &gofrErrors.Response{StatusCode: 400, Code: "Invalid name", Reason: "The name in the parameter is incorrect"}
@@ -111,7 +112,7 @@ func TestHandler_ServeHTTP_Content_Type(t *testing.T) {
 	r = routeKeySetter(w, r)
 	req := request.NewHTTPRequest(r)
 	resp := responder.NewContextualResponder(w, r)
-	*r = *r.WithContext(ctx.WithValue(r.Context(), gofrContextkey, NewContext(resp, req, k)))
+	*r = *r.Clone(ctx.WithValue(r.Context(), gofrContextkey, NewContext(resp, req, k)))
 
 	Handler(func(c *Context) (interface{}, error) {
 		return "hi", nil
@@ -131,7 +132,7 @@ func TestHandler_ServeHTTP(t *testing.T) {
 	r = routeKeySetter(w, r)
 	req := request.NewHTTPRequest(r)
 	resp := responder.NewContextualResponder(w, r)
-	*r = *r.WithContext(ctx.WithValue(r.Context(), gofrContextkey, NewContext(resp, req, k)))
+	*r = *r.Clone(ctx.WithValue(r.Context(), gofrContextkey, NewContext(resp, req, k)))
 	Handler(func(c *Context) (interface{}, error) {
 		p := product{Name: "Orange", CategoryID: 1}
 		data := struct {
@@ -162,7 +163,7 @@ func TestHandler_ServeHTTP_XML(t *testing.T) {
 	r = routeKeySetter(w, r)
 	req := request.NewHTTPRequest(r)
 	resp := responder.NewContextualResponder(w, r)
-	*r = *r.WithContext(ctx.WithValue(r.Context(), gofrContextkey, NewContext(resp, req, k)))
+	*r = *r.Clone(ctx.WithValue(r.Context(), gofrContextkey, NewContext(resp, req, k)))
 	expectedError := gofrErrors.Response{StatusCode: http.StatusInternalServerError, Reason: "something unexpected occurred"}
 
 	Handler(func(c *Context) (interface{}, error) {
@@ -183,7 +184,7 @@ func TestHandler_ServeHTTP_Text(t *testing.T) {
 	r = routeKeySetter(w, r)
 	req := request.NewHTTPRequest(r)
 	resp := responder.NewContextualResponder(w, r)
-	*r = *r.WithContext(ctx.WithValue(r.Context(), gofrContextkey, NewContext(resp, req, k)))
+	*r = *r.Clone(ctx.WithValue(r.Context(), gofrContextkey, NewContext(resp, req, k)))
 
 	Handler(func(c *Context) (interface{}, error) {
 		return nil, errors.New("something unexpected occurred")
@@ -202,7 +203,7 @@ func TestHandler_ServeHTTP_PartialContent(t *testing.T) {
 	r = routeKeySetter(w, r)
 	req := request.NewHTTPRequest(r)
 	resp := responder.NewContextualResponder(w, r)
-	*r = *r.WithContext(ctx.WithValue(r.Context(), gofrContextkey, NewContext(resp, req, k)))
+	*r = *r.Clone(ctx.WithValue(r.Context(), gofrContextkey, NewContext(resp, req, k)))
 	Handler(func(c *Context) (interface{}, error) {
 		p := product{Name: "Orange", CategoryID: 1}
 		data := struct {
@@ -233,7 +234,7 @@ func TestHandler_ServeHTTP_EntityAlreadyExists(t *testing.T) {
 	r = routeKeySetter(w, r)
 	req := request.NewHTTPRequest(r)
 	resp := responder.NewContextualResponder(w, r)
-	*r = *r.WithContext(ctx.WithValue(r.Context(), gofrContextkey, NewContext(resp, req, k)))
+	*r = *r.Clone(ctx.WithValue(r.Context(), gofrContextkey, NewContext(resp, req, k)))
 
 	Handler(func(c *Context) (interface{}, error) {
 		p := product{Name: "Orange", CategoryID: 1}
@@ -277,7 +278,7 @@ func Test_HealthInvalidMethod(t *testing.T) {
 		r = routeKeySetter(w, r)
 		req := request.NewHTTPRequest(r)
 		resp := responder.NewContextualResponder(w, r)
-		*r = *r.WithContext(ctx.WithValue(r.Context(), gofrContextkey, NewContext(resp, req, k)))
+		*r = *r.Clone(ctx.WithValue(r.Context(), gofrContextkey, NewContext(resp, req, k)))
 
 		Handler(func(c *Context) (interface{}, error) {
 			return tc.data, tc.error
@@ -306,7 +307,7 @@ func TestHTTP_Respond_Nil(t *testing.T) {
 	r = routeKeySetter(w, r)
 	req := request.NewHTTPRequest(r)
 	resp := responder.NewContextualResponder(w, r)
-	*r = *r.WithContext(ctx.WithValue(r.Context(), gofrContextkey, NewContext(resp, req, k)))
+	*r = *r.Clone(ctx.WithValue(r.Context(), gofrContextkey, NewContext(resp, req, k)))
 	{
 		// Test for nil types.Response
 		expectedError := gofrErrors.Response{StatusCode: http.StatusBadRequest, Code: "Missing Parameter",
@@ -352,7 +353,7 @@ func TestHTTP_Respond_Delete(t *testing.T) {
 	r = routeKeySetter(w, r)
 	req := request.NewHTTPRequest(r)
 	resp := responder.NewContextualResponder(w, r)
-	*r = *r.WithContext(ctx.WithValue(r.Context(), gofrContextkey, NewContext(resp, req, k)))
+	*r = *r.Clone(ctx.WithValue(r.Context(), gofrContextkey, NewContext(resp, req, k)))
 
 	Handler(func(c *Context) (interface{}, error) {
 		return nil, nil
@@ -378,7 +379,7 @@ func TestHandler_ServeHTTP_Error(t *testing.T) {
 	r = routeKeySetter(w, r)
 	req := request.NewHTTPRequest(r)
 	resp := responder.NewContextualResponder(w, r)
-	*r = *r.WithContext(ctx.WithValue(r.Context(), gofrContextkey, NewContext(resp, req, k)))
+	*r = *r.Clone(ctx.WithValue(r.Context(), gofrContextkey, NewContext(resp, req, k)))
 
 	{
 		// Error is present but only status code is set and no body
@@ -421,7 +422,7 @@ func Test_Head(t *testing.T) {
 	r = routeKeySetter(w, r)
 	req := request.NewHTTPRequest(r)
 	resp := responder.NewContextualResponder(w, r)
-	*r = *r.WithContext(ctx.WithValue(r.Context(), gofrContextkey, NewContext(resp, req, k)))
+	*r = *r.Clone(ctx.WithValue(r.Context(), gofrContextkey, NewContext(resp, req, k)))
 
 	h := Handler(func(c *Context) (interface{}, error) {
 		return "hello", nil
@@ -436,10 +437,79 @@ func Test_Head(t *testing.T) {
 	r = routeKeySetter(w, r)
 	req = request.NewHTTPRequest(r)
 	resp = responder.NewContextualResponder(w, r)
-	*r = *r.WithContext(ctx.WithValue(r.Context(), gofrContextkey, NewContext(resp, req, k)))
+	*r = *r.Clone(ctx.WithValue(r.Context(), gofrContextkey, NewContext(resp, req, k)))
 
 	got := w.Header().Get("content-length")
 	if got != expected {
 		t.Errorf("got %v\n expected %v\n", got, expected)
+	}
+}
+
+func TestHandler_ServeHTTP_TypeResponse(t *testing.T) {
+	k := New()
+	w := newCustomWriter()
+	r := httptest.NewRequest("GET", "/Dummy", nil)
+	r.Header.Add("Content-type", "application/json")
+	r = routeKeySetter(w, r)
+	req := request.NewHTTPRequest(r)
+	resp := responder.NewContextualResponder(w, r)
+	*r = *r.Clone(ctx.WithValue(r.Context(), gofrContextkey, NewContext(resp, req, k)))
+	input := types.Response{
+		Data: "Mukund",
+	}
+
+	Handler(func(c *Context) (interface{}, error) {
+		return input, nil
+	}).ServeHTTP(w, r)
+
+	expOutput, _ := json.Marshal(input)
+
+	if !strings.Contains(w.Body, string(expOutput)) {
+		t.Errorf("Test failed. expected %v, got %v", string(expOutput), w.Body)
+	}
+}
+func TestHandler_ServeHTTP_TypeRaw(t *testing.T) {
+	k := New()
+	w := newCustomWriter()
+	r := httptest.NewRequest("GET", "/Dummy", nil)
+	r.Header.Add("Content-type", "application/json")
+	r = routeKeySetter(w, r)
+	req := request.NewHTTPRequest(r)
+	resp := responder.NewContextualResponder(w, r)
+	*r = *r.Clone(ctx.WithValue(r.Context(), gofrContextkey, NewContext(resp, req, k)))
+
+	Handler(func(c *Context) (interface{}, error) {
+		return types.Raw{
+			Data: "Mukund",
+		}, nil
+	}).ServeHTTP(w, r)
+
+	expOutput := "Mukund"
+
+	if !strings.Contains(w.Body, expOutput) {
+		t.Errorf("Test failed. expected %v, got %v", expOutput, w.Body)
+	}
+}
+func TestHandler_ServeHTTP_TypeDefault(t *testing.T) {
+	k := New()
+	w := newCustomWriter()
+	r := httptest.NewRequest("GET", "/Dummy", nil)
+	r.Header.Add("Content-type", "application/json")
+	r = routeKeySetter(w, r)
+	req := request.NewHTTPRequest(r)
+	resp := responder.NewContextualResponder(w, r)
+	*r = *r.Clone(ctx.WithValue(r.Context(), gofrContextkey, NewContext(resp, req, k)))
+	expOut := struct {
+		Data interface{} `json:"data"`
+	}{"Mukund"}
+
+	Handler(func(c *Context) (interface{}, error) {
+		return "Mukund", nil
+	}).ServeHTTP(w, r)
+
+	expOutput, _ := json.Marshal(expOut)
+
+	if !strings.Contains(w.Body, string(expOutput)) {
+		t.Errorf("Test failed. expected %v, got %v", string(expOutput), w.Body)
 	}
 }

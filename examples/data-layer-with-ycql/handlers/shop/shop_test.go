@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"reflect"
+	"strconv"
 	"strings"
 	"testing"
 
@@ -50,8 +51,12 @@ func TestGet(t *testing.T) {
 		req := httptest.NewRequest(http.MethodGet, "/shop?"+tc.queryParams, nil)
 		r := request.NewHTTPRequest(req)
 		context := gofr.NewContext(nil, r, app)
+		params := context.Params()
 
-		store.EXPECT().Get(gomock.Any(), gomock.Any()).Return(tc.resp)
+		var shop = models.Shop{Name: params["name"], Location: params["location"], State: params["stats"]}
+		shop.ID, _ = strconv.Atoi(params["id"])
+
+		store.EXPECT().Get(context, shop).Return(tc.resp)
 
 		resp, err := h.Get(context)
 
@@ -64,33 +69,24 @@ func TestGet(t *testing.T) {
 func TestCreate(t *testing.T) {
 	store, h, app := initializeHandlerTest(t)
 
-	// create success case
-	store.EXPECT().Get(gomock.Any(), gomock.Any()).Return(nil)
-	store.EXPECT().Create(gomock.Any(), gomock.Any()).Return(
-		[]models.Shop{{ID: 4, Name: "UBCity", Location: "HSR", State: "karnataka"}}, nil,
-	)
-	// entity exists case
-	store.EXPECT().Get(gomock.Any(), gomock.Any()).Return(
-		[]models.Shop{{ID: 3, Name: "UBCity", Location: "Bangalore", State: "karnataka"}},
-	)
-
 	tests := []struct {
-		desc  string
-		input string
-		resp  interface{}
-		err   error
+		desc     string
+		input    string
+		resp     interface{}
+		mockResp []models.Shop
+		err      error
 	}{
 		{
 			"create success", `{"id":4, "name": "UBCity", "location":"HSR", "State":"karnataka"}`,
-			[]models.Shop{{ID: 4, Name: "UBCity", Location: "HSR", State: "karnataka"}}, nil,
+			[]models.Shop{{ID: 4, Name: "UBCity", Location: "HSR", State: "karnataka"}}, nil, nil,
 		},
 		{
 			"entity exists", `{"id": 3, "name": "UBCity", "location":"Bangalore", "state":"karnataka"}`,
-			nil, errors.EntityAlreadyExists{},
+			nil, []models.Shop{{ID: 3, Name: "UBCity", Location: "HSR", State: "karnataka"}}, errors.EntityAlreadyExists{},
 		},
 		{
 			"unmarshal error", `{"id":"3", "name":"UBCity", "location":"Bangalore", "state":"karnataka"}`, nil,
-			&json.UnmarshalTypeError{Value: "string", Type: reflect.TypeOf(40), Offset: 9, Struct: "Shop", Field: "id"},
+			nil, &json.UnmarshalTypeError{Value: "string", Type: reflect.TypeOf(40), Offset: 9, Struct: "Shop", Field: "id"},
 		},
 	}
 
@@ -99,6 +95,13 @@ func TestCreate(t *testing.T) {
 		req := httptest.NewRequest(http.MethodPost, "/dummy", in)
 		r := request.NewHTTPRequest(req)
 		ctx := gofr.NewContext(nil, r, app)
+
+		var shop models.Shop
+
+		_ = ctx.Bind(&shop)
+
+		store.EXPECT().Get(ctx, models.Shop{ID: shop.ID}).Return(tc.mockResp).MaxTimes(2)
+		store.EXPECT().Create(ctx, shop).Return(tc.resp, tc.err).MaxTimes(1)
 
 		resp, err := h.Create(ctx)
 
@@ -110,23 +113,6 @@ func TestCreate(t *testing.T) {
 
 func TestUpdate(t *testing.T) {
 	store, h, app := initializeHandlerTest(t)
-
-	// update name,location and state
-	store.EXPECT().Get(gomock.Any(), gomock.Any()).Return(
-		[]models.Shop{{ID: 3, Name: "SelectCityWalk", Location: "tirupati", State: "AndhraPradesh"}},
-	)
-	store.EXPECT().Update(gomock.Any(), gomock.Any()).Return(
-		[]models.Shop{{ID: 3, Name: "SelectCityWalk", Location: "tirupati", State: "AndhraPradesh"}}, nil,
-	)
-	// udpate location,state case
-	store.EXPECT().Get(gomock.Any(), gomock.Any()).Return(
-		[]models.Shop{{ID: 3, Name: "SelectCityWalk", Location: "Dhanbad", State: "Jharkhand"}},
-	)
-	store.EXPECT().Update(gomock.Any(), gomock.Any()).Return(
-		[]models.Shop{{ID: 3, Name: "SelectCityWalk", Location: "Dhanbad", State: "Jharkhand"}}, nil,
-	)
-	// update non existent entity
-	store.EXPECT().Get(gomock.Any(), gomock.Any()).Return([]models.Shop{})
 
 	tests := []struct {
 		desc  string
@@ -144,12 +130,12 @@ func TestUpdate(t *testing.T) {
 			[]models.Shop{{ID: 3, Name: "SelectCityWalk", Location: "Dhanbad", State: "Jharkhand"}}, nil,
 		},
 		{
-			"unmarshall error", "3", `{ "name":  "SkyWalkMall", "location":30, "state": "karnataka"}`, nil,
-			&json.UnmarshalTypeError{Value: "number", Type: reflect.TypeOf("30"), Offset: 39, Struct: "Shop", Field: "location"},
-		},
-		{
 			"update non existent entity", "5", `{ "name":  "Mali", "age":   40, "State": "AP"}`, nil,
 			errors.EntityNotFound{Entity: "shop", ID: "5"},
+		},
+		{
+			"unmarshall error", "3", `{ "name":  "SkyWalkMall", "location":30, "state": "karnataka"}`, nil,
+			&json.UnmarshalTypeError{Value: "number", Type: reflect.TypeOf("30"), Offset: 39, Struct: "Shop", Field: "location"},
 		},
 	}
 
@@ -163,6 +149,14 @@ func TestUpdate(t *testing.T) {
 			"id": tc.id,
 		})
 
+		var shop models.Shop
+
+		_ = ctx.Bind(&shop)
+		shop.ID, _ = strconv.Atoi(ctx.PathParam("id"))
+
+		store.EXPECT().Get(ctx, models.Shop{ID: shop.ID}).Return(tc.resp).MaxTimes(3)
+		store.EXPECT().Update(ctx, shop).Return(tc.resp, tc.err).MaxTimes(2)
+
 		resp, err := h.Update(ctx)
 
 		assert.Equal(t, tc.err, err, "TEST[%d], failed.\n%s", i, tc.desc)
@@ -174,22 +168,15 @@ func TestUpdate(t *testing.T) {
 func TestDelete(t *testing.T) {
 	store, h, app := initializeHandlerTest(t)
 
-	// delete non existent item fail case
-	store.EXPECT().Get(gomock.Any(), gomock.Any()).Return(nil)
-	// delete existent item success case
-	store.EXPECT().Get(gomock.Any(), gomock.Any()).Return(
-		[]models.Shop{{ID: 3, Name: "Kali", Location: "HSR", State: "karnataka"}},
-	)
-	store.EXPECT().Delete(gomock.Any(), gomock.Any()).Return(nil)
-
 	tests := []struct {
-		desc string
-		id   string
-		resp interface{}
-		err  error
+		desc     string
+		id       string
+		resp     interface{}
+		mockResp []models.Shop
+		err      error
 	}{
-		{"delete non existent item fail", "5", nil, errors.EntityNotFound{Entity: "shop", ID: "5"}},
-		{"delete existent item success", "3", nil, nil},
+		{"delete non existent item fail", "5", nil, nil, errors.EntityNotFound{Entity: "shop", ID: "5"}},
+		{"delete existent item success", "3", nil, []models.Shop{{ID: 3, Name: "Kali", Location: "HSR", State: "karnataka"}}, nil},
 	}
 
 	for i, tc := range tests {
@@ -200,6 +187,15 @@ func TestDelete(t *testing.T) {
 		ctx.SetPathParams(map[string]string{
 			"id": tc.id,
 		})
+
+		var shop models.Shop
+
+		shop.ID, _ = strconv.Atoi(ctx.PathParam("id"))
+
+		id := ctx.PathParam("id")
+
+		store.EXPECT().Get(ctx, shop).Return(tc.mockResp)
+		store.EXPECT().Delete(ctx, id).Return(nil).MaxTimes(1)
 
 		resp, err := h.Delete(ctx)
 

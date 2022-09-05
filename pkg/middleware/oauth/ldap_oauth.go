@@ -35,7 +35,7 @@ func LDAPOAuth(logger log.Logger, ldapOptions *middleware.LDAPOptions, options O
 			} else if token, err = oAuth.Validate(logger, req); err == nil {
 				jwtClaimsKey := JWTContextKey("claims")
 				ctx := context.WithValue(req.Context(), jwtClaimsKey, token.Claims)
-				req = req.WithContext(ctx)
+				req = req.Clone(ctx)
 				inner.ServeHTTP(w, req)
 				return
 			} else {

@@ -22,7 +22,7 @@ func TestErrorResponse(t *testing.T) {
 	req.Header.Set("X-Authenticated-UserId", "gofr0000")
 	req.Header.Set("True-Client-Ip", "localhost")
 	req.Header.Set("X-Correlation-ID", "1s3d323adsd")
-	req = req.WithContext(context.WithValue(req.Context(), CorrelationIDKey, "gofrTest"))
+	req = req.Clone(context.WithValue(req.Context(), CorrelationIDKey, "gofrTest"))
 
 	contentTypes := []string{"application/json", "application/xml", "text/xml", "text/plain"}
 	sampleError := errors.MultipleErrors{StatusCode: http.StatusBadRequest, Errors: []error{&errors.Response{

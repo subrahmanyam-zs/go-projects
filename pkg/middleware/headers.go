@@ -52,7 +52,7 @@ func PropagateHeaders(inner http.Handler) http.Handler {
 			ctx = context.WithValue(ctx, AuthorizationHeader, authorizationHeader)
 		}
 
-		*r = *r.WithContext(ctx)
+		*r = *r.Clone(ctx)
 
 		inner.ServeHTTP(w, r)
 	})

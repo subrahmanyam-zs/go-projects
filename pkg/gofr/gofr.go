@@ -68,7 +68,10 @@ func (k *Gofr) PATCH(path string, handler Handler) {
 	k.addRoute(http.MethodPatch, path, handler)
 }
 
+// Deprecated: EnableSwaggerUI is deprecated. Auto enabled swagger-endpoints.
 func (k *Gofr) EnableSwaggerUI() {
 	k.addRoute(http.MethodGet, "/swagger", SwaggerUIHandler)
 	k.addRoute(http.MethodGet, "/swagger/{name}", SwaggerUIHandler)
+
+	k.Logger.Warn("Usage of EnableSwaggerUI is deprecated. Swagger Endpoints are auto-enabled")
 }

@@ -82,3 +82,7 @@ func (s *aws) push(fd *os.File) error {
 
 	return nil
 }
+
+func (s *aws) list(directory string) ([]string, error) {
+	return nil, ErrListingNotSupported
+}

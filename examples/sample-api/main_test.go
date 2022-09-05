@@ -24,12 +24,12 @@ func TestIntegration(t *testing.T) {
 		{"get hello", http.MethodGet, "hello?name=random", http.StatusOK, nil},
 		{"get json", http.MethodGet, "json", http.StatusOK, nil},
 		{"get error", http.MethodGet, "error", http.StatusInternalServerError, nil},
-		{"get swagger", http.MethodGet, "swagger", http.StatusOK, nil},
+		{"get swagger", http.MethodGet, "/.well-known/swagger", http.StatusOK, nil},
 		{"unregistered update route", http.MethodPut, "swagger", http.StatusMethodNotAllowed, []byte(`{}`)},
 	}
 
 	for i, tc := range tests {
-		req, _ := request.NewMock(tc.method, "http://localhost:9000/"+tc.endpoint, bytes.NewBuffer(tc.body))
+		req, _ := request.NewMock(tc.method, "http://localhost:4500/"+tc.endpoint, bytes.NewBuffer(tc.body))
 
 		c := http.Client{}
 

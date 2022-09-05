@@ -17,7 +17,7 @@ off performance for ease of use.
   docker run --name gofr-solr -p 2020:8983 solr:8 -DzkRun
   docker run --name gofr-mongo -d -e MONGO_INITDB_ROOT_USERNAME=admin -e MONGO_INITDB_ROOT_PASSWORD=admin123 -p 2004:27017 mongo:latest
   docker run --name gofr-zipkin -d -p 2005:9411 openzipkin/zipkin:latest
-  docker run --name gofr-pgsql -d -e POSTGRES_PASSWORD=root123 -p 2006:5432 postgres:13.4
+  docker run --name gofr-pgsql -d -e POSTGRES_DB=customers -e POSTGRES_PASSWORD=root123 -p 2006:5432 postgres:13.4
   docker run --name gofr-mssql -d -e 'ACCEPT_EULA=Y' -e 'SA_PASSWORD=reallyStrongPwd123' -p 2007:1433 mcr.microsoft.com/mssql/server:2017-latest
   docker run --rm -d -p 2181:2181 -p 443:2008 -p 2008:2008 -p 2009:2009 \
       --env ADVERTISED_LISTENERS=PLAINTEXT://localhost:443,INTERNAL://localhost:2009 \
@@ -31,6 +31,7 @@ off performance for ease of use.
   docker run --name gofr-yugabyte -p 2011:9042 -d yugabytedb/yugabyte:latest bin/yugabyted start --daemon=false  
   docker run -d --name gofr-elasticsearch -p 2012:9200 -p 2013:9300 -e "discovery.type=single-node" elasticsearch:6.8.6 
   docker run -d --name gofr-dynamodb -p 2021:8000 amazon/dynamodb-local
+  docker run -d --name=gofr-cockroachdb -p 26257:26257 cockroachdb/cockroach:v21.2.4 start-single-node --insecure
   ```
   Please note that the recommended local port for the services are different than the actual ports. This is done to
   avoid conflict with the local installation on developer machines. This method also allows a developer to work on

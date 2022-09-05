@@ -56,3 +56,10 @@ func TestAzureFileOpen(t *testing.T) {
 		assert.Equal(t, v.expErr, err)
 	}
 }
+
+func Test_list_azure(t *testing.T) {
+	s := &azure{fileName: "aws.txt", fileMode: READWRITE}
+	expErr := ErrListingNotSupported
+	_, err := s.list("test")
+	assert.Equalf(t, expErr, err, "Test case failed.\nExpected: %v, got: %v", expErr, err)
+}

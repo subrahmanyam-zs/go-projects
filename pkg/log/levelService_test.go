@@ -2,6 +2,7 @@ package log
 
 import (
 	"bytes"
+	"crypto/tls"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -14,12 +15,13 @@ import (
 
 func TestRemoteLevelLogger(t *testing.T) {
 	tests := []struct {
-		desc  string
-		level level
-		body  []byte
+		desc        string
+		level       level
+		serviceName string
+		body        []byte
 	}{
-		{"success case", Info, []byte(`{"data": [{"serviceName": "gofr-sample-api","config": {"LOG_LEVEL": "INFO"}}]}`)},
-		{"failure case", Debug, nil},
+		{"success case", Info, "gofr-sample-api", []byte(`{"data": [{"serviceName": "gofr-sample-api","config": {"LOG_LEVEL": "INFO"}}]}`)},
+		{"failure case", Debug, "", nil},
 	}
 
 	for i, tc := range tests {
@@ -28,13 +30,21 @@ func TestRemoteLevelLogger(t *testing.T) {
 			_, _ = w.Write(tc.body)
 		}))
 
+		req, _ := http.NewRequest(http.MethodGet, ts.URL+"/configs?serviceName="+tc.serviceName, http.NoBody)
+
+		tr := &http.Transport{
+			//nolint:gosec // need this to skip TLS verification
+			TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+		}
+		client := &http.Client{Transport: tr}
+
 		rls.logger = NewMockLogger(io.Discard)
 
 		s := &levelService{url: ts.URL, logger: rls.logger}
 
 		s.level = Debug
 
-		s.updateRemoteLevel()
+		s.updateRemoteLevel(client, req)
 
 		ts.Close()
 
@@ -49,9 +59,12 @@ func TestRemoteLevelLoggerRequestError(t *testing.T) {
 
 	rls.logger = l
 
+	req, _ := http.NewRequest(http.MethodGet, "", http.NoBody)
+	client := &http.Client{}
+
 	s := &levelService{url: "", logger: l}
 
-	s.updateRemoteLevel()
+	s.updateRemoteLevel(client, req)
 
 	assert.Contains(t, b.String(), "Could not create log service client")
 }
@@ -62,6 +75,14 @@ func TestRemoteLevelLoggerNoResponse(t *testing.T) {
 		w.WriteHeader(404)
 	}))
 
+	req, _ := http.NewRequest(http.MethodGet, ts.URL+"/configs?serviceName=", http.NoBody)
+
+	tr := &http.Transport{
+		//nolint:gosec // need this to skip TLS verification
+		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+	}
+	client := &http.Client{Transport: tr}
+
 	defer ts.Close()
 
 	b := new(bytes.Buffer)
@@ -71,7 +92,7 @@ func TestRemoteLevelLoggerNoResponse(t *testing.T) {
 
 	s := &levelService{url: ts.URL, logger: l}
 
-	s.updateRemoteLevel()
+	s.updateRemoteLevel(client, req)
 
 	expectedLog := "Logging Service returned 404 status. Req: " + ts.URL
 

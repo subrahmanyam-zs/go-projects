@@ -12,7 +12,9 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"developer.zopsmart.com/go/gofr/pkg/datastore/pubsub"
+	"developer.zopsmart.com/go/gofr/pkg/datastore/pubsub/avro"
 	"developer.zopsmart.com/go/gofr/pkg/datastore/pubsub/kafka"
+	"developer.zopsmart.com/go/gofr/pkg/errors"
 	"developer.zopsmart.com/go/gofr/pkg/gofr/config"
 	"developer.zopsmart.com/go/gofr/pkg/log"
 )
@@ -150,7 +152,10 @@ func Test_initializeDB(t *testing.T) {
 
 		mockConfig := config.MockConfig{
 			Data: map[string]string{"DB_HOST": tc.host, "DB_USER": c.Get("DB_USER"), "DB_PASSWORD": c.Get("DB_PASSWORD"),
-				"DB_NAME": c.Get("DB_NAME"), "DB_PORT": tc.port, "DB_DIALECT": c.Get("DB_DIALECT"), "DB_ORM": tc.ORM},
+				"DB_NAME": c.Get("DB_NAME"), "DB_PORT": tc.port, "DB_DIALECT": c.Get("DB_DIALECT"), "DB_ORM": tc.ORM,
+				"DB_MAX_OPEN_CONN": c.Get("DB_MAX_OPEN_CONN"), "DB_MAX_IDLE_CONN": c.Get("DB_MAX_IDLE_CONN"),
+				"DB_MAX_CONN_LIFETIME": c.Get("DB_MAX_CONN_LIFETIME"),
+			},
 		}
 
 		k := NewWithConfig(&mockConfig)
@@ -317,10 +322,8 @@ func Test_PubSub(t *testing.T) {
 			"subject": "gofr-value",
 			"version": 3,
 			"id":      303,
-			"schema": "{\"type\":\"record\",\"name\":\"person\"," +
-				"\"fields\":[{\"name\":\"Id\",\"type\":\"string\"}," +
-				"{\"name\":\"Name\",\"type\":\"string\"}," +
-				"{\"name\":\"Email\",\"type\":\"string\"}]}",
+			"schema": `{"type":"record","name":"person","fields":[{"name":"Id","type":"string"},
+						{"name":"Name","type":"string"},{"name":"Email","type":"string"}]}`,
 		}
 
 		reBytes, _ := json.Marshal(re)
@@ -356,7 +359,7 @@ func Test_PubSub(t *testing.T) {
 
 	for i, tc := range testCases {
 		b.Reset()
-		initializePubSub(tc.configLoc, k)
+		initializePubSub(tc.configLoc, logger, k)
 
 		if !strings.Contains(b.String(), tc.expectedStr) {
 			t.Errorf("[FAILED %v], expected: `%v` in the logs, got: %v", i, tc.expectedStr, b.String())
@@ -374,10 +377,8 @@ func Test_Notifier(t *testing.T) {
 			"subject": "gofr-value",
 			"version": 3,
 			"id":      303,
-			"schema": "{\"type\":\"record\",\"name\":\"person\"," +
-				"\"fields\":[{\"name\":\"Id\",\"type\":\"string\"}," +
-				"{\"name\":\"Name\",\"type\":\"string\"}," +
-				"{\"name\":\"Email\",\"type\":\"string\"}]}",
+			"schema": `{"type":"record","name":"person","fields":[{"name":"Id","type":"string"},
+						{"name":"Name","type":"string"},{"name":"Email","type":"string"}]}`,
 		}
 
 		reBytes, _ := json.Marshal(re)
@@ -409,16 +410,15 @@ func Test_Notifier(t *testing.T) {
 		assert.Contains(t, b.String(), tc.expectedStr, "[FAILED %v], expected: `%v` in the logs, got: %v", i, tc.expectedStr, b.String())
 	}
 }
+
 func Test_initializeAvro(t *testing.T) {
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		re := map[string]interface{}{
 			"subject": "gofr-value",
 			"version": 3,
 			"id":      303,
-			"schema": "{\"type\":\"record\",\"name\":\"person\"," +
-				"\"fields\":[{\"name\":\"Id\",\"type\":\"string\"}," +
-				"{\"name\":\"Name\",\"type\":\"string\"}," +
-				"{\"name\":\"Email\",\"type\":\"string\"}]}",
+			"schema": `{"type":"record","name":"person","fields":[{"name":"Id","type":"string"},
+			{"name":"Name","type":"string"},{"name":"Email","type":"string"}]}`,
 		}
 
 		reBytes, _ := json.Marshal(re)
@@ -453,7 +453,7 @@ func Test_initializeAvro(t *testing.T) {
 
 	for _, tt := range tests {
 		k.PubSub = tt.ps
-		avroConfig := avroConfigFromEnv(tt.c)
+		avroConfig := avroConfigFromEnv(tt.c, "")
 		initializeAvro(avroConfig, k)
 
 		if !strings.Contains(b.String(), tt.expectedStr) {
@@ -504,4 +504,288 @@ func Test_GofrCMDConfig(t *testing.T) {
 	if k.Redis == nil {
 		t.Errorf("expected redis to be connected through configs")
 	}
+}
+
+func Test_initializeEventBridge(t *testing.T) {
+	b := new(bytes.Buffer)
+	logger := log.NewMockLogger(b)
+	c := &config.MockConfig{
+		Data: map[string]string{
+			"EVENT_BRIDGE_REGION": "us-east-1",
+			"EVENT_BRIDGE_BUS":    "Gofr",
+			"EVENT_BRIDGE_SOURCE": "Gofr-application",
+		},
+	}
+	k := &Gofr{Logger: logger}
+	initializeEventBridge(c, logger, k)
+
+	assert.Contains(t, b.String(), "AWS EventBridge initialized successfully")
+}
+
+func Test_initializeAvroFromConfigs(t *testing.T) {
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		res := map[string]interface{}{
+			"subject": "gofr-value",
+			"version": 3,
+			"id":      303,
+			"schema": `{"type":"record","name":"person","fields":[{"name":"Id","type":"string"},
+						{"name":"Name","type":"string"},{"name":"Email","type":"string"}]}`,
+		}
+
+		body, _ := json.Marshal(res)
+		w.Header().Set("Content-type", "application/json")
+		_, _ = w.Write(body)
+	}))
+
+	cfg := &avro.Config{
+		URL:     ts.URL,
+		Subject: "gofr-value",
+	}
+
+	logger := log.NewMockLogger(io.Discard)
+	c := config.NewGoDotEnvProvider(logger, "../../configs")
+
+	topic := c.Get("KAFKA_TOPIC")
+	topics := strings.Split(topic, ",")
+	kafkaCfg := &kafka.Config{
+		Brokers: c.Get("KAFKA_HOSTS"),
+		Topics:  topics,
+	}
+	kafkaObj, _ := kafka.New(kafkaCfg, logger)
+	testcases := []struct {
+		desc   string
+		ps     pubsub.PublisherSubscriber
+		expErr error
+	}{
+		{"Successful connection", kafkaObj, nil},
+		{"Empty pubsub", nil, errors.DataStoreNotInitialized{DBName: "Avro", Reason: "Kafka/Eventhub not provided"}},
+	}
+
+	for i, tc := range testcases {
+		_, err := initializeAvroFromConfigs(cfg, tc.ps)
+		assert.Equal(t, tc.expErr, err, "Test[%d], failed.\n%s", i, tc.desc)
+	}
+}
+
+func Test_InitializeDynamoDBFromConfig(t *testing.T) {
+	logger := log.NewMockLogger(io.Discard)
+	cfg := config.NewGoDotEnvProvider(logger, "../../configs")
+
+	conn, err := InitializeDynamoDBFromConfig(cfg, logger, "")
+	if err != nil {
+		t.Errorf("Test case failed. Expected: %v, got: %v", nil, err)
+	}
+
+	assert.NotNil(t, conn, "Test case failed.")
+}
+
+func Test_InitializeRedisFromConfigs(t *testing.T) {
+	logger := log.NewMockLogger(io.Discard)
+	cfg := config.NewGoDotEnvProvider(logger, "../../configs")
+
+	conn, err := InitializeRedisFromConfigs(cfg, logger, "")
+	if err != nil {
+		t.Errorf("Test case failed. Expected: %v, got: %v", nil, err)
+	}
+
+	assert.NotNil(t, conn, "Test case failed")
+}
+
+func Test_InitializeGORMFromConfigs(t *testing.T) {
+	logger := log.NewMockLogger(io.Discard)
+	cfg := config.NewGoDotEnvProvider(logger, "../../configs")
+
+	conn, err := InitializeGORMFromConfigs(cfg, "")
+	if err != nil {
+		t.Errorf("Test case failed. Expected: %v, got: %v", nil, err)
+	}
+
+	assert.NotNil(t, conn, "Test case failed")
+}
+
+func Test_InitializeMongoDBFromConfigs(t *testing.T) {
+	var cfg mockConfig
+
+	logger := log.NewMockLogger(io.Discard)
+
+	conn, err := InitializeMongoDBFromConfigs(cfg, logger, "")
+	if err != nil {
+		t.Errorf("Test case failed. Expected: %v, got: %v", nil, err)
+	}
+
+	assert.NotNil(t, conn, "Test case failed")
+}
+
+func TestInitializeSolrFromConfigs(t *testing.T) {
+	logger := log.NewMockLogger(io.Discard)
+	c := config.NewGoDotEnvProvider(logger, "../../configs")
+
+	cfg := &config.MockConfig{Data: map[string]string{
+		"PRE_SOLR_HOST": c.Get("SOLR_HOST"),
+		"PRE_SOLR_PORT": c.Get("SOLR_PORT"),
+	}}
+
+	conn, err := InitializeSolrFromConfigs(cfg, "PRE")
+	if err != nil {
+		t.Errorf("Test case failed. Expected: %v, got: %v", nil, err)
+	}
+
+	assert.NotNil(t, conn, "Test case failed")
+}
+
+func Test_InitializeElasticSearchFromConfigs(t *testing.T) {
+	cfg := &config.MockConfig{Data: map[string]string{"PRE_ELASTIC_SEARCH_HOST": "localhost",
+		"PRE_ELASTIC_SEARCH_PORT": "2012"}}
+	logger := log.NewMockLogger(io.Discard)
+
+	conn, err := InitializeElasticSearchFromConfigs(cfg, logger, "PRE")
+	if err != nil {
+		t.Errorf("Test case failed. Expected: %v, got: %v", nil, err)
+	}
+
+	assert.NotNil(t, conn, "Test case failed")
+}
+
+func Test_InitializeCassandraFromConfigs(t *testing.T) {
+	var cfg mockConfig
+
+	logger := log.NewMockLogger(io.Discard)
+
+	conn, err := InitializeCassandraFromConfigs(cfg, logger, "")
+	if err != nil {
+		t.Errorf("Test case failed. Expected: %v, got: %v", nil, err)
+	}
+
+	assert.NotNil(t, conn, "Test case failed")
+}
+
+func Test_InitializeYCQLFromConfigs(t *testing.T) {
+	logger := log.NewMockLogger(io.Discard)
+	c := config.NewGoDotEnvProvider(logger, "../../configs")
+	cfg := &config.MockConfig{
+		Data: map[string]string{
+			"PRE_CASS_DB_DIALECT":  "YCQL",
+			"PRE_CASS_DB_PASS":     c.Get("YCQL_DB_PASS"),
+			"PRE_CASS_DB_USER":     c.Get("YCQL_DB_USER"),
+			"PRE_CASS_DB_PORT":     c.Get("YCQL_DB_PORT"),
+			"PRE_CASS_DB_KEYSPACE": c.Get("CASS_DB_KEYSPACE"),
+			"PRE_CASS_DB_TIMEOUT":  c.Get("CASS_DB_TIMEOUT"),
+			"PRE_CASS_DB_HOST":     "localhost",
+		},
+	}
+
+	conn, err := InitializeYCQLFromConfigs(cfg, logger, "PRE")
+	if err != nil {
+		t.Errorf("Test case failed. Expected: %v, got: %v", nil, err)
+	}
+
+	assert.NotNil(t, conn, "Test case failed")
+}
+
+func Test_initializeEventhubFromConfigs(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping testing in short mode")
+	}
+
+	logger := log.NewMockLogger(io.Discard)
+	c := config.NewGoDotEnvProvider(logger, "../../configs")
+	cfg := &config.MockConfig{Data: map[string]string{
+		"PRE_EVENTHUB_NAMESPACE":  "zsmisc-dev",
+		"PRE_EVENTHUB_NAME":       "healthcheck",
+		"PRE_AZURE_CLIENT_ID":     c.Get("AZURE_CLIENT_ID"),
+		"PRE_AZURE_CLIENT_SECRET": c.Get("AZURE_CLIENT_SECRET"),
+		"PRE_AZURE_TENANT_ID":     c.Get("AZURE_TENANT_ID"),
+		"PRE_PUBSUB_BACKEND":      "EVENTHUB",
+	}}
+
+	conn, err := initializeEventhubFromConfigs(cfg, "PRE")
+	if err != nil {
+		t.Errorf("Test case failed. Expected: %v, got: %v", nil, err)
+	}
+
+	assert.NotNil(t, conn, "Test case failed")
+}
+
+func Test_initializeEventBridgeFromConfigs(t *testing.T) {
+	logger := log.NewMockLogger(io.Discard)
+	cfg := &config.MockConfig{
+		Data: map[string]string{
+			"EVENT_BRIDGE_REGION": "us-east-1",
+			"EVENT_BRIDGE_BUS":    "Gofr",
+			"EVENT_BRIDGE_SOURCE": "Gofr-application",
+		},
+	}
+
+	conn, err := initializeEventBridgeFromConfigs(cfg, logger, "")
+	if err != nil {
+		t.Errorf("Test case failed. Expected: %v, got: %v", nil, err)
+	}
+
+	assert.NotNil(t, conn, "Test case failed")
+}
+
+func Test_InitializeKafkaFromConfigs(t *testing.T) {
+	var cfg mockConfig
+
+	logger := log.NewMockLogger(io.Discard)
+
+	conn, err := initializeKafkaFromConfigs(cfg, logger, "")
+	if err != nil {
+		t.Errorf("Test case failed. Expected: %v, got: %v", nil, err)
+	}
+
+	assert.NotNil(t, conn, "Test case failed")
+}
+
+func Test_InitializePubSubFromConfigs(t *testing.T) {
+	cfg := &config.MockConfig{Data: map[string]string{"PRE_PUBSUB_BACKEND": ""}}
+	expErr := errors.DataStoreNotInitialized{DBName: "PubSub", Reason: "pubsub backend not provided"}
+
+	ps, err := InitializePubSubFromConfigs(cfg, log.NewMockLogger(io.Discard), "PRE")
+
+	assert.Equal(t, nil, ps, "Test case failed")
+	assert.Equal(t, expErr, err, "Test case failed")
+}
+
+func Test_InitializeAWSSNSFromConfigs(t *testing.T) {
+	b := new(bytes.Buffer)
+	logger := log.NewMockLogger(b)
+	conf := config.NewGoDotEnvProvider(logger, "../../configs")
+
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		re := map[string]interface{}{
+			"subject": "gofr-value",
+			"version": 3,
+			"id":      303,
+			"schema": `{"type":"record","name":"person","fields":[{"name":"Id","type":"string"},
+						{"name":"Name","type":"string"},{"name":"Email","type":"string"}]}`,
+		}
+
+		reBytes, _ := json.Marshal(re)
+		w.Header().Set("Content-type", "application/json")
+		_, _ = w.Write(reBytes)
+	}))
+	cfg := &config.MockConfig{Data: map[string]string{
+		"PRE_EVENTHUB_NAMESPACE": "zsmisc-dev",
+		"PRE_EVENTHUB_NAME":      "healthcheck",
+		"PRE_AccessKeyID":        conf.Get("SNS_ACCESS_KEY"),
+		"PRE_SecretAccessKey":    conf.Get("SNS_SECRET_ACCESS_KEY"),
+		"PRE_Region":             conf.Get("SNS_REGION"),
+		"PRE_NOTIFIER_BACKEND":   "SNS",
+		"PRE_AVRO_SCHEMA_URL":    ts.URL,
+	}}
+
+	conn, err := InitializeAWSSNSFromConfigs(cfg, "PRE")
+
+	assert.NotNil(t, conn, "Test case failed")
+	assert.Equal(t, nil, err, "Test case failed")
+}
+
+func Test_InitializeSQLFromConfigs(t *testing.T) {
+	logger := log.NewMockLogger(io.Discard)
+	cfg := config.NewGoDotEnvProvider(logger, "../../configs")
+	conn, err := InitializeSQLFromConfigs(cfg, "")
+
+	assert.NotNil(t, conn, "Test case failed")
+	assert.Equal(t, nil, err, "Test case failed")
 }

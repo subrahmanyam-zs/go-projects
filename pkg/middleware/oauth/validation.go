@@ -16,6 +16,7 @@ func getJWT(logger log.Logger, r *http.Request) (JWT, error) {
 
 	jwtVal := strings.Fields(token)
 	if token == "" || len(jwtVal) != 2 || !strings.EqualFold(jwtVal[0], "bearer") {
+		logger.Error("invalid format for authorization header")
 		return JWT{}, middleware.ErrInvalidRequest
 	}
 
@@ -32,11 +33,13 @@ func getJWT(logger log.Logger, r *http.Request) (JWT, error) {
 
 	decodedHeader, err := base64.RawStdEncoding.DecodeString(jwtParts[0])
 	if err != nil {
+		logger.Error("Failed to decode jwt header: ", err)
 		return JWT{}, middleware.ErrInvalidToken
 	}
 
 	err = json.Unmarshal(decodedHeader, &h)
 	if err != nil {
+		logger.Error("Failed to unmarshal jwt header: ", err)
 		return JWT{}, middleware.ErrInvalidToken
 	}
 

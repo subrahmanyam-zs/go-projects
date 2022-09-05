@@ -2,6 +2,7 @@ package file
 
 import (
 	"os"
+	"strconv"
 
 	"developer.zopsmart.com/go/gofr/pkg/errors"
 	"developer.zopsmart.com/go/gofr/pkg/gofr"
@@ -12,6 +13,7 @@ const (
 	Azure = "AZURE"
 	AWS   = "AWS"
 	GCP   = "GCP"
+	SFTP  = "SFTP"
 )
 
 type Mode string
@@ -29,6 +31,7 @@ type Config struct {
 	Azure     AzureConfig
 	AWS       AWSConfig
 	GCP       GCPConfig
+	SFTP      SFTPConfig
 }
 
 // AzureConfig is used to store configurations related to Azure cloud storage.
@@ -54,8 +57,16 @@ type GCPConfig struct {
 	BucketName string
 }
 
+// SFTPConfig is used to store configuration related to SFTP.
+type SFTPConfig struct {
+	Host     string
+	User     string
+	Password string
+	Port     int
+}
+
 // NewWithConfig takes the gofr config and creates Config struct specific to this file package and then calls New()
-func NewWithConfig(config gofr.Config, filename string, mode Mode) (File, error) {
+func NewWithConfig(config gofr.Config, filename string, mode Mode) (Storage, error) {
 	var fileConfig Config
 	fileConfig.FileStore = config.Get("FILE_STORE")
 
@@ -68,11 +79,14 @@ func NewWithConfig(config gofr.Config, filename string, mode Mode) (File, error)
 	// Reading GCP Configs.
 	fileConfig.GCP = setGCPConfig(config)
 
+	// Reading SFTP Configs
+	fileConfig.SFTP = setSFTPConfig(config)
+
 	return New(&fileConfig, filename, mode)
 }
 
-// New takes file specific config struct and calls respective constructor functions for opening files
-func New(config *Config, filename string, mode Mode) (File, error) {
+// New takes  file specific config struct and calls respective constructor functions for opening files
+func New(config *Config, filename string, mode Mode) (Storage, error) {
 	l := fileAbstractor{}
 
 	switch config.FileStore {
@@ -93,6 +107,12 @@ func New(config *Config, filename string, mode Mode) (File, error) {
 	case GCP:
 		gcpFile, err := newGCPFile(&config.GCP, filename, mode)
 		l.fileName, l.fileMode, l.remoteFileAbstracter = filename, fetchLocalFileMode(mode), gcpFile
+
+		return &l, err
+
+	case SFTP:
+		sftpFile, err := newSFTPFile(&config.SFTP, filename, mode)
+		l.fileName, l.fileMode, l.remoteFileAbstracter = filename, fetchLocalFileMode(mode), sftpFile
 
 		return &l, err
 
@@ -142,5 +162,16 @@ func setGCPConfig(config gofr.Config) GCPConfig {
 	return GCPConfig{
 		GCPKey:     config.Get("GCP_STORAGE_CREDENTIALS"),
 		BucketName: config.Get("GCP_STORAGE_BUCKET_NAME"),
+	}
+}
+
+func setSFTPConfig(config gofr.Config) SFTPConfig {
+	port, _ := strconv.Atoi(config.Get("SFTP_PORT"))
+
+	return SFTPConfig{
+		Host:     config.Get("SFTP_HOST"),
+		User:     config.Get("SFTP_USER"),
+		Password: config.Get("SFTP_PASSWORD"),
+		Port:     port,
 	}
 }

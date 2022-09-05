@@ -10,8 +10,6 @@ func main() {
 	app := gofr.New()
 
 	app.Server.ValidateHeaders = false
-	// enabling /swagger endpoint for Swagger UI
-	app.EnableSwaggerUI()
 
 	// add a handler
 	app.GET("/hello-world", handler.HelloWorld)

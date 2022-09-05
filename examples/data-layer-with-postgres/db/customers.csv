@@ -1,5 +1,5 @@
-Name
-Alice
-Bob
-Frank
-William
+id,name,email,phone
+1,Alice,abc@zopmsart.com,8877665544
+2,Bob,yups@zopsmart.com,8899667722
+3,Frank,yups@zopsmart.com,8989778722
+4,Will,tyk@zopsmart.com,3434343434

@@ -25,29 +25,78 @@ import (
 	"developer.zopsmart.com/go/gofr/pkg/log"
 )
 
-func TestNewKafkaProducer(t *testing.T) {
-	tests := []struct {
-		config *Config
-		err    error
+func TestNewKafka(t *testing.T) {
+	conf := sarama.NewConfig()
+	conf.Consumer.Group.Session.Timeout = 1
+
+	logger := log.NewMockLogger(io.Discard)
+
+	testCases := []struct {
+		k       Config
+		wantErr bool
 	}{
 		{
-			config: &Config{Brokers: "somehost"},
-			err:    sarama.ErrOutOfBrokers,
+			Config{
+				Brokers:           "localhost:2008,localhost:2009",
+				Topics:            []string{"test-topic"},
+				MaxRetry:          4,
+				RetryFrequency:    300,
+				DisableAutoCommit: true,
+			}, false,
 		},
 		{
-			config: &Config{
-				Topics:  []string{"some-topic"},
+			Config{
+				Brokers:           "localhost:2008,localhost:2009",
+				Topics:            []string{"test-topic"},
+				MaxRetry:          4,
+				RetryFrequency:    300,
+				DisableAutoCommit: false,
+			}, false,
+		},
+		{
+			Config{
 				Brokers: "localhost:2009",
-			},
-			err: nil,
+				Topics:  []string{"test-topic"},
+				Config:  conf,
+			}, true,
+		},
+		{
+			Config{
+				Brokers: "localhost:0000",
+				Topics:  []string{"test-topic"},
+			}, true,
 		},
 	}
 
-	for _, test := range tests {
-		_, err := NewKafkaProducer(test.config)
-		if !reflect.DeepEqual(err, test.err) {
-			t.Errorf("FAILED, expected: %v, got: %v", test.err, err)
+	for i, tt := range testCases {
+		_, err := New(&tt.k, logger)
+		if !tt.wantErr && err != nil {
+			t.Errorf("FAILED[%v], expected: %v, got: %v", i+1, tt.wantErr, err)
 		}
+
+		if tt.wantErr && err == nil {
+			t.Errorf("FAILED[%v], expected: %v, got: %v", i+1, tt.wantErr, err)
+		}
+	}
+}
+
+func TestNewKafkaProducerError(t *testing.T) {
+	_, err := NewKafkaProducer(&Config{Brokers: "somehost"})
+
+	if !strings.Contains(err.Error(), sarama.ErrOutOfBrokers.Error()) {
+		t.Errorf("FAILED, expected: %v, got: %v", sarama.ErrOutOfBrokers.Error(), err.Error())
+	}
+}
+
+func TestNewKafkaProducer(t *testing.T) {
+	cnfg := &Config{
+		Topics:  []string{"some-topic"},
+		Brokers: "localhost:2009",
+	}
+
+	_, err := NewKafkaProducer(cnfg)
+	if !assert.Nil(t, err) {
+		t.Errorf("FAILED, expected nil got: %v", err)
 	}
 }
 
@@ -108,61 +157,6 @@ func TestNewKafkaFromEnv(t *testing.T) {
 	}
 }
 
-func TestNewKafka(t *testing.T) {
-	conf := sarama.NewConfig()
-	conf.Consumer.Group.Session.Timeout = 1
-
-	logger := log.NewMockLogger(io.Discard)
-
-	testCases := []struct {
-		k       Config
-		wantErr bool
-	}{
-		{
-			Config{
-				Brokers:           "localhost:2008,localhost:2009",
-				Topics:            []string{"test-topic"},
-				MaxRetry:          4,
-				RetryFrequency:    300,
-				DisableAutoCommit: true,
-			}, false,
-		},
-		{
-			Config{
-				Brokers:           "localhost:2008,localhost:2009",
-				Topics:            []string{"test-topic"},
-				MaxRetry:          4,
-				RetryFrequency:    300,
-				DisableAutoCommit: false,
-			}, false,
-		},
-		{
-			Config{
-				Brokers: "localhost:2009",
-				Topics:  []string{"test-topic"},
-				Config:  conf,
-			}, true,
-		},
-		{
-			Config{
-				Brokers: "localhost:0000",
-				Topics:  []string{"test-topic"},
-			}, true,
-		},
-	}
-
-	for i, tt := range testCases {
-		_, err := New(&tt.k, logger)
-		if !tt.wantErr && err != nil {
-			t.Errorf("FAILED[%v], expected: %v, got: %v", i+1, tt.wantErr, err)
-		}
-
-		if tt.wantErr && err == nil {
-			t.Errorf("FAILED[%v], expected: %v, got: %v", i+1, tt.wantErr, err)
-		}
-	}
-}
-
 func Test_PubSub(t *testing.T) {
 	logger := log.NewLogger()
 	c := config.NewGoDotEnvProvider(logger, "../../../../configs")
@@ -181,6 +175,38 @@ func Test_PubSub(t *testing.T) {
 	Ping(t, k)
 	PublishEvent(t, k)
 	SubscribeWithCommit(t, k, c.Get("KAFKA_TOPIC"))
+	Subscribe(t, k)
+	Pause(t, k)
+	Resume(t, k)
+}
+
+// Test_PubSubWithOffset check the subscribe operation with custom initial offset value.
+func Test_PubSubWithOffset(t *testing.T) {
+	t.Skip("skipping testing in short mode")
+
+	logger := log.NewLogger()
+	c := config.NewGoDotEnvProvider(logger, "../../../../configs")
+	topic := c.Get("KAFKA_TOPIC")
+	// prereqisite
+	k, err := New(&Config{
+		Brokers:        c.Get("KAFKA_HOSTS"),
+		Topics:         []string{topic},
+		InitialOffsets: OffsetOldest,
+		GroupID:        "testing-consumerGroup",
+		Offsets:        []pubsub.TopicPartition{{Topic: topic, Partition: 0, Offset: 1}},
+	}, logger)
+
+	if err != nil {
+		t.Errorf("Kafka connection failed : %v", err)
+		return
+	}
+
+	Ping(t, k)
+	// In this we are first trying to publish some messages then we are consuming 1 message
+	PublishMessage(t, k)
+	// SubscribeWithCommit will only subscribe and commit messages from 0th and the 1st offset.
+	SubscribeWithCommit(t, k, topic)
+	// Subscribe to ensure every message in the queue is subscribed.
 	Subscribe(t, k)
 }
 
@@ -263,23 +289,20 @@ func Subscribe(t *testing.T, k *Kafka) {
 	}
 
 	for _, tt := range tests {
-		tt := tt
-		t.Run(tt.name, func(t *testing.T) {
-			msg, err := k.Subscribe()
-			if (err != nil) != tt.wantErr {
-				t.Errorf("Subscribe() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
+		msg, err := k.Subscribe()
+		if (err != nil) != tt.wantErr {
+			t.Errorf("Subscribe() error = %v, wantErr %v", err, tt.wantErr)
+			return
+		}
 
-			if msg == nil {
-				t.Errorf("Subscribe(): expected message, got nil")
-				return
-			}
+		if msg == nil {
+			t.Errorf("Subscribe(): expected message, got nil")
+			return
+		}
 
-			if len(msg.Headers) != 1 {
-				t.Errorf("Subscribe() only one message header should be present, found: %v", len(msg.Headers))
-			}
-		})
+		if len(msg.Headers) != 1 {
+			t.Errorf("Subscribe() only one message header should be present, found: %v", len(msg.Headers))
+		}
 	}
 }
 
@@ -297,6 +320,19 @@ func Ping(t *testing.T, k *Kafka) {
 	}
 }
 
+func Pause(t *testing.T, k *Kafka) {
+	err := k.Pause()
+	if err != nil {
+		t.Errorf("FAILED, expected: successful Pause, got: %v", err)
+	}
+}
+
+func Resume(t *testing.T, k *Kafka) {
+	err := k.Resume()
+	if err != nil {
+		t.Errorf("FAILED, expected: successful Resume, got: %v", err)
+	}
+}
 func Test_convertKafkaConfig(t *testing.T) {
 	expectedConfig := sarama.NewConfig()
 	setDefaultConfig(expectedConfig)
@@ -326,26 +362,93 @@ func Test_processSASLConfigs(t *testing.T) {
 	expConfig.Net.TLS.Config = &tls.Config{
 		InsecureSkipVerify: true, //nolint:gosec // TLS InsecureSkipVerify set true.
 	}
-	expConfig.Net.SASL.Mechanism = SASLTypeSCRAMSHA512
-	expConfig.Net.SASL.SCRAMClientGeneratorFunc = func() sarama.SCRAMClient {
+
+	scramClientGeneratorFunc := func() sarama.SCRAMClient {
 		return &XDGSCRAMClient{HashGeneratorFcn: sha512.New}
 	}
 
-	saslConfig := SASLConfig{
-		User:      "testuser",
-		Password:  "password",
-		Mechanism: SASLTypeSCRAMSHA512,
+	tests := []struct {
+		desc                     string
+		mechanism                string
+		SCRAMClientGeneratorFunc func() sarama.SCRAMClient
+	}{
+		{"using mechanism SASL/PLAIN", PLAIN, nil},
+		{"using SASL mechanism SCRAM", SASLTypeSCRAMSHA512, scramClientGeneratorFunc},
 	}
 
-	conf := sarama.NewConfig()
-	processSASLConfigs(saslConfig, conf)
+	for i, tc := range tests {
+		expConfig.Net.SASL.Mechanism = sarama.SASLMechanism(tc.mechanism)
+		expConfig.Net.SASL.SCRAMClientGeneratorFunc = tc.SCRAMClientGeneratorFunc
 
-	conf.Net.SASL.SCRAMClientGeneratorFunc = nil
-	expConfig.Net.SASL.SCRAMClientGeneratorFunc = nil
-	conf.Producer.Partitioner = nil
-	expConfig.Producer.Partitioner = nil
+		saslConfig := SASLConfig{
+			User:      "testuser",
+			Password:  "password",
+			Mechanism: tc.mechanism,
+		}
 
-	assert.Equal(t, expConfig, conf)
+		conf := sarama.NewConfig()
+		processSASLConfigs(saslConfig, conf)
+
+		conf.Net.SASL.SCRAMClientGeneratorFunc = nil
+		expConfig.Net.SASL.SCRAMClientGeneratorFunc = nil
+		conf.Producer.Partitioner = nil
+		expConfig.Producer.Partitioner = nil
+
+		assert.Equal(t, expConfig, conf, "TEST[%d], failed.\n%s", i, tc.desc)
+	}
+}
+
+func Test_KafkaAuthentication(t *testing.T) {
+	logger := log.NewMockLogger(io.Discard)
+	c := config.NewGoDotEnvProvider(logger, "../../../../configs")
+	topic := c.Get("KAFKA_TOPIC")
+	topics := strings.Split(topic, ",")
+
+	tests := []struct {
+		userName      string
+		pass          string
+		authMechanism string
+		err           error
+	}{
+		{"", "", PLAIN, nil},
+		{"zopsmart", "zopsmart", "", errInvalidMechanism},
+	}
+
+	for i, tc := range tests {
+		cfg := &Config{
+
+			Brokers: c.Get("KAFKA_HOSTS"),
+			Topics:  topics,
+			SASL:    SASLConfig{User: tc.userName, Password: tc.pass, Mechanism: tc.authMechanism},
+		}
+
+		_, err := New(cfg, log.NewMockLogger(io.Discard))
+
+		assert.Equal(t, tc.err, err, "TEST[%d], failed.\n%s", i)
+	}
+}
+
+func Test_invalidSaslMechanism(t *testing.T) {
+	logger := log.NewMockLogger(io.Discard)
+	c := config.NewGoDotEnvProvider(logger, "../../../../configs")
+	topic := c.Get("KAFKA_TOPIC")
+	topics := strings.Split(topic, ",")
+
+	cfg := &Config{
+		Brokers: c.Get("KAFKA_HOSTS"),
+		Topics:  topics,
+		SASL: SASLConfig{
+			User:      "invalid-user-name",
+			Password:  "password",
+			Mechanism: "invalid-mechanism",
+		},
+	}
+
+	kafka, err := New(cfg, logger)
+
+	assert.Equal(t, errInvalidMechanism, err)
+
+	assert.Nil(t, kafka)
 }
 
 func TestKafkaHealthCheck(t *testing.T) {
@@ -517,46 +620,6 @@ func PublishMessage(t *testing.T, k *Kafka) {
 			t.Errorf("Failed[%v] expected error as nil\n got %v", i, err)
 		}
 	}
-}
-
-// Test_PubSubWithOffset check the subscribe operation with custom initial offset value.
-func Test_PubSubWithOffset(t *testing.T) {
-	topic := "test-custom-offset"
-	logger := log.NewLogger()
-	c := config.NewGoDotEnvProvider(logger, "../../../../configs")
-	// prereqisite
-	k, err := New(&Config{
-		Brokers:        c.Get("KAFKA_HOSTS"),
-		Topics:         []string{topic},
-		InitialOffsets: OffsetOldest,
-		GroupID:        "testing-consumerGroup",
-	}, logger)
-
-	if err != nil {
-		t.Errorf("Kafka connection failed : %v", err)
-		return
-	}
-	// In this we are first trying to publish some messages then we are consuming 1 message
-	PublishMessage(t, k)
-	Subscribe(t, k)
-	// testing subscribe operation with offset
-	k, err = New(&Config{
-		Brokers:        c.Get("KAFKA_HOSTS"),
-		Topics:         []string{topic},
-		InitialOffsets: OffsetOldest,
-		GroupID:        "testing-consumerGroup",
-		Offsets:        []pubsub.TopicPartition{{Topic: topic, Partition: 0, Offset: 0}},
-	}, logger)
-
-	if err != nil {
-		t.Errorf("Kafka connection failed : %v", err)
-		return
-	}
-	// since we have already consumed one message so the offset value changed to 1. As we are setting the offset value as 0
-	// so when we will try to consume message it will start consuming message from offset 0.
-	// If setting of offset is unsuccessful then the subscribe operation will fail.
-	SubscribeWithCommit(t, k, topic)
-	Subscribe(t, k)
 }
 
 func Test_populateOffsetTopic(t *testing.T) {

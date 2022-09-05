@@ -308,7 +308,7 @@ func TestAppData(t *testing.T) {
 		data := &sync.Map{}
 		data.Store("key1", "val1")
 		req := httptest.NewRequest("GET", "/dummy", nil)
-		req = req.WithContext(context.WithValue(req.Context(), appData, data))
+		req = req.Clone(context.WithValue(req.Context(), appData, data))
 
 		handler.ServeHTTP(MockWriteHandler{}, req)
 
@@ -328,7 +328,7 @@ func TestAppData(t *testing.T) {
 		data := &sync.Map{}
 		data.Store("key2", "val2")
 		req := httptest.NewRequest("GET", "/dummy", nil)
-		req = req.WithContext(context.WithValue(req.Context(), appData, data))
+		req = req.Clone(context.WithValue(req.Context(), appData, data))
 
 		handler.ServeHTTP(MockWriteHandler{}, req)
 
@@ -408,7 +408,7 @@ func TestErrorMessages(t *testing.T) {
 	err := errors.Response{Reason: errorMessage}
 
 	req := httptest.NewRequest("GET", "/dummy", nil)
-	req = req.WithContext(context.WithValue(req.Context(), ErrorMessage, err.Error()))
+	req = req.Clone(context.WithValue(req.Context(), ErrorMessage, err.Error()))
 
 	handler := Logging(logger, "")(&MockHandler{statusCode: http.StatusInternalServerError})
 

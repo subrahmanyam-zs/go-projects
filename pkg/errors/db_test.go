@@ -1,13 +1,23 @@
 package errors
 
 import (
+	"errors"
 	"testing"
-
-	"github.com/stretchr/testify/assert"
 )
 
 func TestDb_Error(t *testing.T) {
-	err := DB{}
+	testcases := []struct {
+		err error
+		exp string
+	}{
+		{DB{}, "DB Error"},
+		{DB{Err: errors.New("sql error")}, "sql error"},
+	}
 
-	assert.Nil(t, err.Err)
+	for i := range testcases {
+		err := testcases[i].err.Error()
+		if err != testcases[i].exp {
+			t.Errorf("[TESTCASE %v]Failed. Expected %v\nGot %v", i+1, testcases[i].exp, err)
+		}
+	}
 }

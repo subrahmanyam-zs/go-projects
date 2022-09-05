@@ -9,14 +9,13 @@ import (
 	"strconv"
 	"time"
 
-	"developer.zopsmart.com/go/gofr/pkg/gofr/cache"
 	"developer.zopsmart.com/go/gofr/pkg/middleware"
 )
 
 type cachedHTTPService struct {
 	*httpService
 
-	cacher       cache.Cacher
+	cacher       Cacher
 	ttl          time.Duration
 	keyGenerator KeyGenerator
 }

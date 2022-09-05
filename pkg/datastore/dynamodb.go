@@ -5,18 +5,18 @@ import (
 	"strings"
 	"time"
 
-	"golang.org/x/net/context"
-
-	"developer.zopsmart.com/go/gofr/pkg"
-	"developer.zopsmart.com/go/gofr/pkg/gofr/types"
-	"developer.zopsmart.com/go/gofr/pkg/log"
-
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/aws/aws-sdk-go/aws/request"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/dynamodb"
 	"github.com/prometheus/client_golang/prometheus"
+
+	"golang.org/x/net/context"
+
+	"developer.zopsmart.com/go/gofr/pkg"
+	"developer.zopsmart.com/go/gofr/pkg/gofr/types"
+	"developer.zopsmart.com/go/gofr/pkg/log"
 )
 
 // nolint:gochecknoglobals // dynamodbStats has to be a global variable for prometheus
@@ -94,9 +94,7 @@ func (d *DynamoDB) HealthCheck() types.Health {
 
 func (d *DynamoDB) PutItem(input *dynamodb.PutItemInput) (*dynamodb.PutItemOutput, error) {
 	begin := time.Now()
-
 	out, err := d.DynamoDB.PutItem(input)
-
 	duration := time.Since(begin)
 	query := genPutItemQuery(input)
 
@@ -105,24 +103,21 @@ func (d *DynamoDB) PutItem(input *dynamodb.PutItemInput) (*dynamodb.PutItemOutpu
 	return out, err
 }
 
-func (d *DynamoDB) PutItemRequest(input *dynamodb.PutItemInput) (*request.Request, *dynamodb.PutItemOutput) {
-	begin := time.Now()
-
+func (d *DynamoDB) PutItemRequest(input *dynamodb.PutItemInput) (*Request, *dynamodb.PutItemOutput) {
 	req, out := d.DynamoDB.PutItemRequest(input)
-
-	duration := time.Since(begin)
 	query := genPutItemQuery(input)
 
-	d.monitorQuery(query, begin, duration)
+	ql := genQueryLogger(query)
 
-	return req, out
+	ql.Hosts = d.Endpoint
+	ql.Logger = d.logger
+
+	return &Request{queryLogger: ql, Request: req}, out
 }
 
 func (d *DynamoDB) PutItemWithContext(ctx context.Context, input *dynamodb.PutItemInput) (*dynamodb.PutItemOutput, error) {
 	begin := time.Now()
-
 	out, err := d.DynamoDB.PutItemWithContext(ctx, input)
-
 	duration := time.Since(begin)
 	query := genPutItemQuery(input)
 
@@ -144,24 +139,20 @@ func (d *DynamoDB) GetItem(input *dynamodb.GetItemInput) (*dynamodb.GetItemOutpu
 	return out, err
 }
 
-func (d *DynamoDB) GetItemRequest(input *dynamodb.GetItemInput) (*request.Request, *dynamodb.GetItemOutput) {
-	begin := time.Now()
-
+func (d *DynamoDB) GetItemRequest(input *dynamodb.GetItemInput) (*Request, *dynamodb.GetItemOutput) {
 	req, out := d.DynamoDB.GetItemRequest(input)
-
-	duration := time.Since(begin)
 	query := genGetItemQuery(input)
+	ql := genQueryLogger(query)
 
-	d.monitorQuery(query, begin, duration)
+	ql.Hosts = d.Endpoint
+	ql.Logger = d.logger
 
-	return req, out
+	return &Request{queryLogger: ql, Request: req}, out
 }
 
 func (d *DynamoDB) GetItemWithContext(ctx context.Context, input *dynamodb.GetItemInput) (*dynamodb.GetItemOutput, error) {
 	begin := time.Now()
-
 	out, err := d.DynamoDB.GetItemWithContext(ctx, input)
-
 	duration := time.Since(begin)
 	query := genGetItemQuery(input)
 
@@ -172,9 +163,7 @@ func (d *DynamoDB) GetItemWithContext(ctx context.Context, input *dynamodb.GetIt
 
 func (d *DynamoDB) DeleteItem(input *dynamodb.DeleteItemInput) (*dynamodb.DeleteItemOutput, error) {
 	begin := time.Now()
-
 	out, err := d.DynamoDB.DeleteItem(input)
-
 	duration := time.Since(begin)
 	query := genDeleteItemQuery(input)
 
@@ -183,24 +172,20 @@ func (d *DynamoDB) DeleteItem(input *dynamodb.DeleteItemInput) (*dynamodb.Delete
 	return out, err
 }
 
-func (d *DynamoDB) DeleteItemRequest(input *dynamodb.DeleteItemInput) (*request.Request, *dynamodb.DeleteItemOutput) {
-	begin := time.Now()
-
+func (d *DynamoDB) DeleteItemRequest(input *dynamodb.DeleteItemInput) (*Request, *dynamodb.DeleteItemOutput) {
 	req, out := d.DynamoDB.DeleteItemRequest(input)
-
-	duration := time.Since(begin)
 	query := genDeleteItemQuery(input)
+	ql := genQueryLogger(query)
 
-	d.monitorQuery(query, begin, duration)
+	ql.Hosts = d.Endpoint
+	ql.Logger = d.logger
 
-	return req, out
+	return &Request{queryLogger: ql, Request: req}, out
 }
 
 func (d *DynamoDB) DeleteItemWithContext(ctx context.Context, input *dynamodb.DeleteItemInput) (*dynamodb.DeleteItemOutput, error) {
 	begin := time.Now()
-
 	out, err := d.DynamoDB.DeleteItemWithContext(ctx, input)
-
 	duration := time.Since(begin)
 	query := genDeleteItemQuery(input)
 
@@ -211,9 +196,7 @@ func (d *DynamoDB) DeleteItemWithContext(ctx context.Context, input *dynamodb.De
 
 func (d *DynamoDB) UpdateItem(input *dynamodb.UpdateItemInput) (*dynamodb.UpdateItemOutput, error) {
 	begin := time.Now()
-
 	out, err := d.DynamoDB.UpdateItem(input)
-
 	duration := time.Since(begin)
 	query := genUpdateItemQuery(input)
 
@@ -222,24 +205,20 @@ func (d *DynamoDB) UpdateItem(input *dynamodb.UpdateItemInput) (*dynamodb.Update
 	return out, err
 }
 
-func (d *DynamoDB) UpdateItemRequest(input *dynamodb.UpdateItemInput) (*request.Request, *dynamodb.UpdateItemOutput) {
-	begin := time.Now()
-
+func (d *DynamoDB) UpdateItemRequest(input *dynamodb.UpdateItemInput) (*Request, *dynamodb.UpdateItemOutput) {
 	req, out := d.DynamoDB.UpdateItemRequest(input)
-
-	duration := time.Since(begin)
 	query := genUpdateItemQuery(input)
+	ql := genQueryLogger(query)
 
-	d.monitorQuery(query, begin, duration)
+	ql.Hosts = d.Endpoint
+	ql.Logger = d.logger
 
-	return req, out
+	return &Request{queryLogger: ql, Request: req}, out
 }
 
 func (d *DynamoDB) UpdateItemWithContext(ctx context.Context, input *dynamodb.UpdateItemInput) (*dynamodb.UpdateItemOutput, error) {
 	begin := time.Now()
-
 	out, err := d.DynamoDB.UpdateItemWithContext(ctx, input)
-
 	duration := time.Since(begin)
 	query := genUpdateItemQuery(input)
 
@@ -249,58 +228,20 @@ func (d *DynamoDB) UpdateItemWithContext(ctx context.Context, input *dynamodb.Up
 }
 
 func (d *DynamoDB) monitorQuery(query []string, begin time.Time, duration time.Duration) {
-	var (
-		ql    QueryLogger
-		table string
-	)
-
-	queryOperation := query[0]
-	lenQuery := len(query)
-
-	table = query[lenQuery-1]
-	query[lenQuery-1] = fmt.Sprintf("on table %v", table)
-
-	ql.Query = make([]string, 1)
-
-	if lenQuery > 1 {
-		ql.Query[0] = fmt.Sprintf("%v - with %v", query[0], strings.Join(query[1:], ", "))
-	}
+	table := query[len(query)-1]
+	ql := genQueryLogger(query)
 
 	ql.Duration = duration.Microseconds()
 	ql.StartTime = begin
-	ql.DataStore = pkg.DynamoDB
-	ql.Hosts = d.config.Endpoint
+	ql.Hosts = d.Endpoint
 
 	// log the query
-
 	if d.logger != nil {
 		d.logger.Debug(ql)
 	}
 
 	// push stats to metrics server
-	dynamodbStats.WithLabelValues(queryOperation, ql.Hosts, table).Observe(duration.Seconds())
-}
-
-func getAttributeNames(mp map[string]*dynamodb.AttributeValue) string {
-	var names string
-
-	for key := range mp {
-		names += key + ", "
-	}
-
-	names = strings.TrimSuffix(names, ", ")
-
-	return fmt.Sprintf("{%v}", names)
-}
-
-func getTableNameString(tableName *string) string {
-	var name string
-
-	if tableName != nil {
-		name = *tableName
-	}
-
-	return name
+	dynamodbStats.WithLabelValues(query[0], ql.Hosts, table).Observe(duration.Seconds())
 }
 
 func genPutItemQuery(input *dynamodb.PutItemInput) []string {
@@ -332,7 +273,10 @@ func genGetItemQuery(input *dynamodb.GetItemInput) []string {
 		query = append(query, fmt.Sprintf("AttributesToGet {%v}", sub))
 	}
 
-	query = append(query, fmt.Sprintf("Key %v", getAttributeNames(input.Key)), getTableNameString(input.TableName))
+	keys := fmt.Sprintf("Key %v", getAttributeNames(input.Key))
+	table := getTableNameString(input.TableName)
+
+	query = append(query, keys, table)
 
 	return query
 }
@@ -344,7 +288,10 @@ func genDeleteItemQuery(input *dynamodb.DeleteItemInput) []string {
 		query = append(query, fmt.Sprintf("ConditionExpression %v", *input.ConditionExpression))
 	}
 
-	query = append(query, fmt.Sprintf("Key %v", getAttributeNames(input.Key)), getTableNameString(input.TableName))
+	keys := fmt.Sprintf("Key %v", getAttributeNames(input.Key))
+	table := getTableNameString(input.TableName)
+
+	query = append(query, keys, table)
 
 	return query
 }
@@ -372,7 +319,81 @@ func genUpdateItemQuery(input *dynamodb.UpdateItemInput) []string {
 		query = append(query, fmt.Sprintf("ConditionExpression %v", *input.ConditionExpression))
 	}
 
-	query = append(query, fmt.Sprintf("Key %v", getAttributeNames(input.Key)), getTableNameString(input.TableName))
+	keys := fmt.Sprintf("Key %v", getAttributeNames(input.Key))
+	table := getTableNameString(input.TableName)
+
+	query = append(query, keys, table)
 
 	return query
+}
+
+func getAttributeNames(mp map[string]*dynamodb.AttributeValue) string {
+	var names string
+
+	for key := range mp {
+		names += key + ", "
+	}
+
+	names = strings.TrimSuffix(names, ", ")
+
+	return fmt.Sprintf("{%v}", names)
+}
+
+func getTableNameString(tableName *string) string {
+	var name string
+
+	if tableName != nil {
+		name = *tableName
+	}
+
+	return name
+}
+
+func genQueryLogger(query []string) QueryLogger {
+	var (
+		ql       QueryLogger
+		q        string
+		lenQuery = len(query)
+		table    = query[lenQuery-1]
+	)
+
+	if lenQuery > 1 {
+		q = fmt.Sprintf("%v - with %v, on table %v", query[0], strings.Join(query[1:lenQuery-1], ", "), table)
+		ql.Query = []string{q}
+	}
+
+	ql.DataStore = pkg.DynamoDB
+
+	return ql
+}
+
+type Request struct {
+	*request.Request
+
+	// fields to monitor the query
+	queryLogger QueryLogger
+}
+
+// Send will send the request to dynamodb, returning error if errors are encountered.
+func (r *Request) Send() error {
+	begin := time.Now()
+	err := r.Request.Send()
+	duration := time.Since(begin)
+
+	r.queryLogger.StartTime = begin
+	r.queryLogger.Duration = duration.Microseconds()
+
+	// log the query
+	if r.queryLogger.Logger != nil {
+		r.queryLogger.Logger.Debug(r.queryLogger)
+	}
+
+	qValues := strings.Split(r.queryLogger.Query[0], " ")
+	table := qValues[len(qValues)-1]
+	opType := qValues[0]
+
+	// push stats to metrics server
+	dynamodbStats.WithLabelValues(opType, r.queryLogger.Hosts, table).Observe(duration.Seconds())
+
+	return err
 }

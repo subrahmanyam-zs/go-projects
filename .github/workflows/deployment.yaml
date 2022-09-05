@@ -37,9 +37,7 @@ jobs:
           docker build \
             -t $CONTAINER_IMAGE \
             -t $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/$CONTAINER_IMAGE .
-
       - name: Push Image
         run: |
           docker push $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/$CONTAINER_IMAGE      
   
-

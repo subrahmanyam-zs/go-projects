@@ -35,7 +35,6 @@ type httpService struct {
 	customHeaders map[string]string
 	healthCh      chan bool
 	isHealthy     bool
-	isAuthSet     bool
 	contentType   responseType
 	sp            surgeProtector
 	numOfRetries  int
@@ -43,10 +42,18 @@ type httpService struct {
 
 	cache *cachedHTTPService
 
+	authOptions
+
 	// CustomRetry enables the custom retry logic to make service calls
 	// arguments: logger, error, response status-code, attempt count
 	// returns whether framework should retry service call or not
 	CustomRetry func(logger log.Logger, err error, statusCode, attemptCount int) bool
+}
+
+type authOptions struct {
+	isSet              bool
+	isTokenGenBlocking bool
+	isTokenPresent     chan bool
 }
 
 type responseType int
@@ -61,8 +68,9 @@ const (
 	ErrToken                = errors.Error("token could not be obtained")
 )
 
-// nolint:lll,gocognit,gocyclo  // cannot reduce the number of lines since there are many parameters.
+// nolint:lll,gocognit,gocyclo,funlen  // cannot reduce the number of lines since there are many parameters.
 func (h *httpService) call(ctx context.Context, method, target string, params map[string]interface{}, body []byte, headers map[string]string) (*Response, error) {
+	target = strings.TrimLeft(target, "/")
 	correlationID, _ := ctx.Value(middleware.CorrelationIDKey).(string)
 	appData := getAppData(ctx)
 
@@ -72,15 +80,22 @@ func (h *httpService) call(ctx context.Context, method, target string, params ma
 		authorizationHeader = val.(string)
 	}
 
-	err := h.preCall(method, target, correlationID, params, appData, headers, authorizationHeader)
-	if err != nil {
-		return nil, err
-	}
-
 	select {
 	case <-ctx.Done():
 		return nil, RequestCanceled{}
 	default:
+		start := time.Now()
+
+		statusCode, err := h.preCall()
+		if err != nil {
+			httpServiceResponse.WithLabelValues(h.url, method, fmt.Sprintf("%d", statusCode)).Observe(time.Since(start).Seconds())
+
+			h.logError(&errorLog{CorrelationID: correlationID, Method: method, URI: h.url + "/" + target, Params: params,
+				Message: err.Error(), AppData: appData}, headers, start, authorizationHeader)
+
+			return nil, err
+		}
+
 		req, err := h.createReq(ctx, method, target, params, body, headers)
 		if err != nil {
 			return nil, err
@@ -98,15 +113,12 @@ func (h *httpService) call(ctx context.Context, method, target string, params ma
 		// Don't want to log the Cookie.
 		delete(headers, "Cookie")
 
-		start := time.Now()
-
-		var (
-			resp       *http.Response
-			statusCode int
-		)
+		var resp *http.Response
 
 		for i := 0; i <= h.numOfRetries; i++ {
-			resp, err = h.Do(req) //nolint:bodyclose // body is being closed after call response is logged
+			req.Body = io.NopCloser(bytes.NewReader(body)) // reset Request.Body
+
+			resp, err = h.Do(req) // nolint:bodyclose // body is being closed after call response is logged
 			if resp != nil {
 				statusCode = resp.StatusCode
 			}
@@ -130,7 +142,7 @@ func (h *httpService) call(ctx context.Context, method, target string, params ma
 			break
 		}
 		// add url, method, statusCode and duration in prometheus metric
-		httpServiceResponse.WithLabelValues(h.url+"/"+target, method, fmt.Sprintf("%d", statusCode)).Observe(time.Since(start).Seconds())
+		httpServiceResponse.WithLabelValues(h.url, method, fmt.Sprintf("%d", statusCode)).Observe(time.Since(start).Seconds())
 
 		if err != nil {
 			return nil, err
@@ -165,16 +177,31 @@ func (h *httpService) call(ctx context.Context, method, target string, params ma
 	}
 }
 
-// nolint:lll //cannot reduce the number of lines since there are many parameters.
-func (h *httpService) preCall(method, target, correlationID string, params, appData map[string]interface{}, headers map[string]string, authorizationHeader string) error {
-	start := time.Now()
-
+func (h *httpService) preCall() (int, error) {
 	var (
 		err        error
 		statusCode int
 	)
 
-	if h.isAuthSet && h.auth == "" {
+	token := h.auth // this auth is without a lock, i.e. when token generation is a non-blocking call
+
+	// if the tokenGeneration is blocking, it means that the first call made to the service must have a token
+	// token generation happens in a go routine as the client is initialized.
+	// the execution is blocked by reading the channel ensuring that the token is always generated for the first call
+	// as soon as the first token is generated the channel is closed.
+	// this makes sure that following reads on the channel will be non-blocking.
+	if h.authOptions.isTokenGenBlocking {
+		// this is blocking call. Will be blocked until channel is closed in new.go or when there is a timeout
+		select {
+		case <-time.After(h.Timeout):
+			return http.StatusInternalServerError, errors.Timeout{URL: h.url}
+		case <-h.authOptions.isTokenPresent:
+			// once the channel is closed, this will not be a blocking call anymore. it will always reach here.
+			token = h.auth
+		}
+	}
+
+	if h.authOptions.isSet && token == "" {
 		err = ErrToken
 		statusCode = http.StatusUnauthorized
 	}
@@ -188,15 +215,7 @@ func (h *httpService) preCall(method, target, correlationID string, params, appD
 
 	h.mu.Unlock()
 
-	if err != nil {
-		httpServiceResponse.WithLabelValues(h.url+"/"+target, method, fmt.Sprintf("%d", statusCode)).Observe(time.Since(start).Seconds())
-		h.logError(&errorLog{CorrelationID: correlationID, Method: method, URI: h.url + "/" + target, Params: params,
-			Message: err.Error(), AppData: appData}, headers, start, authorizationHeader)
-
-		return err
-	}
-
-	return nil
+	return statusCode, err
 }
 
 // fetch the appData from request context and generate a map of type map[string]interface{}, if appData is nil
@@ -221,7 +240,6 @@ func getAppData(ctx context.Context) map[string]interface{} {
 // the endpoint and the method for the request are defined from the parameters provided to the function
 // nolint:lll,gocognit // cannot reduce the number of lines since there are many parameters.
 func (h *httpService) createReq(ctx context.Context, method, target string, params map[string]interface{}, body []byte, headers map[string]string) (*http.Request, error) {
-	target = strings.TrimLeft(target, "/")
 	uri := h.url + "/" + target
 
 	if target == "" {

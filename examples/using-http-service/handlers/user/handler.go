@@ -13,12 +13,12 @@ type handler struct {
 }
 
 // New is factory function for handler layer
-//nolint:revive // handler should not be used without proper initilization with required dependency
+//nolint:revive // handler should not be used without proper initialization of the required dependency
 func New(service services.User) handler {
 	return handler{service: service}
 }
 
-// Get is a handler function of type gofr.Handler that uses HTTP Service to make downstream calls
+// Get retrieves the company details for the given name passed as a path param
 func (h handler) Get(ctx *gofr.Context) (interface{}, error) {
 	name := ctx.PathParam("name")
 	if strings.TrimSpace(name) == "" {

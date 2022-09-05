@@ -121,23 +121,6 @@ func TestGofr_Start(t *testing.T) {
 	}
 }
 
-func TestGofr_EnableSwaggerUI(t *testing.T) {
-	k := New()
-	// Added contextInjector middleware
-	k.Server.Router.Use(k.Server.contextInjector)
-
-	k.EnableSwaggerUI()
-
-	w := httptest.NewRecorder()
-	r, _ := request.NewMock(http.MethodGet, "/swagger", nil)
-
-	k.Server.Router.ServeHTTP(w, r)
-
-	if w.Code != 200 {
-		t.Errorf("Expected 200 but got: %v", w.Code)
-	}
-}
-
 func TestGofrUseMiddleware(t *testing.T) {
 	k := New()
 	mws := []Middleware{
@@ -148,6 +131,23 @@ func TestGofrUseMiddleware(t *testing.T) {
 	k.Server.UseMiddleware(mws...)
 
 	if len(k.Server.mws) != 2 || !reflect.DeepEqual(k.Server.mws, mws) {
+		t.Errorf("FAILED, Expected: %v, Got: %v", mws, k.Server.mws)
+	}
+}
+
+func TestGofrUseMiddlewarePopulated(t *testing.T) {
+	k := New()
+	k.Server.mws = []Middleware{
+		sampleMW1,
+	}
+
+	mws := []Middleware{
+		sampleMW2,
+	}
+
+	k.Server.UseMiddleware(mws...)
+
+	if len(k.Server.mws) != 2 || reflect.DeepEqual(k.Server.mws, []Middleware{sampleMW1, sampleMW2}) {
 		t.Errorf("FAILED, Expected: %v, Got: %v", mws, k.Server.mws)
 	}
 }

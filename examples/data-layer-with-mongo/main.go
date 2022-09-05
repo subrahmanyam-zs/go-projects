@@ -9,7 +9,6 @@ import (
 func main() {
 	// create the application object
 	app := gofr.New()
-	app.EnableSwaggerUI()
 
 	store := customer.New()
 	h := handlers.New(store)

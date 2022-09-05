@@ -15,7 +15,20 @@ type File interface {
 	Close() error
 }
 
+type Storage interface {
+	File
+	// List lists all the files in the directory
+	List(directory string) ([]string, error)
+	// Move moves the file from source to destination
+	Move(dest, src string) error
+	// Copy copies the file from source to destination
+	Copy(dest, src string) (int, error)
+	// Delete deletes the given file
+	Delete(fileName string) error
+}
+
 type cloudStore interface {
 	fetch(fd *os.File) error
 	push(fd *os.File) error
+	list(folderName string) ([]string, error)
 }

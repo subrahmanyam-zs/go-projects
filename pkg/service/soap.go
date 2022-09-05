@@ -33,6 +33,7 @@ func NewSOAPClient(resourceURL string, logger log.Logger, user, pass string) *so
 				isEnabled:             false,
 				customHeartbeatURL:    "/.well-known/heartbeat",
 				retryFrequencySeconds: RetryFrequency,
+				logger:                logger,
 			},
 			auth:      auth,
 			isHealthy: true,

@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
@@ -183,7 +184,7 @@ func getIdentityInsert(txn *sql.Tx, tableName string) (bool, error) {
 func (d *Seeder) getRecords(tableName string) ([][]string, error) {
 	fileLocation := d.path + "/" + tableName + ".csv"
 
-	fileLoc, err := os.Open(fileLocation)
+	fileLoc, err := os.Open(filepath.Clean(fileLocation))
 	if err != nil {
 		return nil, err
 	}
@@ -411,7 +412,7 @@ func (d *Seeder) RefreshMongoCollections(t tester, collectionNames ...string) {
 		collectionName := collectionNames[i]
 		fileLoc := d.path + "/" + collectionName + ".json"
 
-		file, err := os.ReadFile(fileLoc)
+		file, err := os.ReadFile(filepath.Clean(fileLoc))
 		if err != nil {
 			t.Error(err)
 			return
@@ -529,7 +530,7 @@ func (d *Seeder) RefreshRedis(t tester, tableNames ...string) {
 func (d *Seeder) setRedisHashMaps(tableName string) error {
 	fileLoc := d.path + "/" + tableName + ".json"
 
-	file, err := os.ReadFile(fileLoc)
+	file, err := os.ReadFile(filepath.Clean(fileLoc))
 	if err != nil {
 		return err
 	}
@@ -563,7 +564,7 @@ func (d *Seeder) RefreshDynamoDB(t tester, tableNames ...string) {
 	for _, tableName := range tableNames {
 		fileLoc := fmt.Sprintf("%s/%s.json", d.path, tableName)
 
-		raw, err := os.ReadFile(fileLoc)
+		raw, err := os.ReadFile(filepath.Clean(fileLoc))
 		if err != nil {
 			t.Errorf("Got error reading file: %s", err)
 

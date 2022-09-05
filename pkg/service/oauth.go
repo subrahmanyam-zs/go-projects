@@ -15,12 +15,13 @@ import (
 )
 
 type OAuthOption struct {
-	ClientID       string
-	ClientSecret   string
-	KeyProviderURL string
-	Scope          string
-	MaxSleep       int
-	Audience       string
+	ClientID        string
+	ClientSecret    string
+	KeyProviderURL  string
+	Scope           string
+	Audience        string
+	MaxSleep        int
+	WaitForTokenGen bool
 }
 
 // nolint:gocognit // need to add new condition to check clientID and clientSecret
@@ -74,18 +75,8 @@ func (h *httpService) setClientOauthHeader(option *OAuthOption) {
 	}()
 }
 
-// nolint:gocognit // cognitive complexity of func is high (> 10)
 func getNewAccessToken(basicAuth string, option *OAuthOption) (bearerToken string, exp int, err error) {
-	data := url.Values{}
-	data.Set("grant_type", "client_credentials")
-
-	if option.Scope != "" {
-		data.Set("scope", option.Scope)
-	}
-
-	if option.Audience != "" {
-		data.Set("audience", option.Audience)
-	}
+	data := getPayload(option)
 
 	reqHeaders := map[string]string{
 		"Content-Type": "application/x-www-form-urlencoded",
@@ -149,6 +140,21 @@ func oauthFibonacciRetry(max int) []int {
 	retryList = append(retryList, max)
 
 	return retryList
+}
+
+func getPayload(option *OAuthOption) url.Values {
+	data := url.Values{}
+	data.Set("grant_type", "client_credentials")
+
+	if option.Scope != "" {
+		data.Set("scope", option.Scope)
+	}
+
+	if option.Audience != "" {
+		data.Set("audience", option.Audience)
+	}
+
+	return data
 }
 
 func successStatusRange(status int) bool {

@@ -2,8 +2,11 @@ package service
 
 import (
 	"net/http"
+	"strconv"
 	"sync"
 	"time"
+
+	"developer.zopsmart.com/go/gofr/pkg/log"
 )
 
 // 1. HTTP client should not bombard the downstream service
@@ -27,6 +30,21 @@ type surgeProtector struct {
 
 	// isEnabled is true if the surge protector is enabled
 	isEnabled bool
+
+	logger log.Logger
+}
+
+type logHealthCheck struct {
+	Err        error `json:"err,omitempty"`
+	StatusCode int   `json:"statusCode,omitempty"`
+}
+
+func (l logHealthCheck) String() string {
+	if l.Err != nil {
+		return "Health Check Failed with error: " + l.Err.Error()
+	}
+
+	return "Health Check Failed with Status Code: " + strconv.Itoa(l.StatusCode)
 }
 
 func (sp *surgeProtector) checkHealth(url string, ch chan bool) {
@@ -35,15 +53,26 @@ func (sp *surgeProtector) checkHealth(url string, ch chan bool) {
 
 		sp.mu.Lock()
 
+		// this will be used to log an error when the health-check/heartbeat fails
+		var l logHealthCheck
+
 		resp, err := http.Get(url + sp.customHeartbeatURL)
-		if err != nil || (resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusNotFound) {
-			isHealthy = false
+		if err != nil {
+			l.Err = err
+		} else if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusNotFound {
+			l.StatusCode = resp.StatusCode
+			resp.Body.Close()
 		} else {
 			isHealthy = true
 			resp.Body.Close()
 		}
 
+		if !isHealthy {
+			sp.logger.Errorf("%v", l)
+		}
+
 		retryFrequency := sp.retryFrequencySeconds
+
 		sp.mu.Unlock()
 
 		ch <- isHealthy

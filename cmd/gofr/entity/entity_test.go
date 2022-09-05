@@ -9,14 +9,16 @@ import (
 )
 
 func Test_addEntity(t *testing.T) {
-	currDir, _ := os.Getwd()
+	path, err := os.MkdirTemp("", "testEntity")
+	if err != nil {
+		t.Errorf("Received unexpected error:\n%+v", err)
 
-	defer func() {
-		_ = os.Chdir(currDir)
-	}()
+		return
+	}
 
-	dir := t.TempDir()
-	_ = os.Mkdir(dir+"/testEntity", os.ModePerm)
+	defer os.RemoveAll(path)
+
+	_ = os.Chdir(path)
 
 	var h Handler
 
@@ -37,7 +39,7 @@ func Test_addEntity(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		_ = os.Chdir(dir + "/testEntity")
+		_ = os.Chdir(path)
 
 		if err := addEntity(h, tt.args.entityType, tt.args.entity); (err != nil) != tt.wantErr {
 			t.Errorf("Test %v: addEntity() error = %v, wantErr %v", tt.name, err, tt.wantErr)
@@ -53,20 +55,23 @@ func Test_addEntity(t *testing.T) {
 }
 
 func TestErrors_addCore(t *testing.T) {
-	currDir, _ := os.Getwd()
-
 	ctrl := gomock.NewController(t)
 
 	defer func() {
 		ctrl.Finish()
-
-		_ = os.Chdir(currDir)
 	}()
 
 	c := NewMockfileSystem(ctrl)
-	dir := t.TempDir()
-	path := dir + "/testEntity"
-	_ = os.Mkdir(path, os.ModePerm)
+
+	path, err := os.MkdirTemp("", "testEntity")
+	if err != nil {
+		t.Errorf("Received unexpected error:\n%+v", err)
+
+		return
+	}
+
+	defer os.RemoveAll(path)
+
 	test, _ := os.Create(path + "/test.txt")
 	testingFile, _ := os.Create(path + "/testingFile.txt")
 
@@ -129,7 +134,7 @@ func TestErrors_addCore(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		_ = os.Chdir(dir + "/testEntity")
+		_ = os.Chdir(path)
 
 		if err := addEntity(c, tt.args.entityType, tt.args.name); (err != nil) != tt.wantErr {
 			t.Errorf("Test %v: addEntity() error = %v, wantErr %v", tt.name, err, tt.wantErr)
@@ -138,17 +143,19 @@ func TestErrors_addCore(t *testing.T) {
 }
 
 func Test_addConsumer(t *testing.T) {
-	currDir, _ := os.Getwd()
-	dir := t.TempDir()
-	projectDirectory := dir + "/testProject"
-	_ = os.Mkdir(projectDirectory, os.ModePerm)
+	projectDirectory, err := os.MkdirTemp("", "testProject")
+	if err != nil {
+		t.Errorf("Received unexpected error:\n%+v", err)
+
+		return
+	}
+
+	defer os.RemoveAll(projectDirectory)
 
 	ctrl := gomock.NewController(t)
 
 	defer func() {
 		ctrl.Finish()
-
-		_ = os.Chdir(currDir)
 	}()
 
 	c := NewMockfileSystem(ctrl)
@@ -191,21 +198,30 @@ func Test_addConsumer(t *testing.T) {
 }
 
 func Test_addComposite(t *testing.T) {
-	currDir, _ := os.Getwd()
+	path, err := os.MkdirTemp("", "testProject")
+	if err != nil {
+		t.Errorf("Received unexpected error:\n%+v", err)
 
-	dir := t.TempDir()
-	projectDirectory := dir + "/testProject"
-	_ = os.Mkdir(projectDirectory, os.ModePerm)
-	_ = os.Chdir(projectDirectory)
-	testFile, _ := os.Create("test.go")
-	compositePath := projectDirectory + "/composite"
+		return
+	}
+
+	defer os.RemoveAll(path)
+
+	_ = os.Chdir(path)
+
+	testFile, err := os.CreateTemp(path, "test.go")
+	if err != nil {
+		t.Errorf("Received unexpected error:\n%+v", err)
+
+		return
+	}
+
+	compositePath := path + "/composite"
 
 	ctrl := gomock.NewController(t)
 
 	defer func() {
 		ctrl.Finish()
-
-		_ = os.Chdir(currDir)
 	}()
 
 	c := NewMockfileSystem(ctrl)
@@ -238,7 +254,7 @@ func Test_addComposite(t *testing.T) {
 		}, true},
 	}
 	for _, tt := range tests {
-		if err := addComposite(c, projectDirectory, tt.entity); (err != nil) != tt.wantErr {
+		if err := addComposite(c, path, tt.entity); (err != nil) != tt.wantErr {
 			t.Errorf("Test %v: addComposite() error = %v, wantErr %v", tt.name, err, tt.wantErr)
 		}
 	}

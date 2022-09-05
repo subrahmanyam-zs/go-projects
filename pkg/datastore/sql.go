@@ -7,9 +7,14 @@ import (
 	"time"
 
 	"developer.zopsmart.com/go/gofr/pkg"
+	"developer.zopsmart.com/go/gofr/pkg/errors"
 )
 
 func (c *SQLClient) Query(query string, args ...interface{}) (*sql.Rows, error) {
+	if c == nil || c.DB == nil {
+		return nil, errors.SQLNotInitialized
+	}
+
 	begin := time.Now()
 	rows, err := c.DB.Query(query, args...)
 
@@ -19,6 +24,10 @@ func (c *SQLClient) Query(query string, args ...interface{}) (*sql.Rows, error) 
 }
 
 func (c *SQLClient) Exec(query string, args ...interface{}) (sql.Result, error) {
+	if c == nil || c.DB == nil {
+		return nil, errors.SQLNotInitialized
+	}
+
 	begin := time.Now()
 	rows, err := c.DB.Exec(query, args...)
 
@@ -38,6 +47,10 @@ func (c *SQLClient) QueryRow(query string, args ...interface{}) *sql.Row {
 }
 
 func (c *SQLClient) QueryContext(ctx context.Context, query string, args ...interface{}) (*sql.Rows, error) {
+	if c == nil || c.DB == nil {
+		return nil, errors.SQLNotInitialized
+	}
+
 	begin := time.Now()
 
 	rows, err := c.DB.QueryContext(ctx, query, args...)
@@ -48,6 +61,10 @@ func (c *SQLClient) QueryContext(ctx context.Context, query string, args ...inte
 }
 
 func (c *SQLClient) ExecContext(ctx context.Context, query string, args ...interface{}) (sql.Result, error) {
+	if c == nil || c.DB == nil {
+		return nil, errors.SQLNotInitialized
+	}
+
 	begin := time.Now()
 
 	rows, err := c.DB.ExecContext(ctx, query, args...)
@@ -88,6 +105,10 @@ func checkQueryOperation(query string) string {
 }
 
 func (c *SQLClient) monitorQuery(begin time.Time, query string) {
+	if c == nil || c.DB == nil {
+		return
+	}
+
 	var (
 		hostName string
 		dbName   string
@@ -116,6 +137,10 @@ func (c *SQLClient) monitorQuery(begin time.Time, query string) {
 }
 
 func (c *SQLClient) Begin() (*SQLTx, error) {
+	if c == nil || c.DB == nil {
+		return nil, errors.SQLNotInitialized
+	}
+
 	begin := time.Now()
 
 	tx, err := c.DB.Begin()
@@ -125,6 +150,10 @@ func (c *SQLClient) Begin() (*SQLTx, error) {
 }
 
 func (c *SQLClient) BeginTx(ctx context.Context, opts *sql.TxOptions) (*SQLTx, error) {
+	if c == nil || c.DB == nil {
+		return nil, errors.SQLNotInitialized
+	}
+
 	begin := time.Now()
 
 	tx, err := c.DB.BeginTx(ctx, opts)
@@ -134,6 +163,10 @@ func (c *SQLClient) BeginTx(ctx context.Context, opts *sql.TxOptions) (*SQLTx, e
 }
 
 func (c *SQLTx) Exec(query string, args ...interface{}) (sql.Result, error) {
+	if c == nil || c.Tx == nil {
+		return nil, errors.SQLNotInitialized
+	}
+
 	begin := time.Now()
 
 	result, err := c.Tx.Exec(query, args...)
@@ -143,6 +176,10 @@ func (c *SQLTx) Exec(query string, args ...interface{}) (sql.Result, error) {
 }
 
 func (c *SQLTx) Query(query string, args ...interface{}) (*sql.Rows, error) {
+	if c == nil || c.Tx == nil {
+		return nil, errors.SQLNotInitialized
+	}
+
 	begin := time.Now()
 
 	rows, err := c.Tx.Query(query, args...)
@@ -161,6 +198,10 @@ func (c *SQLTx) QueryRow(query string, args ...interface{}) *sql.Row {
 }
 
 func (c *SQLTx) ExecContext(ctx context.Context, query string, args ...interface{}) (sql.Result, error) {
+	if c == nil || c.Tx == nil {
+		return nil, errors.SQLNotInitialized
+	}
+
 	begin := time.Now()
 
 	result, err := c.Tx.ExecContext(ctx, query, args...)
@@ -170,6 +211,10 @@ func (c *SQLTx) ExecContext(ctx context.Context, query string, args ...interface
 }
 
 func (c *SQLTx) QueryContext(ctx context.Context, query string, args ...interface{}) (*sql.Rows, error) {
+	if c == nil || c.Tx == nil {
+		return nil, errors.SQLNotInitialized
+	}
+
 	begin := time.Now()
 
 	rows, err := c.Tx.QueryContext(ctx, query, args...)
@@ -188,6 +233,10 @@ func (c *SQLTx) QueryRowContext(ctx context.Context, query string, args ...inter
 }
 
 func (c *SQLTx) Commit() error {
+	if c == nil || c.Tx == nil {
+		return errors.SQLNotInitialized
+	}
+
 	begin := time.Now()
 
 	err := c.Tx.Commit()

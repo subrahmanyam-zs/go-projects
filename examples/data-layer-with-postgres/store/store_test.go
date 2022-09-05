@@ -32,12 +32,12 @@ func TestCoreLayer(t *testing.T) {
 
 func createTable(app *gofr.Gofr) {
 	// drop table to clean previously added id's
-	_, err := app.DB().Exec("DROP TABLE customers;")
+	_, err := app.DB().Exec("DROP TABLE IF EXISTS customers;")
 	if err != nil {
 		return
 	}
 
-	_, err = app.DB().Exec("CREATE TABLE customers (id serial primary key,name varchar (50));")
+	_, err = app.DB().Exec("CREATE TABLE IF NOT EXISTS customers (id int PRIMARY KEY , name varchar(15) , email varchar(30) , phone bigint);")
 	if err != nil {
 		return
 	}
@@ -49,8 +49,8 @@ func testAddCustomer(t *testing.T, app *gofr.Gofr) {
 		customer model.Customer
 		err      error
 	}{
-		{"create succuss test #1", model.Customer{Name: "Test123"}, nil},
-		{"create succuss test #2", model.Customer{Name: "Test234"}, nil},
+		{"create success test #1", model.Customer{ID: 5, Name: "Test123"}, nil},
+		{"create success test #2", model.Customer{ID: 6, Name: "Test234"}, nil},
 	}
 
 	for i, tc := range tests {
@@ -109,8 +109,8 @@ func testUpdateCustomer(t *testing.T, app *gofr.Gofr) {
 		customer model.Customer
 		err      error
 	}{
-		{"update succuss", model.Customer{ID: 1, Name: "Test1234"}, nil},
-		{"update fail", model.Customer{ID: 1, Name: "very-long-mock-name-lasdjflsdjfljasdlfjsdlfjsdfljlkj"}, errors.DB{}},
+		{"update succuss", model.Customer{ID: 5, Name: "Test1234"}, nil},
+		{"update fail", model.Customer{ID: 6, Name: "very-long-mock-name-lasdjflsdjfljasdlfjsdlfjsdfljlkj"}, errors.DB{}},
 	}
 
 	for i, tc := range tests {

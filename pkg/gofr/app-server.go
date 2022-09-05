@@ -133,6 +133,9 @@ func (s *server) Start(logger log.Logger) {
 	s.Router.Route(http.MethodGet, "/.well-known/health-check", HealthHandler)
 	s.Router.Route(http.MethodGet, "/.well-known/heartbeat", HeartBeatHandler)
 	s.Router.Route(http.MethodGet, "/.well-known/openapi.json", OpenAPIHandler)
+	// routes for swagger-endpoints.
+	s.Router.Route(http.MethodGet, "/.well-known/swagger", SwaggerUIHandler)
+	s.Router.Route(http.MethodGet, "/.well-known/swagger/{name}", SwaggerUIHandler)
 
 	s.handleMetrics(logger)
 
@@ -225,6 +228,12 @@ func (s *server) Done() {
 
 // UseMiddleware is a setter method for passing user defined custom middleware
 func (s *server) UseMiddleware(mws ...Middleware) {
+	if s.mws != nil {
+		s.mws = append(s.mws, mws...)
+
+		return
+	}
+
 	s.mws = mws
 }
 
@@ -238,9 +247,9 @@ func (s *server) contextInjector(inner http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		c := s.contextPool.Get().(*Context)
 		c.reset(responder.NewContextualResponder(w, r), request.NewHTTPRequest(r))
-		*r = *r.WithContext(ctx.WithValue(r.Context(), appData, &sync.Map{}))
+		*r = *r.Clone(ctx.WithValue(r.Context(), appData, &sync.Map{}))
 		c.Context = r.Context()
-		*r = *r.WithContext(ctx.WithValue(c.Context, gofrContextkey, c))
+		*r = *r.Clone(ctx.WithValue(c.Context, gofrContextkey, c))
 
 		correlationID := r.Header.Get("X-B3-TraceID")
 		if correlationID == "" {

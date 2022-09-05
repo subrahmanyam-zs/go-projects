@@ -12,6 +12,7 @@ import (
 	"developer.zopsmart.com/go/gofr/pkg/errors"
 	"developer.zopsmart.com/go/gofr/pkg/gofr"
 	"developer.zopsmart.com/go/gofr/pkg/gofr/request"
+	"developer.zopsmart.com/go/gofr/pkg/gofr/types"
 )
 
 func TestHelloWorldHandler(t *testing.T) {
@@ -125,5 +126,20 @@ func TestHelloLogHandler(t *testing.T) {
 	res, err := HelloLogHandler(ctx)
 	if res != "Logging OK" {
 		t.Errorf("Logging Failed due to : %v", err)
+	}
+}
+
+func TestRawHandler(t *testing.T) {
+	ctx := gofr.NewContext(nil, nil, nil)
+
+	resp, err := Raw(ctx)
+	if err != nil {
+		t.Errorf("FAILED, Expected: %v, Got: %v", nil, err)
+	}
+
+	expOut := types.Raw{Data: details{"Mukund"}}
+
+	if resp != expOut {
+		t.Errorf("FAILED, Expected: %v, Got: %v", expOut, resp)
 	}
 }
