@@ -88,7 +88,7 @@ func TestCustomer_Get(t *testing.T) {
 	}{
 		{"get success", "Henry", []model.Customer{{ID: "1", Name: "Henry", City: "Bangalore"}}},
 		{"get non existent entity", "Random", nil},
-		{"get multiple entities", "", []model.Customer{
+		{"get multiple entity", "", []model.Customer{
 			{ID: "1", Name: "Henry", City: "Bangalore"},
 			{ID: "2", Name: "Bitsy", City: "Mysore"},
 			{ID: "3", Name: "Magic", City: "Bangalore"},

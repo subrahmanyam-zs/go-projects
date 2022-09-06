@@ -135,7 +135,7 @@ func TestHandler_Delete(t *testing.T) {
 		err         error
 	}{
 		{"delete invalid entity", "name=1", 0, nil, errors.InvalidParam{Param: []string{"name"}}},
-		{"delete multiple entities", "name=Tim", 2, "2 Customers Deleted!", nil},
+		{"delete multiple entity", "name=Tim", 2, "2 Customers Deleted!", nil},
 		{"delete single entity", "name=Thomas", 1, "1 Customers Deleted!", nil},
 	}
 

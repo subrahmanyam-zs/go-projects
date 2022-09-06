@@ -28,7 +28,7 @@ func TestCustomer_Get(t *testing.T) {
 		err  error
 	}{
 		{"get single entity", "Messi", []models.Customer{{Name: "Messi", Age: 32, City: "Barcelona"}}, nil},
-		{"get multiple entities", "Tim", []models.Customer{{Name: "Tim", Age: 53, City: "London"}, {Name: "Tim", Age: 35, City: "Munich"}}, nil},
+		{"get multiple entity", "Tim", []models.Customer{{Name: "Tim", Age: 53, City: "London"}, {Name: "Tim", Age: 35, City: "Munich"}}, nil},
 	}
 
 	store := New()
@@ -75,7 +75,7 @@ func TestModel_Delete(t *testing.T) {
 		err   error
 	}{
 		{"delete non existent entity", "Alex", 0, nil},
-		{"delete multiple entities", "Tim", 2, nil},
+		{"delete multiple entity", "Tim", 2, nil},
 		{"delete single entity", "Thomas", 1, nil},
 	}
 

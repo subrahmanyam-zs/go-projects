@@ -1,4 +1,4 @@
-package entities
+package entity
 
 type Employee struct {
 	ID     string `json:"Id"`
