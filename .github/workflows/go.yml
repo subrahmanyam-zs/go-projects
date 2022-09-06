@@ -4,10 +4,8 @@ name: Workflow-Pipeline
     branches:
       - master
       - development
+      - develop
     tags:
-      - "*"
-  pull_request:
-    branches:
       - "*"
 jobs:
   setup:
