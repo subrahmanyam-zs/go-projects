@@ -1,10 +1,12 @@
 package main
 
 import (
+	"bytes"
 	"io"
 	"net/http"
 	"os"
 	"strconv"
+	"strings"
 	"testing"
 	"time"
 
@@ -63,22 +65,49 @@ func TestMain(m *testing.M) {
 
 func TestIntegration(t *testing.T) {
 	go main()
-	time.Sleep(time.Second * 5)
+	time.Sleep(2 * time.Second)
 
-	req, _ := request.NewMock(http.MethodGet, "http://localhost:9092/customer", nil)
-	c := http.Client{}
+	seeder := datastore.NewSeeder(&gofr.New().DataStore, "./db")
+	seeder.RefreshTables(t, "customers"+
+		"")
 
-	resp, err := c.Do(req)
-	if err != nil {
-		t.Errorf("TEST Failed.\tHTTP request encountered Err: %v\n", err)
-		return
+	testcases := []struct {
+		desc       string
+		method     string
+		endpoint   string
+		statusCode int
+		body       []byte
+		response   []byte
+	}{
+		{"post customer", http.MethodPost, "/customer", http.StatusCreated, []byte(`{"id":0,"name":"Jason"}`), []byte(`{"id":0,"name":"Jason"}`)},
+		{"get customer", http.MethodGet, "/customer/1", http.StatusOK, nil, []byte(`{"id":1,"name":"Alice"}`)},
+		{"update customer", http.MethodPut, "/customer/1", http.StatusOK, []byte(`{"id":1,"name":"Bob"}`), []byte(`{"id":1,"name":"Bob"}`)},
+		{"delete customer", http.MethodDelete, "/customer/2", http.StatusNoContent, nil, nil},
 	}
 
-	if resp.StatusCode != http.StatusOK {
-		t.Errorf("Failed.\tExpected %v\tGot %v\n", http.StatusOK, resp.StatusCode)
-	}
+	for i, tc := range testcases {
+		req, _ := request.NewMock(tc.method, "http://localhost:9092"+tc.endpoint, bytes.NewBuffer(tc.body))
+		c := http.Client{}
 
-	_ = resp.Body.Close()
+		resp, err := c.Do(req)
+		if err != nil {
+			t.Errorf("TEST Failed.\tHTTP request encountered Err: %v\n", err)
+			return
+		}
+
+		buf := new(bytes.Buffer)
+		buf.ReadFrom(resp.Body)
+
+		if !strings.Contains(buf.String(), string(tc.response)) {
+			t.Errorf("Failed testcase  %v.\tExpected %v\tGot %v\n", i, string(tc.response), buf)
+		}
+
+		if resp.StatusCode != tc.statusCode {
+			t.Errorf("Failed testcase %v.\tExpected %v\tGot %v\n", i, tc.statusCode, resp.StatusCode)
+		}
+
+		_ = resp.Body.Close()
+	}
 }
 
 func initializeTests(t *testing.T) *gofr.Gofr {

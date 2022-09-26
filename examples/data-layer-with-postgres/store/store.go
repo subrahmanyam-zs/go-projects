@@ -2,11 +2,10 @@ package store
 
 import (
 	"database/sql"
-	"fmt"
-
 	"developer.zopsmart.com/go/gofr/examples/data-layer-with-postgres/model"
 	"developer.zopsmart.com/go/gofr/pkg/errors"
 	"developer.zopsmart.com/go/gofr/pkg/gofr"
+	"fmt"
 )
 
 type customer struct{}
@@ -56,7 +55,7 @@ func (c customer) Get(ctx *gofr.Context) ([]model.Customer, error) {
 func (c customer) GetByID(ctx *gofr.Context, id int) (model.Customer, error) {
 	var resp model.Customer
 
-	err := ctx.DB().QueryRowContext(ctx, " SELECT * FROM customers where id=$1", id).Scan(&resp.ID, &resp.Name)
+	err := ctx.DB().QueryRowContext(ctx, " SELECT id,name FROM customers where id=$1", id).Scan(&resp.ID, &resp.Name)
 	if err == sql.ErrNoRows {
 		return model.Customer{}, errors.EntityNotFound{Entity: "customer", ID: fmt.Sprint(id)}
 	}
