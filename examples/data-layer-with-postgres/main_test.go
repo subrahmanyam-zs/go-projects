@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"io"
+	"io/ioutil"
 	"net/http"
 	"os"
 	"strconv"
@@ -79,10 +80,10 @@ func TestIntegration(t *testing.T) {
 		body       []byte
 		response   []byte
 	}{
-		{"post customer", http.MethodPost, "/customer", http.StatusCreated, []byte(`{"id":0,"name":"Jason"}`), []byte(`{"id":0,"name":"Jason"}`)},
-		{"get customer", http.MethodGet, "/customer/1", http.StatusOK, nil, []byte(`{"id":1,"name":"Alice"}`)},
-		{"update customer", http.MethodPut, "/customer/1", http.StatusOK, []byte(`{"id":1,"name":"Bob"}`), []byte(`{"id":1,"name":"Bob"}`)},
-		{"delete customer", http.MethodDelete, "/customer/2", http.StatusNoContent, nil, nil},
+		{"post customer", http.MethodPost, "/customer", http.StatusCreated, []byte(`{"id":0,"name":"Jason"}`), []byte(`{"data":{"id":0,"name":"Jason"}}`)},
+		{"get customer", http.MethodGet, "/customer/1", http.StatusOK, nil, []byte(`{"data":{"id":1,"name":"Alice"}}`)},
+		{"update customer", http.MethodPut, "/customer/1", http.StatusOK, []byte(`{"id":1,"name":"Bob"}`), []byte(`{"data":{"id":1,"name":"Bob"}}`)},
+		{"Delete customer", http.MethodDelete, "/customer/1", http.StatusNoContent, nil, []byte("")},
 	}
 
 	for i, tc := range testcases {
@@ -95,12 +96,12 @@ func TestIntegration(t *testing.T) {
 			return
 		}
 
-		buf := new(bytes.Buffer)
-		buf.ReadFrom(resp.Body)
+		body, _ := ioutil.ReadAll(resp.Body)
 
-		if !strings.Contains(buf.String(), string(tc.response)) {
-			t.Errorf("Failed testcase  %v.\tExpected %v\tGot %v\n", i, string(tc.response), buf)
-		}
+		// as ReadAll is giving additional space to remove that strings.TrimSpace is used
+		respBody := []byte(strings.TrimSpace(string(body)))
+
+		assert.Equal(t, tc.response, respBody, "TEST[%d], failed.\n%s", i, tc.desc)
 
 		if resp.StatusCode != tc.statusCode {
 			t.Errorf("Failed testcase %v.\tExpected %v\tGot %v\n", i, tc.statusCode, resp.StatusCode)
