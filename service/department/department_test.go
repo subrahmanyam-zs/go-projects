@@ -42,8 +42,12 @@ func TestValidatePut(t *testing.T) {
 		dataToUpdate   entities.Department
 		expectedOutput entities.Department
 	}{
-		{desc: "valid input", id: 1, dataToUpdate: entities.Department{ID: 1, Name: "HR", FloorNo: 1},
-			expectedOutput: entities.Department{ID: 1, Name: "HR", FloorNo: 1}},
+		{
+			"valid input",
+			1,
+			entities.Department{1, "HR", 1},
+			entities.Department{1, "HR", 1},
+		},
 		{desc: "invalid id", dataToUpdate: entities.Department{ID: 1, Name: "HR", FloorNo: 1}},
 		{desc: "Invalid name", id: 2, dataToUpdate: entities.Department{ID: 2, FloorNo: 2}},
 		{desc: "Invalid floorNo", id: 2, dataToUpdate: entities.Department{ID: 2, Name: "TECH"}},
