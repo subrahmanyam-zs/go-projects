@@ -69,8 +69,7 @@ func TestIntegration(t *testing.T) {
 	time.Sleep(2 * time.Second)
 
 	seeder := datastore.NewSeeder(&gofr.New().DataStore, "./db")
-	seeder.RefreshTables(t, "customers"+
-		"")
+	seeder.RefreshTables(t, "customers")
 
 	testcases := []struct {
 		desc       string
@@ -103,9 +102,7 @@ func TestIntegration(t *testing.T) {
 
 		assert.Equal(t, tc.response, respBody, "TEST[%d], failed.\n%s", i, tc.desc)
 
-		if resp.StatusCode != tc.statusCode {
-			t.Errorf("Failed testcase %v.\tExpected %v\tGot %v\n", i, tc.statusCode, resp.StatusCode)
-		}
+		assert.Equal(t, resp.StatusCode, tc.statusCode, "TEST[%d], failed.\n%s", i, tc.desc)
 
 		_ = resp.Body.Close()
 	}
